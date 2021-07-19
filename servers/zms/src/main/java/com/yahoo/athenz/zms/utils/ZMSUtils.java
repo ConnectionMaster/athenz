@@ -16,6 +16,7 @@
 package com.yahoo.athenz.zms.utils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import com.yahoo.athenz.auth.Authority;
 import com.yahoo.athenz.auth.impl.SimplePrincipal;
@@ -97,7 +98,10 @@ public class ZMSUtils {
         StringBuilder rolePrefix = new StringBuilder(256);
         rolePrefix.append(provSvcName).append(".tenant.").append(tenantDomain).append('.');
         if (resourceGroup != null) {
-            rolePrefix.append("res_group.").append(resourceGroup).append('.');
+            rolePrefix.append("res_group.");
+            if (!resourceGroup.isEmpty()) {
+                rolePrefix.append(resourceGroup).append('.');
+            }
         }
         return rolePrefix.toString();
     }
@@ -106,7 +110,7 @@ public class ZMSUtils {
         
         StringBuilder rolePrefix = new StringBuilder(256);
         rolePrefix.append(provSvcDomain).append('.').append(provSvcName).append('.');
-        if (resourceGroup != null) {
+        if (!StringUtil.isEmpty(resourceGroup)) {
             rolePrefix.append("res_group.").append(resourceGroup).append('.');
         }
         return rolePrefix.toString();
@@ -118,7 +122,7 @@ public class ZMSUtils {
         StringBuilder trustedRole = new StringBuilder(256);
         trustedRole.append(provSvcDomain).append(AuthorityConsts.ROLE_SEP).append(provSvcName)
                 .append(".tenant.").append(tenantDomain).append('.');
-        if (resourceGroup != null) {
+        if (!StringUtil.isEmpty(resourceGroup)) {
             trustedRole.append("res_group.").append(resourceGroup).append('.');
         }
         return trustedRole.toString();
@@ -126,6 +130,13 @@ public class ZMSUtils {
     
     /**
      * Setup a new AuditLogMsgBuilder object with common values.
+     * @param ctx resource context object
+     * @param auditLogger audit logger object
+     * @param domainName domain name
+     * @param auditRef audit reference value provided in the request
+     * @param caller api name
+     * @param method http method name
+     * @return audit log message builder object
     **/
     public static AuditLogMsgBuilder getAuditLogMsgBuilder(ResourceContext ctx,
             AuditLogger auditLogger, String domainName, String auditRef, String caller,
@@ -413,5 +424,22 @@ public class ZMSUtils {
         }
 
         return SimplePrincipal.create(domain, name, (String) null);
+    }
+
+    public static boolean metaValueChanged(Object domainValue, Object metaValue) {
+        return (metaValue == null) ? false : !metaValue.equals(domainValue);
+    }
+
+    public static long configuredDueDateMillis(Integer domainDueDateDays, Integer roleDueDateDays) {
+
+        // the role expiry days settings overrides the domain one if one configured
+
+        int expiryDays = 0;
+        if (roleDueDateDays != null && roleDueDateDays > 0) {
+            expiryDays = roleDueDateDays;
+        } else if (domainDueDateDays != null && domainDueDateDays > 0) {
+            expiryDays = domainDueDateDays;
+        }
+        return expiryDays == 0 ? 0 : System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(expiryDays, TimeUnit.DAYS);
     }
 }

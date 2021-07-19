@@ -20,7 +20,7 @@
   <parent>
     <groupId>com.yahoo.athenz</groupId>
     <artifactId>athenz</artifactId>
-    <version>1.9.30-SNAPSHOT</version>
+    <version>1.10.25-SNAPSHOT</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
 
@@ -28,6 +28,10 @@
   <name>athenz-cert-refresher</name>
   <description>Athenz SSL Cert Refresher Package</description>
   <packaging>jar</packaging>
+
+  <properties>
+    <code.coverage.min>1.00</code.coverage.min>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -44,17 +48,16 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <distributionManagement>
-    <repository>
-      <id>bintray-athenz-cert-refresher-repo</id>
-      <url>https://api.bintray.com/maven/yahoo/maven/athenz-cert-refresher/;publish=1</url>
-    </repository>
-  </distributionManagement>
 
   <build>
     <plugins>
@@ -79,4 +82,53 @@
     </plugins>
   </build>
 
+  <profiles>
+    <profile>
+      <id>jdk11</id>
+      <activation>
+        <jdk>[11,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>${maven-compiler-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>jdk11</id>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <release>11</release>
+                  <compileSourceRoots>
+                    <compileSourceRoot>${project.basedir}/src/main/java11</compileSourceRoot>
+                  </compileSourceRoots>
+                  <outputDirectory>${project.build.outputDirectory}/META-INF/versions/11</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>${maven-jar-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>default-jar</id>
+                <configuration>
+                  <archive>
+                    <manifestEntries>
+                      <Multi-Release>true</Multi-Release>
+                    </manifestEntries>
+                  </archive>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

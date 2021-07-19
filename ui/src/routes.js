@@ -30,15 +30,24 @@ module.exports = routes()
     .add('service', '/domain/:domain/service')
     .add('template', '/domain/:domain/template')
     .add('history', '/domain/:domain/history')
+    .add('tags', '/domain/:domain/tags')
     .add('members', '/domain/:domain/role/:role/members')
     .add('review', '/domain/:domain/role/:role/review')
     .add('role-policy', '/domain/:domain/role/:role/policy')
     .add('policy', '/domain/:domain/policy')
     .add('settings', '/domain/:domain/role/:role/settings')
     .add('role-history', '/domain/:domain/role/:role/history')
+    .add('role-tags', '/domain/:domain/role/:role/tags')
     .add('group-members', '/domain/:domain/group/:group/members')
     .add('group-settings', '/domain/:domain/group/:group/settings')
     .add('group', '/domain/:domain/group')
     .add('group-history', '/domain/:domain/group/:group/history')
     .add('group-roles', '/domain/:domain/group/:group/roles')
-    .add('group-review', '/domain/:domain/group/:group/review');
+    .add('group-review', '/domain/:domain/group/:group/review')
+    .add('microsegmentation', '/domain/:domain/microsegmentation')
+    .add('domain-settings', '/domain/:domain/domain-settings')
+    .add(
+        'dynamic-instance',
+        '/domain/:domain/service/:service/instance/dynamic'
+    )
+    .add('static-instance', '/domain/:domain/service/:service/instance/static');

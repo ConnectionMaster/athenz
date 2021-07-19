@@ -262,7 +262,7 @@ public class ZTSRDLClientMock extends ZTSRDLGeneratedClient implements java.io.C
         String key = domainName + ":" + roleName;
         if (credsMap.isEmpty()) {
             lastRoleTokenFailTime.put(key, System.currentTimeMillis());
-            throw new ZTSClientException(ZTSClientException.NOT_FOUND, "role is not assumed");
+            throw new ZTSClientException(ResourceException.NOT_FOUND, "role is not assumed");
         } else {
             lastRoleTokenFailTime.put(key, -1L);
         }
@@ -427,6 +427,11 @@ public class ZTSRDLClientMock extends ZTSRDLGeneratedClient implements java.io.C
     }
 
     @Override
+    public RoleCertificate postRoleCertificateRequestExt(RoleCertificateRequest req) {
+        return new RoleCertificate().setX509Certificate("x509cert");
+    }
+
+    @Override
     public Access getAccess(String domainName, String roleName, String principal) {
         if (domainName.equals("exc")) {
             throw new ResourceException(400, "Invalid request");
@@ -459,14 +464,6 @@ public class ZTSRDLClientMock extends ZTSRDLGeneratedClient implements java.io.C
     }
 
     @Override
-    public DomainMetrics postDomainMetrics(String domainName, DomainMetrics req) {
-        if (domainName.equals("exc")) {
-            throw new ResourceException(400, "Invalid request");
-        }
-        return null;
-    }
-
-    @Override
     public CertificateAuthorityBundle getCertificateAuthorityBundle(String bundleName) {
         if (bundleName.equals("exc")) {
             throw new NullPointerException("Invalid request");
@@ -478,5 +475,62 @@ public class ZTSRDLClientMock extends ZTSRDLGeneratedClient implements java.io.C
         bundle.setName(bundleName);
         bundle.setCerts("certs");
         return bundle;
+    }
+
+    @Override
+    public Workloads getWorkloadsByService(String domainName, String serviceName) {
+        if ("bad-domain".equals(domainName)) {
+            throw new ResourceException(404, "unknown domain");
+        }
+        Workload wl = new Workload().setProvider("openstack").setIpAddresses(Collections.singletonList("10.0.0.1"))
+                .setUuid("avve-resw").setUpdateTime(Timestamp.fromMillis(System.currentTimeMillis()));
+        return new Workloads().setWorkloadList(Collections.singletonList(wl));
+    }
+
+    @Override
+    public Workloads getWorkloadsByIP(String ip) {
+        if ("127.0.0.1".equals(ip)) {
+            throw new ResourceException(404, "unknown ip");
+        }
+        Workload wl = new Workload().setProvider("openstack").setDomainName("athenz").setServiceName("api")
+                .setUuid("avve-resw").setUpdateTime(Timestamp.fromMillis(System.currentTimeMillis()));
+        return new Workloads().setWorkloadList(Collections.singletonList(wl));
+    }
+
+    @Override
+    public TransportRules getTransportRules(String domainName, String serviceName) {
+        TransportRule tr;
+        TransportRules transportRules = null;
+        switch (domainName) {
+            case "bad-domain":
+                throw new ResourceException(404, "unknown domain");
+            case "ingress-domain":
+                tr = new TransportRule().setEndPoint("10.0.0.1/26").setPort(4443).setProtocol("TCP")
+                        .setSourcePortRange("1024-65535");
+                transportRules = new TransportRules();
+                transportRules.setIngressRules(Collections.singletonList(tr));
+                break;
+            case "egress-domain":
+                tr = new TransportRule().setEndPoint("10.0.0.1/23").setPort(8443).setProtocol("TCP")
+                        .setSourcePortRange("1024-65535");
+                transportRules = new TransportRules();
+                transportRules.setEgressRules(Collections.singletonList(tr));
+                break;
+        }
+
+        return transportRules;
+    }
+
+    @Override
+    public InstanceRegisterToken getInstanceRegisterToken(String provider, String domain, String service, String instanceId) {
+
+        if ("coretech".equals(domain)) {
+            return new InstanceRegisterToken().setProvider(provider).setDomain(domain)
+                    .setService(service).setAttestationData("token");
+        } else if ("bad-domain".equals(domain)) {
+            throw new ResourceException(ResourceException.NOT_FOUND, "unknown domain");
+        } else {
+            throw new IllegalArgumentException();
+        }
     }
 }

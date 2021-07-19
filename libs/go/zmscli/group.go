@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AthenZ/athenz/clients/go/zms"
 	"github.com/ardielle/ardielle-go/rdl"
-	"github.com/yahoo/athenz/clients/go/zms"
 )
 
 func (cli Zms) groupNames(dn string) ([]string, error) {
@@ -28,15 +28,20 @@ func (cli Zms) groupNames(dn string) ([]string, error) {
 }
 
 func (cli Zms) ListGroups(dn string) (*string, error) {
-	var buf bytes.Buffer
 	groups, err := cli.groupNames(dn)
 	if err != nil {
 		return nil, err
 	}
-	buf.WriteString("groups:\n")
-	cli.dumpObjectList(&buf, groups, dn, "group")
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("groups:\n")
+		cli.dumpObjectList(&buf, groups, dn, "group")
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(groups, oldYamlConverter)
 }
 
 func (cli Zms) ShowGroup(dn string, gn string, auditLog, pending bool) (*string, error) {
@@ -56,12 +61,60 @@ func (cli Zms) ShowGroup(dn string, gn string, auditLog, pending bool) (*string,
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	buf.WriteString("group:\n")
-	cli.dumpGroup(&buf, *group, auditLog, indentLevel1Dash, indentLevel1DashLvl)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("group:\n")
+		cli.dumpGroup(&buf, *group, auditLog, indentLevel1Dash, indentLevel1DashLvl)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(group, oldYamlConverter)
 }
+
+func (cli Zms) SetGroupMemberExpiryDays(dn string, rn string, days int32) (*string, error) {
+	group, err := cli.Zms.GetGroup(zms.DomainName(dn), zms.EntityName(rn), nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	meta := getGroupMetaObject(group)
+	meta.MemberExpiryDays = &days
+
+	err = cli.Zms.PutGroupMeta(zms.DomainName(dn), zms.EntityName(rn), cli.AuditRef, &meta)
+	if err != nil {
+		return nil, err
+	}
+	s := "[domain " + dn + " group " + rn + " member-expiry-days attribute successfully updated]\n"
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
+}
+
+func (cli Zms) SetGroupServiceExpiryDays(dn string, rn string, days int32) (*string, error) {
+	group, err := cli.Zms.GetGroup(zms.DomainName(dn), zms.EntityName(rn), nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	meta := getGroupMetaObject(group)
+	meta.ServiceExpiryDays = &days
+
+	err = cli.Zms.PutGroupMeta(zms.DomainName(dn), zms.EntityName(rn), cli.AuditRef, &meta)
+	if err != nil {
+		return nil, err
+	}
+	s := "[domain " + dn + " group " + rn + " service-expiry-days attribute successfully updated]\n"
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
+}
+
 
 func (cli Zms) AddGroup(dn string, gn string, groupMembers []*zms.GroupMember) (*string, error) {
 	fullResourceName := dn + ":group." + gn
@@ -104,7 +157,12 @@ func (cli Zms) DeleteGroup(dn string, gn string) (*string, error) {
 		return nil, err
 	}
 	s := "[Deleted group: " + gn + "]"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) AddGroupMembers(dn string, group string, members []string) (*string, error) {
@@ -125,7 +183,12 @@ func (cli Zms) AddGroupMembers(dn string, group string, members []string) (*stri
 	} else {
 		s = "[Added to " + group + ": " + strings.Join(ms, ",") + "]"
 	}
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) DeleteGroupMembers(dn string, group string, members []string) (*string, error) {
@@ -143,25 +206,38 @@ func (cli Zms) DeleteGroupMembers(dn string, group string, members []string) (*s
 	} else {
 		s = "[Deleted from " + group + ": " + strings.Join(ms, ",") + "]"
 	}
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) CheckGroupMembers(dn string, group string, members []string) (*string, error) {
-	var buf bytes.Buffer
 	ms := cli.validatedUsers(members, false)
+	var groupMembership []*zms.GroupMembership
 	for _, m := range ms {
 		member, err := cli.Zms.GetGroupMembership(zms.DomainName(dn), zms.EntityName(group), zms.GroupMemberName(m), "")
 		if err != nil {
 			return nil, err
 		}
-		cli.dumpGroupMembership(&buf, *member)
+		groupMembership = append(groupMembership, member)
 	}
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		for _, member := range groupMembership {
+			cli.dumpGroupMembership(&buf, *member)
+		}
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(groupMembership, oldYamlConverter)
 }
 
 func (cli Zms) CheckActiveGroupMember(dn string, group string, mbr string) (*string, error) {
-	var buf bytes.Buffer
 	member, err := cli.Zms.GetGroupMembership(zms.DomainName(dn), zms.EntityName(group), zms.GroupMemberName(mbr), "")
 	if err != nil {
 		return nil, err
@@ -169,20 +245,31 @@ func (cli Zms) CheckActiveGroupMember(dn string, group string, mbr string) (*str
 	if !*member.IsMember || !*member.Approved || !*member.Active {
 		return nil, errors.New("Member " + mbr + " is not active")
 	}
-	cli.dumpGroupMembership(&buf, *member)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		cli.dumpGroupMembership(&buf, *member)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(member, oldYamlConverter)
 }
 
 func (cli Zms) ShowGroupsPrincipal(principal string, dn string) (*string, error) {
-	var buf bytes.Buffer
 	domainGroupMember, err := cli.Zms.GetPrincipalGroups(zms.EntityName(principal), zms.DomainName(dn))
 	if err != nil {
 		return nil, err
 	}
-	cli.dumpGroupsPrincipal(&buf, domainGroupMember)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		cli.dumpGroupsPrincipal(&buf, domainGroupMember)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(domainGroupMember, oldYamlConverter)
 }
 
 func (cli Zms) SetGroupAuditEnabled(dn string, group string, auditEnabled bool) (*string, error) {
@@ -194,7 +281,12 @@ func (cli Zms) SetGroupAuditEnabled(dn string, group string, auditEnabled bool) 
 		return nil, err
 	}
 	s := "[domain " + dn + " group " + group + " audit-enabled successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func getGroupMetaObject(group *zms.Group) zms.GroupMeta {
@@ -204,6 +296,8 @@ func getGroupMetaObject(group *zms.Group) zms.GroupMeta {
 		NotifyRoles:             group.NotifyRoles,
 		UserAuthorityExpiration: group.UserAuthorityExpiration,
 		UserAuthorityFilter:     group.UserAuthorityFilter,
+		MemberExpiryDays:        group.MemberExpiryDays,
+		ServiceExpiryDays:       group.ServiceExpiryDays,
 	}
 }
 
@@ -220,7 +314,12 @@ func (cli Zms) SetGroupReviewEnabled(dn string, gn string, reviewEnabled bool) (
 		return nil, err
 	}
 	s := "[domain " + dn + " group " + gn + " review-enabled attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetGroupSelfServe(dn string, gn string, selfServe bool) (*string, error) {
@@ -236,7 +335,12 @@ func (cli Zms) SetGroupSelfServe(dn string, gn string, selfServe bool) (*string,
 		return nil, err
 	}
 	s := "[domain " + dn + " group " + gn + " self-serve attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetGroupUserAuthorityFilter(dn string, gn, filter string) (*string, error) {
@@ -252,7 +356,12 @@ func (cli Zms) SetGroupUserAuthorityFilter(dn string, gn, filter string) (*strin
 		return nil, err
 	}
 	s := "[domain " + dn + " group " + gn + " user-authority-filter attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetGroupUserAuthorityExpiration(dn string, gn, filter string) (*string, error) {
@@ -268,7 +377,12 @@ func (cli Zms) SetGroupUserAuthorityExpiration(dn string, gn, filter string) (*s
 		return nil, err
 	}
 	s := "[domain " + dn + " group " + gn + " user-authority-expiration attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetGroupNotifyRoles(dn string, gn string, notifyRoles string) (*string, error) {
@@ -284,7 +398,12 @@ func (cli Zms) SetGroupNotifyRoles(dn string, gn string, notifyRoles string) (*s
 		return nil, err
 	}
 	s := "[domain " + dn + " group " + gn + " notify-roles attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) PutGroupMembershipDecision(dn string, group string, mbr string, approval bool) (*string, error) {
@@ -304,7 +423,12 @@ func (cli Zms) PutGroupMembershipDecision(dn string, group string, mbr string, a
 		s = s + " rejected."
 	}
 	s = s + "]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) ListPendingDomainGroupMembers(principal string) (*string, error) {
@@ -312,12 +436,16 @@ func (cli Zms) ListPendingDomainGroupMembers(principal string) (*string, error) 
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	buf.WriteString("domains:\n")
-	for _, domainGroupMembers := range domainMembership.DomainGroupMembersList {
-		cli.dumpDomainGroupMembers(&buf, domainGroupMembers, true)
-	}
-	s := buf.String()
 
-	return &s, nil
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("domains:\n")
+		for _, domainGroupMembers := range domainMembership.DomainGroupMembersList {
+			cli.dumpDomainGroupMembers(&buf, domainGroupMembers, true)
+		}
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(domainMembership, oldYamlConverter)
 }

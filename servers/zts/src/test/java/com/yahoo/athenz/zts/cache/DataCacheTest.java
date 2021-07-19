@@ -17,12 +17,10 @@ package com.yahoo.athenz.zts.cache;
 
 import static org.testng.Assert.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import com.yahoo.athenz.zts.ZTSTestUtils;
+import org.hamcrest.MatcherAssert;
 import org.testng.annotations.Test;
 
 import com.yahoo.athenz.zms.Assertion;
@@ -1270,6 +1268,74 @@ public class DataCacheTest {
         assertEquals(suffixList.size(), 2);
         assertTrue(suffixList.contains(".athenz.cloud"));
         assertTrue(suffixList.contains(".athenz.info"));
+    }
+
+    @Test
+    public void transportRulesTest() {
+        String domainName = "transportrulesdc";
+        DataCache cache = new DataCache();
+        DomainData domainData = new DomainData();
+        domainData.setName(domainName);
+        cache.setDomainData(domainData);
+        domainData.setRoles(new ArrayList<>());
+        Role role1 = ZTSTestUtils.createRoleObject(domainName, "ACL.api.inbound-4443", "dom1.svc1", "dom2.svc2");
+        Role role2 = ZTSTestUtils.createRoleObject(domainName, "ACL.api.inbound-8443", "dom3.svc3");
+        domainData.getRoles().add(role1);
+        domainData.getRoles().add(role2);
+
+        Policy policy = ZTSTestUtils.createPolicyObject(domainName, "ACL.api.inbound", domainName + ":role.ACL.api.inbound-4443",
+                false, "TCP-IN:1024-65535:4443", domainName + ":api", AssertionEffect.ALLOW);
+        policy.getAssertions().add(new Assertion().setResource(domainName + ":api").setRole(domainName + ":role.ACL.api.inbound-8443")
+                .setAction("TCP-IN:49152-65535:8443").setEffect(AssertionEffect.ALLOW));
+        // non-existing role added in assertion
+        policy.getAssertions().add(new Assertion().setResource(domainName + ":api").setRole(domainName + ":role.ACL.api.inbound-7443")
+                .setAction("TCP-IN:49152-65535:7443").setEffect(AssertionEffect.ALLOW));
+        domainData.setPolicies(new com.yahoo.athenz.zms.SignedPolicies());
+        domainData.getPolicies().setContents(new com.yahoo.athenz.zms.DomainPolicies());
+        domainData.getPolicies().getContents().setPolicies(new ArrayList<>());
+        domainData.getPolicies().getContents().getPolicies().add(policy);
+
+        Map<String, Role> rolesMap = new HashMap<>();
+        rolesMap.put(domainName + ":role.ACL.api.inbound-4443", role1);
+        rolesMap.put(domainName + ":role.ACL.api.inbound-8443", role2);
+        cache.processPolicy(domainName, policy, rolesMap);
+
+        assertNotNull(cache.getTransportRulesInfoForService("api"));
+        Map<String, List<String>> expectedMap = new HashMap<>();
+        List<String> svcMembers = Arrays.asList("dom1.svc1","dom2.svc2");
+        expectedMap.put("TCP-IN:1024-65535:4443", svcMembers);
+        expectedMap.put("TCP-IN:49152-65535:8443", Collections.singletonList("dom3.svc3"));
+        assertEquals(cache.getTransportRulesInfoForService("api"), expectedMap);
+    }
+
+    @Test
+    public void testIsWorkloadStoreExcludedProvider() {
+        final String domainName = "sys.auth";
+        DataCache cache = new DataCache();
+        DomainData domainData = new DomainData();
+        domainData.setName(domainName);
+        cache.setDomainData(domainData);
+        domainData.setRoles(new ArrayList<>());
+        Role role1 = ZTSTestUtils.createRoleObject(domainName, "workload.store.excluded.providers", "cd.screwdriver.project", "vespa.vespa");
+        domainData.getRoles().add(role1);
+        cache.processSystemBehaviorRoles(domainData);
+        assertTrue(cache.isWorkloadStoreExcludedProvider("cd.screwdriver.project"));
+        assertTrue(cache.isWorkloadStoreExcludedProvider("vespa.vespa"));
+        assertFalse(cache.isWorkloadStoreExcludedProvider("sys.openstack.classic"));
+        RoleMember rm1 = new RoleMember().setMemberName("sys.openstack.classic");
+        role1.getRoleMembers().add(rm1);
+        cache.processSystemBehaviorRoles(domainData);
+        assertTrue(cache.isWorkloadStoreExcludedProvider("cd.screwdriver.project"));
+        assertTrue(cache.isWorkloadStoreExcludedProvider("vespa.vespa"));
+        assertTrue(cache.isWorkloadStoreExcludedProvider("sys.openstack.classic"));
+        role1.getRoleMembers().remove(rm1);
+        RoleMember rm2 = new RoleMember().setMemberName("omega.k8s.identity");
+        role1.getRoleMembers().add(rm2);
+        cache.processSystemBehaviorRoles(domainData);
+        assertTrue(cache.isWorkloadStoreExcludedProvider("cd.screwdriver.project"));
+        assertTrue(cache.isWorkloadStoreExcludedProvider("vespa.vespa"));
+        assertFalse(cache.isWorkloadStoreExcludedProvider("sys.openstack.classic"));
+        assertTrue(cache.isWorkloadStoreExcludedProvider("omega.k8s.identity"));
     }
 }
 

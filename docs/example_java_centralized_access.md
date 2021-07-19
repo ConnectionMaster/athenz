@@ -139,14 +139,14 @@ identity to determine if it request should be processed or not.
 ----------------------------------------------------------------------
 
 The full client source code is available from:
-https://github.com/yahoo/athenz/tree/master/libs/java/cert_refresher/examples/tls-support/src/main/java/com/yahoo/athenz/example/http/tls/client/HttpTLSClient.java
+https://github.com/AthenZ/athenz/tree/master/libs/java/cert_refresher/examples/tls-support/src/main/java/com/yahoo/athenz/example/http/tls/client/HttpTLSClient.java
 
 #### Client Project Dependency Update
 -------------------------------------
 
 First you need to update your Java project `pom.xml` file to indicate
 the dependency on the Athenz Cert Refresher Library. Checkout the
-[Bintray Athenz Cert Refresher Package](https://bintray.com/yahoo/maven/athenz-cert-refresher/)
+[Maven Central Athenz Cert Refresher Package](https://search.maven.org/artifact/com.yahoo.athenz/athenz-cert-refresher)
 to make sure you're using the latest release version:
 
 ```
@@ -155,14 +155,6 @@ to make sure you're using the latest release version:
     <artifactId>athenz-cert-refresher</artifactId>
     <version>VERSION-NUMBER</version>
 </dependency>
-
-<repositories>
-  <repository>
-    <id>bintray-yahoo-maven</id>
-    <name>bintray</name>
-    <url>https://yahoo.bintray.com/maven</url>
-  </repository>
-</repositories>
 ```
 
 #### Build Http Client Utility
@@ -171,7 +163,7 @@ to make sure you're using the latest release version:
 Checkout and build the client component:
 
 ```shell
-$ git clone https://github.com/yahoo/athenz.git
+$ git clone https://github.com/AthenZ/athenz.git
 $ cd libs/java/cert_refresher/examples/tls-support/src/main/java/com/yahoo/athenz/example/http/tls/client/
 $ mvn clean package
 ```
@@ -194,14 +186,14 @@ usage: http-example-client
 
 The full servlet source code is available from:
 
-https://github.com/yahoo/athenz/tree/master/examples/java/centralized-use-case/servlet
+https://github.com/AthenZ/athenz/tree/master/examples/java/centralized-use-case/servlet
 
 #### Servlet Project Dependency Update
 --------------------------------------
 
 First you need to update your Java project `pom.xml` file to indicate
 the dependency on the Athenz ZMS Java Client Library and the Athenz Cert Refresher Libarry.
-Checkout [Bintray ZMS Client Package Page](https://bintray.com/yahoo/maven/athenz-zms-java-client/) and [Bintray Athenz Cert Refresher Package](https://bintray.com/yahoo/maven/athenz-cert-refresher/)
+Checkout [Maven Central  ZMS Client Package Page](https://search.maven.org/artifact/com.yahoo.athenz/athenz-zms-java-client) and [Maven Central Athenz Cert Refresher Package](https://search.maven.org/artifact/com.yahoo.athenz/athenz-cert-refresher)
 to make sure you're using the latest release version:
 
 ```
@@ -215,14 +207,6 @@ to make sure you're using the latest release version:
     <artifactId>athenz-cert-refresher</artifactId>
     <version>VERSION-NUMBER</version>
 </dependency>
-
-<repositories>
-  <repository>
-    <id>bintray-yahoo-maven</id>
-    <name>bintray</name>
-    <url>https://yahoo.bintray.com/maven</url>
-  </repository>
-</repositories>
 ```
 #### Enable TLS Client Certificate Authentication
 -------------------------------------------------
@@ -317,7 +301,7 @@ is to contact ZMS for the authorization check.
 Checkout and build the servlet component:
 
 ```shell
-$ git clone https://github.com/yahoo/athenz.git
+$ git clone https://github.com/AthenZ/athenz.git
 $ cd examples/java/centralized-use-case/servlet/
 $ mvn clean package
 ```

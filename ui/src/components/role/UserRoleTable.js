@@ -17,65 +17,56 @@ import React from 'react';
 import styled from '@emotion/styled';
 import Icon from '../denali/icons/Icon';
 import { colors } from '../denali/styles';
-import RoleUserTable from './RoleUserTable';
 import DeleteModal from '../modal/DeleteModal';
 import Alert from '../denali/Alert';
 import { MODAL_TIME_OUT } from '../constants/constants';
 import DateUtils from '../utils/DateUtils';
 import RequestUtils from '../utils/RequestUtils';
+import { keyframes, css } from '@emotion/react';
 
-const StyleTable = styled.table`
+const StyleTable = styled.div`
     width: 100%;
     border-spacing: 0 15px;
     display: table;
     border-collapse: separate;
     border-color: grey;
 `;
-const TableHeadStyled = styled.th`
-    text-align: ${(props) => props.align};
-    border-bottom: 2px solid #d5d5d5;
-    color: #9a9a9a;
-    font-weight: 600;
+
+const TableHeadStyled = styled.div`
+    border-bottom: 2px solid rgb(213, 213, 213);
+    color: rgb(154, 154, 154);
     font-size: 0.8rem;
-    padding-bottom: 5px;
     vertical-align: top;
     text-transform: uppercase;
-    padding: 5px 0 5px 15px;
+    padding: 5px 0px 5px 15px;
     word-break: break-all;
+    display: flex;
 `;
 
 const LeftMarginSpan = styled.span`
     margin-right: 10px;
-    verticalalign: bottom;
+    vertical-align: bottom;
 `;
 
-const TDStyled = styled.td`
+const TDStyledMember = styled.div`
     background-color: ${(props) => props.color};
     text-align: ${(props) => props.align};
     padding: 5px 0 5px 15px;
     vertical-align: middle;
     word-break: break-all;
+    width: 70%;
 `;
 
-const NameTDStyled = styled.td`
+const TDStyledIcon = styled.div`
     background-color: ${(props) => props.color};
     text-align: ${(props) => props.align};
     padding: 5px 0 5px 15px;
     vertical-align: middle;
     word-break: break-all;
-    width: 60%;
+    width: 15%;
 `;
 
-const ExpTDStyled = styled.td`
-    background-color: ${(props) => props.color};
-    text-align: ${(props) => props.align};
-    padding: 5px 0 5px 15px;
-    vertical-align: middle;
-    word-break: break-all;
-    width: 28%;
-`;
-
-const TrStyled = styled.tr`
+const TrStyled = styled.div`
     box-sizing: border-box;
     margin-top: 10px;
     box-shadow: 0 1px 4px #d9d9d9;
@@ -84,24 +75,43 @@ const TrStyled = styled.tr`
     border-image: none;
     -webkit-border-image: initial;
     border-image: initial;
-    height: 50px;
+    display: flex;
+    ${(props) =>
+        props.isSuccess === true &&
+        css`
+            animation: ${colorTransition} 3s ease;
+        `}
 `;
 
-const TDStyledSub = styled.td`
-    background-color: ${(props) => props.color};
+const colorTransition = keyframes`
+        0% {
+            background-color: rgba(21, 192, 70, 0.20);
+        }
+        100% {
+            background-color: transparent;
+        }
+`;
+
+const StyledTd = styled.div`
+    width: 100%;
+`;
+
+const StyledTable = styled.div`
+    width: 100%;
+`;
+
+const StyledUserCol = styled.div`
     text-align: ${(props) => props.align};
-    padding: 5px 0 5px 15px;
-    vertical-align: middle;
-    word-break: break-all;
-    width: 120px;
+    width: 70%;
 `;
 
-const StyledTd = styled.td`
-    width: 100%;
+const StyledIconCol = styled.div`
+    text-align: ${(props) => props.align};
+    width: 15%;
 `;
 
-const StyledTable = styled.table`
-    width: 100%;
+const FlexDiv = styled.div`
+    display: flex;
 `;
 
 export default class UserRoleTable extends React.Component {
@@ -129,6 +139,12 @@ export default class UserRoleTable extends React.Component {
             this.setState({
                 searchText: this.props.searchText,
             });
+        }
+        if (
+            prevProps.roles !== this.props.roles ||
+            prevProps.users !== this.props.users
+        ) {
+            this.loadRoleByUser();
         }
     }
 
@@ -211,6 +227,8 @@ export default class UserRoleTable extends React.Component {
                 this.state.deleteJustification
                     ? this.state.deleteJustification
                     : 'deleted using Athenz UI',
+                false,
+                'role',
                 this.props._csrf
             )
             .then(() => {
@@ -267,11 +285,11 @@ export default class UserRoleTable extends React.Component {
                     memberName
                 );
                 return (
-                    <tr key={role.roleName}>
-                        <NameTDStyled align={left}>
+                    <FlexDiv key={role.roleName}>
+                        <TDStyledMember align={left}>
                             {role.roleName}
-                        </NameTDStyled>
-                        <ExpTDStyled align={center}>
+                        </TDStyledMember>
+                        <TDStyledIcon align={center}>
                             {role.expiration
                                 ? this.dateUtils.getLocalDate(
                                       role.expiration,
@@ -279,8 +297,8 @@ export default class UserRoleTable extends React.Component {
                                       'UTC'
                                   )
                                 : null}
-                        </ExpTDStyled>
-                        <TDStyledSub align={center}>
+                        </TDStyledIcon>
+                        <TDStyledIcon align={center}>
                             <Icon
                                 icon={'trash'}
                                 onClick={deleteItem}
@@ -289,8 +307,8 @@ export default class UserRoleTable extends React.Component {
                                 size={'1.25em'}
                                 verticalAlign={'text-bottom'}
                             />
-                        </TDStyledSub>
-                    </tr>
+                        </TDStyledIcon>
+                    </FlexDiv>
                 );
             });
             expandArray[memberName] = true;
@@ -377,11 +395,16 @@ export default class UserRoleTable extends React.Component {
                     );
 
                     let toReturn = [];
-
+                    let newMember =
+                        this.props.domain + '-' + item.memberName ===
+                        this.props.newMember;
                     if (!this.state.contents[item.memberName]) {
                         toReturn.push(
-                            <TrStyled key={item.memberName}>
-                                <TDStyled align={left}>
+                            <TrStyled
+                                key={item.memberName}
+                                isSuccess={newMember}
+                            >
+                                <TDStyledMember align={left}>
                                     <LeftMarginSpan>
                                         <Icon
                                             icon={'arrowhead-down-circle'}
@@ -405,9 +428,9 @@ export default class UserRoleTable extends React.Component {
                                         ' (' +
                                         item.memberRoles.length +
                                         ')'}
-                                </TDStyled>
-                                <TDStyled align={center} />
-                                <TDStyled align={center}>
+                                </TDStyledMember>
+                                <TDStyledIcon align={center} />
+                                <TDStyledIcon align={center}>
                                     <Icon
                                         icon={'trash'}
                                         onClick={deleteItem}
@@ -416,16 +439,19 @@ export default class UserRoleTable extends React.Component {
                                         size={'1.25em'}
                                         verticalAlign={'text-bottom'}
                                     />
-                                </TDStyled>
+                                </TDStyledIcon>
                             </TrStyled>
                         );
                     } else {
                         toReturn.push(
-                            <TrStyled key={item.memberName}>
-                                <StyledTd colSpan={3}>
+                            <TrStyled
+                                key={item.memberName}
+                                isSuccess={newMember}
+                            >
+                                <StyledTd>
                                     <StyledTable>
-                                        <tr>
-                                            <TDStyled align={left} colSpan={1}>
+                                        <FlexDiv>
+                                            <TDStyledMember align={left}>
                                                 <LeftMarginSpan>
                                                     <Icon
                                                         icon={
@@ -453,15 +479,9 @@ export default class UserRoleTable extends React.Component {
                                                     ' (' +
                                                     item.memberRoles.length +
                                                     ')'}
-                                            </TDStyled>
-                                            <TDStyled
-                                                align={center}
-                                                colSpan={1}
-                                            />
-                                            <TDStyled
-                                                align={center}
-                                                colSpan={1}
-                                            >
+                                            </TDStyledMember>
+                                            <TDStyledIcon align={center} />
+                                            <TDStyledIcon align={center}>
                                                 <Icon
                                                     icon={'trash'}
                                                     onClick={deleteItem}
@@ -472,8 +492,8 @@ export default class UserRoleTable extends React.Component {
                                                         'text-bottom'
                                                     }
                                                 />
-                                            </TDStyled>
-                                        </tr>
+                                            </TDStyledIcon>
+                                        </FlexDiv>
                                         {this.state.contents[item.memberName]}
                                     </StyledTable>
                                 </StyledTd>
@@ -485,7 +505,7 @@ export default class UserRoleTable extends React.Component {
 
         return (
             <StyleTable key='user-role-table' data-testid='userroletable'>
-                <thead>
+                <TableHeadStyled>
                     {this.state.showSuccess ? (
                         <Alert
                             isOpen={this.state.showSuccess}
@@ -498,14 +518,12 @@ export default class UserRoleTable extends React.Component {
                             onClose={closeSuccess}
                         />
                     ) : null}
-                    <tr>
-                        <TableHeadStyled align={left}>MEMBER</TableHeadStyled>
-                        <TableHeadStyled align={center}>
-                            Expiration Date
-                        </TableHeadStyled>
-                        <TableHeadStyled align={center}>Delete</TableHeadStyled>
-                    </tr>
-                </thead>
+                    <StyledUserCol align={left}>MEMBER</StyledUserCol>
+                    <StyledIconCol align={center}>
+                        Expiration Date
+                    </StyledIconCol>
+                    <StyledIconCol align={center}>Delete</StyledIconCol>
+                </TableHeadStyled>
                 <DeleteModal
                     name={this.state.deleteName}
                     isOpen={this.state.showDelete}

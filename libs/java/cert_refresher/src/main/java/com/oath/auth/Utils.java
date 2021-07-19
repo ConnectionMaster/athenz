@@ -116,14 +116,14 @@ public class Utils {
      * trust-store path which has been created already and just needs to be
      * monitored for changes. Using default password of "secret" for both stores.
      *
-     * @param trustStorePath   path to the trust-store
-     * @param athenzPublicCert path to the certificate file
+     * @param trustStorePath path to the trust-store
+     * @param athenzPublicCert path to the x.509 certificate file
      * @param athenzPrivateKey path to the private key file
      * @return KeyRefresher object
-     * @throws KeyRefresherException
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws FileNotFoundException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws InterruptedException in case of interrupted thread
+     * @throws IOException in case of any errors with reading files
+     * @throws FileNotFoundException in case key/cert are not found
      */
     public static KeyRefresher generateKeyRefresher(final String trustStorePath,
                                                     final String athenzPublicCert, final String athenzPrivateKey)
@@ -140,15 +140,15 @@ public class Utils {
      * trust-store path which has been created already and just needs to be
      * monitored for changes.
      *
-     * @param trustStorePath     path to the trust-store
+     * @param trustStorePath path to the trust-store
      * @param trustStorePassword trust store password
-     * @param athenzPublicCert   path to the certificate file
-     * @param athenzPrivateKey   path to the private key file
+     * @param athenzPublicCert path to the x.509 certificate file
+     * @param athenzPrivateKey path to the private key file
      * @return KeyRefresher object
-     * @throws KeyRefresherException
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws FileNotFoundException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws InterruptedException in case of interrupted thread
+     * @throws IOException in case of any errors with reading files
+     * @throws FileNotFoundException in case key/cert are not found
      */
     public static KeyRefresher generateKeyRefresher(final String trustStorePath,
                                                     final String trustStorePassword, final String athenzPublicCert, final String athenzPrivateKey)
@@ -165,15 +165,15 @@ public class Utils {
      * trust-store path which has been created already and just needs to be
      * monitored for changes.
      *
-     * @param trustStorePath     path to the trust-store
+     * @param trustStorePath path to the trust-store
      * @param trustStorePassword trust store password
-     * @param athenzPublicCert   path to the certificate file
-     * @param athenzPrivateKey   path to the private key file
+     * @param athenzPublicCert path to the x.509 certificate file
+     * @param athenzPrivateKey path to the private key file
      * @return KeyRefresher object
-     * @throws KeyRefresherException
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws FileNotFoundException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws InterruptedException in case of interrupted thread
+     * @throws IOException in case of any errors with reading files
+     * @throws FileNotFoundException in case key/cert are not found
      */
     public static KeyRefresher generateKeyRefresher(final String trustStorePath,
                                                     final char[] trustStorePassword, final String athenzPublicCert, final String athenzPrivateKey)
@@ -190,16 +190,16 @@ public class Utils {
      * trust-store path which has been created already and just needs to be
      * monitored for changes.
      *
-     * @param trustStorePath       path to the trust-store
-     * @param trustStorePassword   trust store password
-     * @param athenzPublicCert     path to the certificate file
-     * @param athenzPrivateKey     path to the private key file
+     * @param trustStorePath path to the trust-store
+     * @param trustStorePassword trust store password
+     * @param athenzPublicCert path to the x.509 certificate file
+     * @param athenzPrivateKey path to the private key file
      * @param keyRefresherListener notify listener that key/cert has changed
      * @return KeyRefresher object
-     * @throws KeyRefresherException
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws FileNotFoundException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws InterruptedException in case of interrupted thread
+     * @throws IOException in case of any errors with reading files
+     * @throws FileNotFoundException in case key/cert are not found
      */
     public static KeyRefresher generateKeyRefresher(final String trustStorePath,
                                                     final char[] trustStorePassword, final String athenzPublicCert,
@@ -207,7 +207,7 @@ public class Utils {
             throws FileNotFoundException, IOException, InterruptedException, KeyRefresherException {
         TrustStore trustStore = new TrustStore(trustStorePath,
                 new JavaKeyStoreProvider(trustStorePath, trustStorePassword));
-        return getKeyRefresher(athenzPublicCert, athenzPrivateKey, trustStore);
+        return getKeyRefresher(athenzPublicCert, athenzPrivateKey, trustStore, keyRefresherListener);
     }
 
     /**
@@ -218,14 +218,14 @@ public class Utils {
      * trust-store path which has been created already and just needs to be
      * monitored for changes. Using default password of "secret" for both stores.
      *
-     * @param caCertPath       path to the trust-store
-     * @param athenzPublicCert path to the certificate file
+     * @param caCertPath path to the trust-store
+     * @param athenzPublicCert path to the x.509 certificate file
      * @param athenzPrivateKey path to the private key file
      * @return KeyRefresher object
-     * @throws KeyRefresherException
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws FileNotFoundException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws InterruptedException in case of interrupted thread
+     * @throws IOException in case of any errors with reading files
+     * @throws FileNotFoundException in case key/cert are not found
      */
     public static KeyRefresher generateKeyRefresherFromCaCert(final String caCertPath,
                                                               final String athenzPublicCert, final String athenzPrivateKey) throws FileNotFoundException, IOException, InterruptedException, KeyRefresherException {
@@ -263,7 +263,7 @@ public class Utils {
      * @param trustManagerProxy uses standard TrustManager interface except also allows
      *                          for the updating of TrustManager on the fly
      * @return a valid SSLContext object using the passed in key/trust managers
-     * @throws KeyRefresherException
+     * @throws KeyRefresherException in case of any errors
      */
     public static SSLContext buildSSLContext(KeyManagerProxy keyManagerProxy,
                                              TrustManagerProxy trustManagerProxy) throws KeyRefresherException {
@@ -307,10 +307,10 @@ public class Utils {
      * @param athenzPublicCert the location on the public certificate file
      * @param athenzPrivateKey the location of the private key file
      * @return a KeyStore with loaded key and certificate
-     * @throws IOException
-     * @throws FileNotFoundException
-     * @throws InterruptedException
-     * @throws KeyRefresherException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws InterruptedException in case of interrupted thread
+     * @throws IOException in case of any errors with reading files
+     * @throws FileNotFoundException in case key/cert are not found
      */
     public static KeyStore createKeyStore(final String athenzPublicCert, final String athenzPrivateKey) throws FileNotFoundException, IOException, InterruptedException, KeyRefresherException {
         if (athenzPublicCert == null || athenzPublicCert.isEmpty()) {
@@ -360,8 +360,8 @@ public class Utils {
      * @param athenzPublicCertPem The public certificate pem
      * @param athenzPrivateKeyPem The private key pem
      * @return a KeyStore with loaded key and certificate
-     * @throws IOException
-     * @throws KeyRefresherException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws IOException in case of any errors with reading files
      */
     public static KeyStore createKeyStoreFromPems(
             final String athenzPublicCertPem,
@@ -381,8 +381,8 @@ public class Utils {
      * @param athenzPrivateKeyInputStream      Supplier of the private key input stream
      * @param athenzPrivateKeyLocationSupplier Supplier of the location of the certificate (for error logging)
      * @return a KeyStore with loaded key and certificate
-     * @throws IOException
-     * @throws KeyRefresherException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws IOException in case of any errors with reading files
      */
     public static KeyStore createKeyStore(
             final Supplier<InputStream> athenzPublicCertInputStream,
@@ -407,7 +407,7 @@ public class Utils {
             } else if (key instanceof PrivateKeyInfo) {
                 privateKey = pemConverter.getPrivateKey((PrivateKeyInfo) key);
             } else {
-                throw new KeyRefresherException("Unknown object type: " + key.getClass().getName());
+                throw new KeyRefresherException("Unknown object type: " + key == null ? "null" : key.getClass().getName());
             }
 
             //noinspection unchecked
@@ -443,8 +443,8 @@ public class Utils {
      * @param inputStream input stream for the x.509 certificates.
      *                    caller responsible for closing the stream
      * @return KeyStore including all x.509 certificates
-     * @throws IOException
-     * @throws KeyRefresherException
+     * @throws KeyRefresherException in case of any key refresher errors processing the request
+     * @throws IOException in case of any errors with reading files
      */
     public static KeyStore generateTrustStore(InputStream inputStream) throws IOException, KeyRefresherException {
         CertificateFactory factory;
@@ -460,8 +460,8 @@ public class Utils {
         } catch (CertificateException | NoSuchAlgorithmException e) {
             String keyStoreFailMsg = "Unable to load the inputstream as a KeyStore.  Please check the content.";
             throw new KeyRefresherException(keyStoreFailMsg, e);
-        } catch (KeyStoreException ignored) {
-            LOG.error("No Provider supports a KeyStoreSpi implementation for the specified type " + DEFAULT_KEYSTORE_TYPE, ignored);
+        } catch (KeyStoreException ex) {
+            LOG.error("No Provider supports a KeyStoreSpi implementation for the specified type {}", DEFAULT_KEYSTORE_TYPE, ex);
         }
         return keyStore;
     }

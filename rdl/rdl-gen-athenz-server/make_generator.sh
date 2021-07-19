@@ -6,7 +6,7 @@
 # generated. Otherwise, the server has all the auto-generated code already
 # checked-in into git.
 
-if [ ! -z "${TRAVIS_PULL_REQUEST}" ] || [ ! -z "${TRAVIS_TAG}" ]; then
+if [ ! -z "${SCREWDRIVER}" ] || [ ! -z "${TRAVIS_PULL_REQUEST}" ] || [ ! -z "${TRAVIS_TAG}" ]; then
     echo >&2 "------------------------------------------------------------------------";
     echo >&2 "SOURCE NOTICE";
     echo >&2 "------------------------------------------------------------------------";
@@ -25,6 +25,11 @@ command -v go >/dev/null 2>&1 || {
 
 if [ -z "${GOPATH}" ]; then
     echo >&2 "GOPATH is not set. please configure this environment variable"
+    exit 1;
+fi
+
+if [ ! -d "${GOPATH}/bin" ]; then
+    echo >&2 "$GOPATH/bin directory does not exist. Please create this directory."
     exit 1;
 fi
 

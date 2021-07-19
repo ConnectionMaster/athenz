@@ -23,16 +23,36 @@ import Menu from '../denali/Menu/Menu';
 import DateUtils from '../utils/DateUtils';
 import RequestUtils from '../utils/RequestUtils';
 import { withRouter } from 'next/router';
+import { css, keyframes } from '@emotion/react';
 
-const TDStyled = styled.td`
+const TDStyledName = styled.div`
     background-color: ${(props) => props.color};
     text-align: ${(props) => props.align};
     padding: 5px 0 5px 15px;
     vertical-align: middle;
     word-break: break-all;
+    width: 28%;
 `;
 
-const TrStyled = styled.tr`
+const TDStyledTime = styled.div`
+    background-color: ${(props) => props.color};
+    text-align: ${(props) => props.align};
+    padding: 5px 0 5px 15px;
+    vertical-align: middle;
+    word-break: break-all;
+    width: 16%;
+`;
+
+const TDStyledIcon = styled.div`
+    background-color: ${(props) => props.color};
+    text-align: ${(props) => props.align};
+    padding: 5px 0 5px 15px;
+    vertical-align: middle;
+    word-break: break-all;
+    width: 7%;
+`;
+
+const TrStyled = styled.div`
     box-sizing: border-box;
     margin-top: 10px;
     box-shadow: 0 1px 4px #d9d9d9;
@@ -41,7 +61,22 @@ const TrStyled = styled.tr`
     border-image: none;
     -webkit-border-image: initial;
     border-image: initial;
-    height: 50px;
+    display: flex;
+    padding: 5px 0 5px 15px;
+    ${(props) =>
+        props.isSuccess &&
+        css`
+            animation: ${colorTransition} 3s ease;
+        `}
+`;
+
+const colorTransition = keyframes`
+        0% {
+            background-color: rgba(21, 192, 70, 0.20);
+        }
+        100% {
+            background-color: transparent;
+        }
 `;
 
 const MenuDiv = styled.div`
@@ -156,6 +191,14 @@ class RoleRow extends React.Component {
             this,
             `/domain/${this.props.domain}/role/${this.state.name}/policy`
         );
+        let clickHistory = this.onClickFunction.bind(
+            this,
+            `/domain/${this.props.domain}/role/${this.state.name}/history`
+        );
+        let clickTag = this.onClickFunction.bind(
+            this,
+            `/domain/${this.props.domain}/role/${this.state.name}/tags`
+        );
 
         let clickDelete = this.onClickDelete.bind(this, this.state.name);
         let submitDelete = this.onSubmitDelete.bind(this, this.props.domain);
@@ -201,6 +244,9 @@ class RoleRow extends React.Component {
             </Menu>
         );
 
+        let reviewRequired =
+            role.reviewEnabled && (role.memberExpiryDays || role.serviceExpiry);
+
         let roleTypeIcon = role.trust ? iconDelegated : '';
         let roleAuditIcon = auditEnabled ? iconAudit : '';
 
@@ -210,18 +256,23 @@ class RoleRow extends React.Component {
             ) : (
                 <span>{' ' + this.state.name}</span>
             );
-
+        let newRole =
+            this.props.newRole === this.props.domain + '-' + this.state.name;
         rows.push(
-            <TrStyled key={this.state.name} data-testid='role-row'>
-                <TDStyled color={color} align={left}>
+            <TrStyled
+                key={this.state.name}
+                data-testid='role-row'
+                isSuccess={newRole}
+            >
+                <TDStyledName color={color} align={left}>
                     {roleTypeIcon}
                     {roleAuditIcon}
                     {roleNameSpan}
-                </TDStyled>
-                <TDStyled color={color} align={left}>
+                </TDStyledName>
+                <TDStyledTime color={color} align={left}>
                     {this.localDate.getLocalDate(role.modified, 'UTC', 'UTC')}
-                </TDStyled>
-                <TDStyled color={color} align={left}>
+                </TDStyledTime>
+                <TDStyledTime color={color} align={left}>
                     {role.lastReviewedDate
                         ? this.localDate.getLocalDate(
                               role.lastReviewedDate,
@@ -229,8 +280,8 @@ class RoleRow extends React.Component {
                               'UTC'
                           )
                         : 'N/A'}
-                </TDStyled>
-                <TDStyled color={color} align={center}>
+                </TDStyledTime>
+                <TDStyledIcon color={color} align={center}>
                     <Menu
                         placement='bottom-start'
                         trigger={
@@ -248,8 +299,8 @@ class RoleRow extends React.Component {
                     >
                         <MenuDiv>Members</MenuDiv>
                     </Menu>
-                </TDStyled>
-                <TDStyled color={color} align={center}>
+                </TDStyledIcon>
+                <TDStyledIcon color={color} align={center}>
                     <Menu
                         placement='bottom-start'
                         trigger={
@@ -257,7 +308,11 @@ class RoleRow extends React.Component {
                                 <Icon
                                     icon={'assignment-priority'}
                                     onClick={clickReview}
-                                    color={colors.icons}
+                                    color={
+                                        reviewRequired
+                                            ? colors.red200
+                                            : colors.icons
+                                    }
                                     isLink
                                     size={'1.25em'}
                                     verticalAlign={'text-bottom'}
@@ -267,8 +322,8 @@ class RoleRow extends React.Component {
                     >
                         <MenuDiv>Review Members</MenuDiv>
                     </Menu>
-                </TDStyled>
-                <TDStyled color={color} align={center}>
+                </TDStyledIcon>
+                <TDStyledIcon color={color} align={center}>
                     <Menu
                         placement='bottom-start'
                         trigger={
@@ -286,8 +341,27 @@ class RoleRow extends React.Component {
                     >
                         <MenuDiv>Rule Policy</MenuDiv>
                     </Menu>
-                </TDStyled>
-                <TDStyled color={color} align={center}>
+                </TDStyledIcon>
+                <TDStyledIcon color={color} align={center}>
+                    <Menu
+                        placement='bottom-start'
+                        trigger={
+                            <span>
+                                <Icon
+                                    icon={'tag'}
+                                    onClick={clickTag}
+                                    color={colors.icons}
+                                    isLink
+                                    size={'1.25em'}
+                                    verticalAlign={'text-bottom'}
+                                />
+                            </span>
+                        }
+                    >
+                        <MenuDiv>Tags</MenuDiv>
+                    </Menu>
+                </TDStyledIcon>
+                <TDStyledIcon color={color} align={center}>
                     <Menu
                         placement='bottom-start'
                         trigger={
@@ -305,8 +379,27 @@ class RoleRow extends React.Component {
                     >
                         <MenuDiv>Settings</MenuDiv>
                     </Menu>
-                </TDStyled>
-                <TDStyled color={color} align={center}>
+                </TDStyledIcon>
+                <TDStyledIcon color={color} align={center}>
+                    <Menu
+                        placement='bottom-start'
+                        trigger={
+                            <span>
+                                <Icon
+                                    icon={'time-history'}
+                                    onClick={clickHistory}
+                                    color={colors.icons}
+                                    isLink
+                                    size={'1.25em'}
+                                    verticalAlign={'text-bottom'}
+                                />
+                            </span>
+                        }
+                    >
+                        <MenuDiv>History</MenuDiv>
+                    </Menu>
+                </TDStyledIcon>
+                <TDStyledIcon color={color} align={center}>
                     <Menu
                         placement='bottom-start'
                         trigger={
@@ -324,7 +417,7 @@ class RoleRow extends React.Component {
                     >
                         <MenuDiv>Delete Role</MenuDiv>
                     </Menu>
-                </TDStyled>
+                </TDStyledIcon>
             </TrStyled>
         );
 

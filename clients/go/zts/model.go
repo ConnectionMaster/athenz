@@ -1073,36 +1073,37 @@ func (self *DomainSignedPolicyData) Validate() error {
 }
 
 //
-// RoleToken - A representation of a signed RoleToken
+// RoleCertificate - Copyright Athenz Authors Licensed under the terms of the
+// Apache version 2.0 license. See LICENSE file for terms. RoleCertificate - a
+// role certificate
 //
-type RoleToken struct {
-	Token      string `json:"token"`
-	ExpiryTime int64  `json:"expiryTime"`
+type RoleCertificate struct {
+	X509Certificate string `json:"x509Certificate"`
 }
 
 //
-// NewRoleToken - creates an initialized RoleToken instance, returns a pointer to it
+// NewRoleCertificate - creates an initialized RoleCertificate instance, returns a pointer to it
 //
-func NewRoleToken(init ...*RoleToken) *RoleToken {
-	var o *RoleToken
+func NewRoleCertificate(init ...*RoleCertificate) *RoleCertificate {
+	var o *RoleCertificate
 	if len(init) == 1 {
 		o = init[0]
 	} else {
-		o = new(RoleToken)
+		o = new(RoleCertificate)
 	}
 	return o
 }
 
-type rawRoleToken RoleToken
+type rawRoleCertificate RoleCertificate
 
 //
-// UnmarshalJSON is defined for proper JSON decoding of a RoleToken
+// UnmarshalJSON is defined for proper JSON decoding of a RoleCertificate
 //
-func (self *RoleToken) UnmarshalJSON(b []byte) error {
-	var m rawRoleToken
+func (self *RoleCertificate) UnmarshalJSON(b []byte) error {
+	var m rawRoleCertificate
 	err := json.Unmarshal(b, &m)
 	if err == nil {
-		o := RoleToken(m)
+		o := RoleCertificate(m)
 		*self = o
 		err = self.Validate()
 	}
@@ -1112,13 +1113,13 @@ func (self *RoleToken) UnmarshalJSON(b []byte) error {
 //
 // Validate - checks for missing required fields, etc
 //
-func (self *RoleToken) Validate() error {
-	if self.Token == "" {
-		return fmt.Errorf("RoleToken.token is missing but is a required field")
+func (self *RoleCertificate) Validate() error {
+	if self.X509Certificate == "" {
+		return fmt.Errorf("RoleCertificate.x509Certificate is missing but is a required field")
 	} else {
-		val := rdl.Validate(ZTSSchema(), "String", self.Token)
+		val := rdl.Validate(ZTSSchema(), "String", self.X509Certificate)
 		if !val.Valid {
-			return fmt.Errorf("RoleToken.token does not contain a valid String (%v)", val.Error)
+			return fmt.Errorf("RoleCertificate.x509Certificate does not contain a valid String (%v)", val.Error)
 		}
 	}
 	return nil
@@ -1126,16 +1127,37 @@ func (self *RoleToken) Validate() error {
 
 //
 // RoleCertificateRequest - RoleCertificateRequest - a certificate signing
-// request
+// request. By including the optional previous Certificate NotBefore and
+// NotAfter dates would all the server to correctly prioritize this request in
+// case the certificate signer is under heavy load and it can't sign all
+// submitted requests from the Athenz Server.
 //
 type RoleCertificateRequest struct {
+
+	//
+	// role certificate singing request
+	//
 	Csr string `json:"csr"`
 
 	//
 	// this request is proxy for this principal
 	//
 	ProxyForPrincipal EntityName `json:"proxyForPrincipal,omitempty" rdl:"optional"`
-	ExpiryTime        int64      `json:"expiryTime"`
+
+	//
+	// request an expiry time for the role certificate
+	//
+	ExpiryTime int64 `json:"expiryTime"`
+
+	//
+	// previous role certificate not before date
+	//
+	PrevCertNotBefore *rdl.Timestamp `json:"prevCertNotBefore,omitempty" rdl:"optional"`
+
+	//
+	// previous role certificate not after date
+	//
+	PrevCertNotAfter *rdl.Timestamp `json:"prevCertNotAfter,omitempty" rdl:"optional"`
 }
 
 //
@@ -1183,6 +1205,58 @@ func (self *RoleCertificateRequest) Validate() error {
 		val := rdl.Validate(ZTSSchema(), "EntityName", self.ProxyForPrincipal)
 		if !val.Valid {
 			return fmt.Errorf("RoleCertificateRequest.proxyForPrincipal does not contain a valid EntityName (%v)", val.Error)
+		}
+	}
+	return nil
+}
+
+//
+// RoleToken - A representation of a signed RoleToken
+//
+type RoleToken struct {
+	Token      string `json:"token"`
+	ExpiryTime int64  `json:"expiryTime"`
+}
+
+//
+// NewRoleToken - creates an initialized RoleToken instance, returns a pointer to it
+//
+func NewRoleToken(init ...*RoleToken) *RoleToken {
+	var o *RoleToken
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(RoleToken)
+	}
+	return o
+}
+
+type rawRoleToken RoleToken
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a RoleToken
+//
+func (self *RoleToken) UnmarshalJSON(b []byte) error {
+	var m rawRoleToken
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := RoleToken(m)
+		*self = o
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *RoleToken) Validate() error {
+	if self.Token == "" {
+		return fmt.Errorf("RoleToken.token is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "String", self.Token)
+		if !val.Valid {
+			return fmt.Errorf("RoleToken.token does not contain a valid String (%v)", val.Error)
 		}
 	}
 	return nil
@@ -1880,6 +1954,107 @@ func (self *InstanceRefreshInformation) Validate() error {
 }
 
 //
+// InstanceRegisterToken -
+//
+type InstanceRegisterToken struct {
+
+	//
+	// provider service name
+	//
+	Provider ServiceName `json:"provider"`
+
+	//
+	// the domain of the instance
+	//
+	Domain DomainName `json:"domain"`
+
+	//
+	// the service this instance is supposed to run
+	//
+	Service SimpleName `json:"service"`
+
+	//
+	// identity attestation data including document with its signature containing
+	// attributes like IP address, instance-id, account#, etc.
+	//
+	AttestationData string `json:"attestationData"`
+
+	//
+	// additional non-signed attributes that assist in attestation. I.e. "keyId",
+	// "accessKey", etc
+	//
+	Attributes map[string]string `json:"attributes,omitempty" rdl:"optional"`
+}
+
+//
+// NewInstanceRegisterToken - creates an initialized InstanceRegisterToken instance, returns a pointer to it
+//
+func NewInstanceRegisterToken(init ...*InstanceRegisterToken) *InstanceRegisterToken {
+	var o *InstanceRegisterToken
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(InstanceRegisterToken)
+	}
+	return o
+}
+
+type rawInstanceRegisterToken InstanceRegisterToken
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a InstanceRegisterToken
+//
+func (self *InstanceRegisterToken) UnmarshalJSON(b []byte) error {
+	var m rawInstanceRegisterToken
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := InstanceRegisterToken(m)
+		*self = o
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *InstanceRegisterToken) Validate() error {
+	if self.Provider == "" {
+		return fmt.Errorf("InstanceRegisterToken.provider is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "ServiceName", self.Provider)
+		if !val.Valid {
+			return fmt.Errorf("InstanceRegisterToken.provider does not contain a valid ServiceName (%v)", val.Error)
+		}
+	}
+	if self.Domain == "" {
+		return fmt.Errorf("InstanceRegisterToken.domain is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "DomainName", self.Domain)
+		if !val.Valid {
+			return fmt.Errorf("InstanceRegisterToken.domain does not contain a valid DomainName (%v)", val.Error)
+		}
+	}
+	if self.Service == "" {
+		return fmt.Errorf("InstanceRegisterToken.service is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "SimpleName", self.Service)
+		if !val.Valid {
+			return fmt.Errorf("InstanceRegisterToken.service does not contain a valid SimpleName (%v)", val.Error)
+		}
+	}
+	if self.AttestationData == "" {
+		return fmt.Errorf("InstanceRegisterToken.attestationData is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "String", self.AttestationData)
+		if !val.Valid {
+			return fmt.Errorf("InstanceRegisterToken.attestationData does not contain a valid String (%v)", val.Error)
+		}
+	}
+	return nil
+}
+
+//
 // InstanceIdentity -
 //
 type InstanceIdentity struct {
@@ -2512,6 +2687,16 @@ type SSHCertRequestMeta struct {
 	// ssh host cert request is for this instance id
 	//
 	InstanceId PathElement `json:"instanceId,omitempty" rdl:"optional"`
+
+	//
+	// previous ssh certificate validity from date
+	//
+	PrevCertValidFrom *rdl.Timestamp `json:"prevCertValidFrom,omitempty" rdl:"optional"`
+
+	//
+	// previous ssh certificate validity to date
+	//
+	PrevCertValidTo *rdl.Timestamp `json:"prevCertValidTo,omitempty" rdl:"optional"`
 }
 
 //
@@ -3145,37 +3330,346 @@ func (self *JWKList) Validate() error {
 type AccessTokenRequest string
 
 //
-// RoleCertificate - Copyright 2019 Oath Holdings Inc Licensed under the terms
-// of the Apache version 2.0 license. See LICENSE file for terms.
-// RoleCertificate - a role certificate
+// Workload -
 //
-type RoleCertificate struct {
-	X509Certificate string `json:"x509Certificate"`
+type Workload struct {
+
+	//
+	// name of the domain, optional for getWorkloadsByService API call
+	//
+	DomainName DomainName `json:"domainName"`
+
+	//
+	// name of the service, , optional for getWorkloadsByService API call
+	//
+	ServiceName EntityName `json:"serviceName"`
+
+	//
+	// unique identifier for the workload, usually defined by provider
+	//
+	Uuid string `json:"uuid"`
+
+	//
+	// list of IP addresses associated with the workload, optional for
+	// getWorkloadsByIP API call
+	//
+	IpAddresses []string `json:"ipAddresses"`
+
+	//
+	// hostname associated with the workload
+	//
+	Hostname string `json:"hostname"`
+
+	//
+	// infrastructure provider e.g. k8s, AWS, Azure, openstack etc.
+	//
+	Provider string `json:"provider"`
+
+	//
+	// most recent update timestamp in the backend
+	//
+	UpdateTime rdl.Timestamp `json:"updateTime"`
+
+	//
+	// certificate expiry time (ex: getNotAfter)
+	//
+	CertExpiryTime rdl.Timestamp `json:"certExpiryTime"`
 }
 
 //
-// NewRoleCertificate - creates an initialized RoleCertificate instance, returns a pointer to it
+// NewWorkload - creates an initialized Workload instance, returns a pointer to it
 //
-func NewRoleCertificate(init ...*RoleCertificate) *RoleCertificate {
-	var o *RoleCertificate
+func NewWorkload(init ...*Workload) *Workload {
+	var o *Workload
 	if len(init) == 1 {
 		o = init[0]
 	} else {
-		o = new(RoleCertificate)
+		o = new(Workload)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *Workload) Init() *Workload {
+	if self.IpAddresses == nil {
+		self.IpAddresses = make([]string, 0)
+	}
+	return self
+}
+
+type rawWorkload Workload
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a Workload
+//
+func (self *Workload) UnmarshalJSON(b []byte) error {
+	var m rawWorkload
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := Workload(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *Workload) Validate() error {
+	if self.DomainName == "" {
+		return fmt.Errorf("Workload.domainName is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "DomainName", self.DomainName)
+		if !val.Valid {
+			return fmt.Errorf("Workload.domainName does not contain a valid DomainName (%v)", val.Error)
+		}
+	}
+	if self.ServiceName == "" {
+		return fmt.Errorf("Workload.serviceName is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "EntityName", self.ServiceName)
+		if !val.Valid {
+			return fmt.Errorf("Workload.serviceName does not contain a valid EntityName (%v)", val.Error)
+		}
+	}
+	if self.Uuid == "" {
+		return fmt.Errorf("Workload.uuid is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "String", self.Uuid)
+		if !val.Valid {
+			return fmt.Errorf("Workload.uuid does not contain a valid String (%v)", val.Error)
+		}
+	}
+	if self.IpAddresses == nil {
+		return fmt.Errorf("Workload: Missing required field: ipAddresses")
+	}
+	if self.Hostname == "" {
+		return fmt.Errorf("Workload.hostname is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "String", self.Hostname)
+		if !val.Valid {
+			return fmt.Errorf("Workload.hostname does not contain a valid String (%v)", val.Error)
+		}
+	}
+	if self.Provider == "" {
+		return fmt.Errorf("Workload.provider is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "String", self.Provider)
+		if !val.Valid {
+			return fmt.Errorf("Workload.provider does not contain a valid String (%v)", val.Error)
+		}
+	}
+	if self.UpdateTime.IsZero() {
+		return fmt.Errorf("Workload: Missing required field: updateTime")
+	}
+	if self.CertExpiryTime.IsZero() {
+		return fmt.Errorf("Workload: Missing required field: certExpiryTime")
+	}
+	return nil
+}
+
+//
+// Workloads -
+//
+type Workloads struct {
+
+	//
+	// list of workloads
+	//
+	WorkloadList []*Workload `json:"workloadList"`
+}
+
+//
+// NewWorkloads - creates an initialized Workloads instance, returns a pointer to it
+//
+func NewWorkloads(init ...*Workloads) *Workloads {
+	var o *Workloads
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(Workloads)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *Workloads) Init() *Workloads {
+	if self.WorkloadList == nil {
+		self.WorkloadList = make([]*Workload, 0)
+	}
+	return self
+}
+
+type rawWorkloads Workloads
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a Workloads
+//
+func (self *Workloads) UnmarshalJSON(b []byte) error {
+	var m rawWorkloads
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := Workloads(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *Workloads) Validate() error {
+	if self.WorkloadList == nil {
+		return fmt.Errorf("Workloads: Missing required field: workloadList")
+	}
+	return nil
+}
+
+//
+// TransportDirection - Copyright The Athenz Authors Licensed under the terms
+// of the Apache version 2.0 license. See LICENSE file for terms.
+//
+type TransportDirection int
+
+//
+// TransportDirection constants
+//
+const (
+	_ TransportDirection = iota
+	IN
+	OUT
+)
+
+var namesTransportDirection = []string{
+	IN:  "IN",
+	OUT: "OUT",
+}
+
+//
+// NewTransportDirection - return a string representation of the enum
+//
+func NewTransportDirection(init ...interface{}) TransportDirection {
+	if len(init) == 1 {
+		switch v := init[0].(type) {
+		case TransportDirection:
+			return v
+		case int:
+			return TransportDirection(v)
+		case int32:
+			return TransportDirection(v)
+		case string:
+			for i, s := range namesTransportDirection {
+				if s == v {
+					return TransportDirection(i)
+				}
+			}
+		default:
+			panic("Bad init value for TransportDirection enum")
+		}
+	}
+	return TransportDirection(0) //default to the first enum value
+}
+
+//
+// String - return a string representation of the enum
+//
+func (e TransportDirection) String() string {
+	return namesTransportDirection[e]
+}
+
+//
+// SymbolSet - return an array of all valid string representations (symbols) of the enum
+//
+func (e TransportDirection) SymbolSet() []string {
+	return namesTransportDirection
+}
+
+//
+// MarshalJSON is defined for proper JSON encoding of a TransportDirection
+//
+func (e TransportDirection) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.String())
+}
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a TransportDirection
+//
+func (e *TransportDirection) UnmarshalJSON(b []byte) error {
+	var j string
+	err := json.Unmarshal(b, &j)
+	if err == nil {
+		s := string(j)
+		for v, s2 := range namesTransportDirection {
+			if s == s2 {
+				*e = TransportDirection(v)
+				return nil
+			}
+		}
+		err = fmt.Errorf("Bad enum symbol for type TransportDirection: %s", s)
+	}
+	return err
+}
+
+//
+// TransportRule -
+//
+type TransportRule struct {
+
+	//
+	// source or destination endpoints defined in terms of CIDR notation
+	//
+	EndPoint string `json:"endPoint"`
+
+	//
+	// range of port numbers for incoming connections
+	//
+	SourcePortRange string `json:"sourcePortRange"`
+
+	//
+	// destination / listener port of the service
+	//
+	Port int32 `json:"port"`
+
+	//
+	// protocol of the connection
+	//
+	Protocol string `json:"protocol"`
+
+	//
+	// transport direction
+	//
+	Direction TransportDirection `json:"direction"`
+}
+
+//
+// NewTransportRule - creates an initialized TransportRule instance, returns a pointer to it
+//
+func NewTransportRule(init ...*TransportRule) *TransportRule {
+	var o *TransportRule
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(TransportRule)
 	}
 	return o
 }
 
-type rawRoleCertificate RoleCertificate
+type rawTransportRule TransportRule
 
 //
-// UnmarshalJSON is defined for proper JSON decoding of a RoleCertificate
+// UnmarshalJSON is defined for proper JSON decoding of a TransportRule
 //
-func (self *RoleCertificate) UnmarshalJSON(b []byte) error {
-	var m rawRoleCertificate
+func (self *TransportRule) UnmarshalJSON(b []byte) error {
+	var m rawTransportRule
 	err := json.Unmarshal(b, &m)
 	if err == nil {
-		o := RoleCertificate(m)
+		o := TransportRule(m)
 		*self = o
 		err = self.Validate()
 	}
@@ -3185,14 +3679,93 @@ func (self *RoleCertificate) UnmarshalJSON(b []byte) error {
 //
 // Validate - checks for missing required fields, etc
 //
-func (self *RoleCertificate) Validate() error {
-	if self.X509Certificate == "" {
-		return fmt.Errorf("RoleCertificate.x509Certificate is missing but is a required field")
+func (self *TransportRule) Validate() error {
+	if self.EndPoint == "" {
+		return fmt.Errorf("TransportRule.endPoint is missing but is a required field")
 	} else {
-		val := rdl.Validate(ZTSSchema(), "String", self.X509Certificate)
+		val := rdl.Validate(ZTSSchema(), "String", self.EndPoint)
 		if !val.Valid {
-			return fmt.Errorf("RoleCertificate.x509Certificate does not contain a valid String (%v)", val.Error)
+			return fmt.Errorf("TransportRule.endPoint does not contain a valid String (%v)", val.Error)
 		}
+	}
+	if self.SourcePortRange == "" {
+		return fmt.Errorf("TransportRule.sourcePortRange is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "String", self.SourcePortRange)
+		if !val.Valid {
+			return fmt.Errorf("TransportRule.sourcePortRange does not contain a valid String (%v)", val.Error)
+		}
+	}
+	if self.Protocol == "" {
+		return fmt.Errorf("TransportRule.protocol is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZTSSchema(), "String", self.Protocol)
+		if !val.Valid {
+			return fmt.Errorf("TransportRule.protocol does not contain a valid String (%v)", val.Error)
+		}
+	}
+	return nil
+}
+
+//
+// TransportRules -
+//
+type TransportRules struct {
+	IngressRules []*TransportRule `json:"ingressRules"`
+	EgressRules  []*TransportRule `json:"egressRules"`
+}
+
+//
+// NewTransportRules - creates an initialized TransportRules instance, returns a pointer to it
+//
+func NewTransportRules(init ...*TransportRules) *TransportRules {
+	var o *TransportRules
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(TransportRules)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *TransportRules) Init() *TransportRules {
+	if self.IngressRules == nil {
+		self.IngressRules = make([]*TransportRule, 0)
+	}
+	if self.EgressRules == nil {
+		self.EgressRules = make([]*TransportRule, 0)
+	}
+	return self
+}
+
+type rawTransportRules TransportRules
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a TransportRules
+//
+func (self *TransportRules) UnmarshalJSON(b []byte) error {
+	var m rawTransportRules
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := TransportRules(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *TransportRules) Validate() error {
+	if self.IngressRules == nil {
+		return fmt.Errorf("TransportRules: Missing required field: ingressRules")
+	}
+	if self.EgressRules == nil {
+		return fmt.Errorf("TransportRules: Missing required field: egressRules")
 	}
 	return nil
 }

@@ -59,9 +59,8 @@ export default class ApplyTemplate extends React.Component {
         this.api = props.api;
         this.initialKeywordsLoad = this.initialKeywordsLoad.bind(this);
         this.onSubmit = this.onSubmit.bind(this);
-        this.reloadTemplatePageOnSubmit = this.reloadTemplatePageOnSubmit.bind(
-            this
-        );
+        this.reloadTemplatePageOnSubmit =
+            this.reloadTemplatePageOnSubmit.bind(this);
         this.state = {
             keywordsList: [],
         };
@@ -190,7 +189,7 @@ export default class ApplyTemplate extends React.Component {
                 isOpen={this.props.showApplyTemplate}
                 cancel={this.props.onCancel}
                 submit={this.onSubmit}
-                title={'Update Template'}
+                title={this.props.title}
                 errorMessage={this.state.errorMessage}
                 sections={rows}
                 header={true}

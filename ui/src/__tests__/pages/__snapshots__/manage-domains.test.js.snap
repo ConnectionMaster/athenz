@@ -60,7 +60,6 @@ exports[`PageManageDomains should render 1`] = `
   display: flex;
   height: 60px;
   position: relative;
-  width: ;
 }
 
 .emotion-3.simple {
@@ -401,7 +400,7 @@ exports[`PageManageDomains should render 1`] = `
   word-break: break-all;
 }
 
-.emotion-48 {
+.emotion-52 {
   background-color: #3570f40D;
   text-align: left;
   padding: 5px 0 5px 15px;
@@ -409,7 +408,7 @@ exports[`PageManageDomains should render 1`] = `
   word-break: break-all;
 }
 
-.emotion-54 {
+.emotion-58 {
   background-color: #3570f40D;
   text-align: center;
   padding: 5px 0 5px 15px;
@@ -417,7 +416,7 @@ exports[`PageManageDomains should render 1`] = `
   word-break: break-all;
 }
 
-.emotion-58 {
+.emotion-62 {
   -webkit-align-items: center;
   -webkit-box-align: center;
   -ms-flex-align: center;
@@ -434,7 +433,7 @@ exports[`PageManageDomains should render 1`] = `
   position: relative;
 }
 
-.emotion-58>input[type='checkbox'] {
+.emotion-62>input[type='checkbox'] {
   box-sizing: border-box;
   cursor: pointer;
   position: absolute;
@@ -442,7 +441,7 @@ exports[`PageManageDomains should render 1`] = `
   visibility: hidden;
 }
 
-.emotion-58>input[type='checkbox']+label {
+.emotion-62>input[type='checkbox']+label {
   box-sizing: border-box;
   cursor: pointer;
   font-family: Helvetica,Arial,sans-serif;
@@ -453,7 +452,7 @@ exports[`PageManageDomains should render 1`] = `
   white-space: nowrap;
 }
 
-.emotion-58>input[type='checkbox']+label .label-content {
+.emotion-62>input[type='checkbox']+label .label-content {
   display: -webkit-inline-box;
   display: -webkit-inline-flex;
   display: -ms-inline-flexbox;
@@ -462,12 +461,12 @@ exports[`PageManageDomains should render 1`] = `
 }
 
 @-moz-document url-prefix() {
-  .emotion-58>input[type='checkbox']+label .label-content {
+  .emotion-62>input[type='checkbox']+label .label-content {
     margin-top: 1px;
   }
 }
 
-.emotion-58>input[type='checkbox']+label:before {
+.emotion-62>input[type='checkbox']+label:before {
   background: #d5d5d5;
   border-radius: 9px;
   box-sizing: border-box;
@@ -483,7 +482,7 @@ exports[`PageManageDomains should render 1`] = `
   width: 34px;
 }
 
-.emotion-58>input[type='checkbox']+label::after {
+.emotion-62>input[type='checkbox']+label::after {
   background-color: #fff;
   border: 2px solid rgba(54,151,242,0.5);
   border-radius: 50%;
@@ -500,52 +499,83 @@ exports[`PageManageDomains should render 1`] = `
   width: 18px;
 }
 
-.emotion-58>input[type='checkbox']:checked+label::before {
+.emotion-62>input[type='checkbox']:checked+label::before {
   background-color: rgba(21,192,70,0.45);
 }
 
-.emotion-58>input[type='checkbox']:checked+label::after {
+.emotion-62>input[type='checkbox']:checked+label::after {
   background-color: #15c046;
   border-color: #15c046;
   left: 16px;
 }
 
-.emotion-58>input[type='checkbox']:disabled+label {
+.emotion-62>input[type='checkbox']:disabled+label {
   color: #9a9a9a;
   cursor: not-allowed;
 }
 
-.emotion-58>input[type='checkbox']:disabled+label::before {
+.emotion-62>input[type='checkbox']:disabled+label::before {
   background-color: #e8e8e8;
   cursor: not-allowed;
 }
 
-.emotion-58>input[type='checkbox']:disabled+label::after {
+.emotion-62>input[type='checkbox']:disabled+label::after {
   border-color: #d5d5d5;
   cursor: not-allowed;
 }
 
-.emotion-58>input[type='checkbox']:checked:disabled+label::after {
+.emotion-62>input[type='checkbox']:checked:disabled+label::after {
   background: #d5d5d5;
 }
 
-.emotion-63 {
-  background-color: ;
+.emotion-65 {
+  background-color: #3570f40D;
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
+}
+
+.emotion-67 {
+  color: #3570f4;
+  -webkit-text-decoration: none;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: '';
+}
+
+.emotion-73 {
   text-align: left;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
 }
 
-.emotion-69 {
-  background-color: ;
+.emotion-79 {
   text-align: center;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
 }
 
-.emotion-78 {
+.emotion-86 {
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
+}
+
+.emotion-92 {
   -webkit-align-items: center;
   -webkit-box-align: center;
   -ms-flex-align: center;
@@ -571,13 +601,13 @@ exports[`PageManageDomains should render 1`] = `
   width: 20px;
 }
 
-.emotion-80 {
+.emotion-94 {
   fill: #303030;
   cursor: inherit;
   vertical-align: text-bottom;
 }
 
-.emotion-81 {
+.emotion-95 {
   margin-right: 0;
   border-left: 1px solid #d5d5d5;
   -webkit-flex: 0 0 350px;
@@ -592,7 +622,7 @@ exports[`PageManageDomains should render 1`] = `
   width: 350px;
 }
 
-.emotion-83 {
+.emotion-97 {
   -webkit-align-items: baseline;
   -webkit-box-align: baseline;
   -ms-flex-align: baseline;
@@ -611,29 +641,28 @@ exports[`PageManageDomains should render 1`] = `
   padding: 20px 30px 20px 15px;
 }
 
-.emotion-85 {
+.emotion-99 {
   font-size: 16px;
   font-weight: 600;
 }
 
-.emotion-87 {
+.emotion-101 {
   color: #3570f4;
   -webkit-text-decoration: none;
   text-decoration: none;
   cursor: pointer;
-  font-weight: ;
 }
 
-.emotion-89 {
+.emotion-103 {
   padding: 0 5px;
   color: #d5d5d5;
 }
 
-.emotion-93 {
+.emotion-107 {
   padding: 0 30px 0 15px;
 }
 
-.emotion-95 {
+.emotion-109 {
   padding: 10px 0;
   display: -webkit-box;
   display: -webkit-flex;
@@ -641,12 +670,12 @@ exports[`PageManageDomains should render 1`] = `
   display: flex;
 }
 
-.emotion-97 {
+.emotion-111 {
   font-size: 1.25em;
   margin-right: 5px;
 }
 
-.emotion-99 {
+.emotion-113 {
   fill: #303030;
   cursor: inherit;
   vertical-align: baseline;
@@ -798,6 +827,11 @@ exports[`PageManageDomains should render 1`] = `
                     AWS Account #
                   </th>
                   <th
+                    class="emotion-34 emotion-35"
+                  >
+                    Business Service
+                  </th>
+                  <th
                     class="emotion-40 emotion-35"
                   >
                     Delete
@@ -805,35 +839,37 @@ exports[`PageManageDomains should render 1`] = `
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr
+                  class="emotion-50 emotion-51"
+                >
                   <td
-                    class="emotion-48 emotion-49"
+                    class="emotion-52 emotion-53"
                     color="#3570f40D"
                   >
                     home.mujibur
                   </td>
                   <td
-                    class="emotion-48 emotion-49"
+                    class="emotion-52 emotion-53"
                     color="#3570f40D"
                   >
                     Personal
                   </td>
                   <td
-                    class="emotion-48 emotion-49"
+                    class="emotion-52 emotion-53"
                     color="#3570f40D"
                   >
                     2018-01-31 19:43 UTC
                   </td>
                   <td
-                    class="emotion-54 emotion-49"
+                    class="emotion-58 emotion-53"
                     color="#3570f40D"
                   />
                   <td
-                    class="emotion-54 emotion-49"
+                    class="emotion-58 emotion-53"
                     color="#3570f40D"
                   >
                     <div
-                      class="emotion-58 denali-switch"
+                      class="emotion-62 denali-switch"
                       data-testid="switch-wrapper"
                     >
                       <input
@@ -849,45 +885,58 @@ exports[`PageManageDomains should render 1`] = `
                     </div>
                   </td>
                   <td
-                    class="emotion-54 emotion-49"
+                    class="emotion-58 emotion-53"
                     color="#3570f40D"
                   >
                     111111
                   </td>
                   <td
-                    class="emotion-54 emotion-49"
+                    class="emotion-65 emotion-66"
+                    color="#3570f40D"
+                    title="add"
+                  >
+                    <a
+                      class="emotion-67 emotion-68"
+                    >
+                      add
+                    </a>
+                  </td>
+                  <td
+                    class="emotion-58 emotion-53"
                     color="#3570f40D"
                   />
                 </tr>
-                <tr>
+                <tr
+                  class="emotion-50 emotion-51"
+                >
                   <td
-                    class="emotion-63 emotion-49"
+                    class="emotion-73 emotion-53"
                     color=""
                   >
                     home.pgote
                   </td>
                   <td
-                    class="emotion-63 emotion-49"
+                    class="emotion-73 emotion-53"
                     color=""
                   >
                     Personal
                   </td>
                   <td
-                    class="emotion-63 emotion-49"
+                    class="emotion-73 emotion-53"
                     color=""
                   >
                     2018-02-15 00:48 UTC
                   </td>
                   <td
-                    class="emotion-69 emotion-49"
+                    class="emotion-79 emotion-53"
                     color=""
                   />
                   <td
-                    class="emotion-69 emotion-49"
+                    class="emotion-79 emotion-53"
                     color=""
                   >
                     <div
-                      class="emotion-58 denali-switch"
+                      class="emotion-62 denali-switch"
                       data-testid="switch-wrapper"
                     >
                       <input
@@ -903,13 +952,24 @@ exports[`PageManageDomains should render 1`] = `
                     </div>
                   </td>
                   <td
-                    class="emotion-69 emotion-49"
+                    class="emotion-79 emotion-53"
                     color=""
                   >
                     14913436251
                   </td>
                   <td
-                    class="emotion-69 emotion-49"
+                    class="emotion-86 emotion-66"
+                    color=""
+                    title="add"
+                  >
+                    <a
+                      class="emotion-67 emotion-68"
+                    >
+                      add
+                    </a>
+                  </td>
+                  <td
+                    class="emotion-79 emotion-53"
                     color=""
                   />
                 </tr>
@@ -922,11 +982,11 @@ exports[`PageManageDomains should render 1`] = `
         data-testid="user-domains"
       >
         <div
-          class="emotion-78 emotion-79"
+          class="emotion-92 emotion-93"
           data-testid="toggle-domain"
         >
           <svg
-            class="emotion-80"
+            class="emotion-94"
             data-testid="icon"
             height="1em"
             viewBox="0 0 1024 1024"
@@ -941,45 +1001,45 @@ exports[`PageManageDomains should render 1`] = `
           </svg>
         </div>
         <div
-          class="emotion-81 emotion-82"
+          class="emotion-95 emotion-96"
         >
           <div
-            class="emotion-83 emotion-84"
+            class="emotion-97 emotion-98"
           >
             <div
-              class="emotion-85 emotion-86"
+              class="emotion-99 emotion-100"
             >
               My Domains
             </div>
             <div>
               <a
-                class="emotion-87 emotion-88"
+                class="emotion-101 emotion-102"
               >
                 Create
               </a>
               <span
-                class="emotion-89 emotion-90"
+                class="emotion-103 emotion-104"
               >
                  | 
               </span>
               <a
-                class="emotion-87 emotion-88"
+                class="emotion-101 emotion-102"
               >
                 Manage
               </a>
             </div>
           </div>
           <div
-            class="emotion-93 emotion-94"
+            class="emotion-107 emotion-108"
           >
             <div
-              class="emotion-95 emotion-96"
+              class="emotion-109 emotion-110"
             >
               <div
-                class="emotion-97 emotion-98"
+                class="emotion-111 emotion-112"
               >
                 <svg
-                  class="emotion-99"
+                  class="emotion-113"
                   data-testid="icon"
                   height="1em"
                   viewBox="0 0 1024 1024"
@@ -1000,19 +1060,19 @@ exports[`PageManageDomains should render 1`] = `
                 </svg>
               </div>
               <a
-                class="emotion-87 emotion-88"
+                class="emotion-101 emotion-102"
               >
                 athens
               </a>
             </div>
             <div
-              class="emotion-95 emotion-96"
+              class="emotion-109 emotion-110"
             >
               <div
-                class="emotion-97 emotion-98"
+                class="emotion-111 emotion-112"
               >
                 <svg
-                  class="emotion-99"
+                  class="emotion-113"
                   data-testid="icon"
                   height="1em"
                   viewBox="0 0 1024 1024"
@@ -1033,7 +1093,7 @@ exports[`PageManageDomains should render 1`] = `
                 </svg>
               </div>
               <a
-                class="emotion-87 emotion-88"
+                class="emotion-101 emotion-102"
               >
                 athens.ci
               </a>

@@ -527,7 +527,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -549,7 +549,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -583,7 +583,7 @@ public class ZMSClient implements Closeable {
      */
     public DomainList getDomainList(Integer limit, String skip, String prefix, Integer depth,
                                     String awsAccount, Integer productId, Date modifiedSince) {
-        return getDomainList(limit, skip, prefix, depth, awsAccount, productId, null, modifiedSince, null, null);
+        return getDomainList(limit, skip, prefix, depth, awsAccount, productId, null, modifiedSince, null, null, null);
     }
 
     /**
@@ -609,7 +609,8 @@ public class ZMSClient implements Closeable {
      */
     public DomainList getDomainList(Integer limit, String skip, String prefix, Integer depth,
                                     String awsAccount, Integer productId, String azureSubscription, Date modifiedSince) {
-        return getDomainList(limit, skip, prefix, depth, awsAccount, productId, azureSubscription, modifiedSince, null, null);
+        return getDomainList(limit, skip, prefix, depth, awsAccount, productId, azureSubscription,
+                modifiedSince, null, null, null);
     }
 
     /**
@@ -638,6 +639,37 @@ public class ZMSClient implements Closeable {
     public DomainList getDomainList(Integer limit, String skip, String prefix, Integer depth,
                                     String awsAccount, Integer productId, String azureSubscription,
                                     Date modifiedSince, String tagKey, String tagValue) {
+        return getDomainList(limit, skip, prefix, depth, awsAccount, productId, azureSubscription,
+                modifiedSince, tagKey, tagValue, null);
+
+    }
+    /**
+     * Retrieve the list of domains provisioned on the ZMS Server
+     * filters based on the specified arguments
+     *
+     * @param limit         number of domain objects to return
+     * @param skip          exclude all the domains including the specified one from the return set
+     * @param prefix        return domains starting with this value
+     * @param depth         maximum depth of the domain (0 - top level domains only)
+     * @param awsAccount    return domain that has the specified aws account name. If account name
+     *                      is specified all other optional attributes are ignored since there must be
+     *                      only one domain matching the specified account name.
+     * @param productId     return domain that has the specified product id. If product id
+     *                      is specified all other optional attributes are ignored since there must be
+     *                      only one domain matching the specified product id.
+     * @param azureSubscription return domain that has the specified azure subscription id. If subscription
+     *                      id is specified all other optional attributes are ignored since there must be
+     *                      only one domain matching the specified subscription id.
+     * @param modifiedSince return domains only modified since this date
+     * @param tagKey        query all domains with given tag name
+     * @param tagValue      query all domains with given tag key and value
+     * @param businessService returns domains that have the specified business service.
+     * @return list of domain names
+     * @throws ZMSClientException in case of failure
+     */
+    public DomainList getDomainList(Integer limit, String skip, String prefix, Integer depth,
+                                    String awsAccount, Integer productId, String azureSubscription,
+                                    Date modifiedSince, String tagKey, String tagValue, String businessService) {
         updatePrincipal();
         String modSinceStr = null;
         if (modifiedSince != null) {
@@ -645,11 +677,12 @@ public class ZMSClient implements Closeable {
             modSinceStr = df.format(modifiedSince);
         }
         try {
-            return client.getDomainList(limit, skip, prefix, depth, awsAccount, productId, null, null, azureSubscription, tagKey, tagValue, modSinceStr);
+            return client.getDomainList(limit, skip, prefix, depth, awsAccount, productId, null, null,
+                    azureSubscription, tagKey, tagValue, businessService, modSinceStr);
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -665,11 +698,12 @@ public class ZMSClient implements Closeable {
     public DomainList getDomainList(String roleMember, String roleName) {
         updatePrincipal();
         try {
-            return client.getDomainList(null, null, null, null, null, null, roleMember, roleName, null, null, null, null);
+            return client.getDomainList(null, null, null, null, null, null, roleMember, roleName,
+                    null, null, null, null, null);
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -690,7 +724,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -713,7 +747,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -733,7 +767,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -751,7 +785,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -770,7 +804,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -787,7 +821,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -805,7 +839,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -824,7 +858,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -842,7 +876,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -863,7 +897,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -885,7 +919,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -965,7 +999,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -987,7 +1021,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1006,7 +1040,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1042,7 +1076,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1059,7 +1093,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1113,7 +1147,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1133,7 +1167,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1153,7 +1187,25 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    /**
+     * Get list of users defined in the system
+     *
+     * @param domainName optional name of the user domain and/or alias domain
+     * @return list of user names
+     * @throws ZMSClientException in case of failure
+     */
+    public UserList getUserList(String domainName) {
+        updatePrincipal();
+        try {
+            return client.getUserList(domainName);
+        } catch (ResourceException ex) {
+            throw new ZMSClientException(ex.getCode(), ex.getData());
+        } catch (Exception ex) {
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1164,14 +1216,7 @@ public class ZMSClient implements Closeable {
      * @throws ZMSClientException in case of failure
      */
     public UserList getUserList() {
-        updatePrincipal();
-        try {
-            return client.getUserList();
-        } catch (ResourceException ex) {
-            throw new ZMSClientException(ex.getCode(), ex.getData());
-        } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
-        }
+        return getUserList(null);
     }
 
     /**
@@ -1191,7 +1236,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1211,7 +1256,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1229,7 +1274,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1250,7 +1295,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1270,7 +1315,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1291,7 +1336,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1311,7 +1356,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1330,7 +1375,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1352,7 +1397,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1371,7 +1416,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1394,7 +1439,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1416,7 +1461,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1435,7 +1480,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1454,7 +1499,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1475,7 +1520,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1507,7 +1552,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1527,7 +1572,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1549,7 +1594,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1570,7 +1615,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1590,7 +1635,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1609,7 +1654,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1628,7 +1673,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1646,7 +1691,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1667,7 +1712,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1687,7 +1732,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1708,7 +1753,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1728,7 +1773,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1752,7 +1797,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1775,7 +1820,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1798,7 +1843,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1835,7 +1880,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1858,7 +1903,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1952,13 +1997,68 @@ public class ZMSClient implements Closeable {
      */
     public SignedDomains getSignedDomains(String domainName, String metaOnly, String metaAttr,
                                           boolean masterCopy, String matchingTag, Map<String, List<String>> responseHeaders) {
+        return getSignedDomains(domainName, metaOnly, metaAttr, masterCopy, false, matchingTag, responseHeaders);
+    }
+
+    /**
+     * Retrieve the list of all domain data from the ZMS Server that
+     * is signed with ZMS's private key. It will pass an optional matchingTag
+     * so that ZMS can skip returning domains if no changes have taken
+     * place since that tag was issued.
+     *
+     * @param domainName      name of the domain. if specified, the server will
+     *                        only return this domain in the result set
+     * @param metaOnly        (can be null) must have value of true or false (default).
+     *                        if set to true, zms server will only return meta information
+     *                        about each domain (description, last modified timestamp, etc) and
+     *                        no role/policy/service details will be returned.
+     * @param metaAttr        (can be null) if metaOnly option is set to true, this
+     *                        parameter can filter the results based on the presence of the
+     *                        requested attribute. Allowed values are: account, ypmid, and all.
+     *                        account - only return domains that have the account value set
+     *                        ypmid - only return domains that have the ypmid value set
+     *                        all - return all domains (no filtering).
+     * @param masterCopy      system principals can request the request to be processed
+     *                        from the master data source instead of read replicas in case
+     *                        there are any configured
+     * @param conditions      an optional parameter to request assertion conditions to be
+     *                        included in the response assertions in case
+     *                        there are any configured
+     * @param matchingTag     (can be null) contains modified timestamp received
+     *                        with last request. If null, then return all domains.
+     * @param responseHeaders contains the "tag" returned for modification
+     *                        time of the domains, map key = "tag", List should
+     *                        contain a single value timestamp String to be used
+     *                        with subsequent call as matchingTag to this API
+     * @return list of domains signed by ZMS Server
+     * @throws ZMSClientException in case of failure
+     */
+    public SignedDomains getSignedDomains(String domainName, String metaOnly, String metaAttr,
+                                          boolean masterCopy, boolean conditions, String matchingTag, Map<String, List<String>> responseHeaders) {
         updatePrincipal();
         try {
-            return client.getSignedDomains(domainName, metaOnly, metaAttr, masterCopy, matchingTag, responseHeaders);
+            return client.getSignedDomains(domainName, metaOnly, metaAttr, masterCopy, conditions, matchingTag, responseHeaders);
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    /**
+     * Retrieve all valid values for the given attribute and user
+     * @param attributeName   name of attribute
+     * @param userName        restrict to values associated with the given user
+     * @return all valid values for the given attribute and user
+     */
+    public DomainMetaStoreValidValuesList getDomainMetaStoreValidValuesList(String attributeName, String userName) {
+        updatePrincipal();
+        try {
+            return client.getDomainMetaStoreValidValuesList(attributeName, userName);
+        } catch (ResourceException ex) {
+            throw new ZMSClientException(ex.getCode(), ex.getData());
+        } catch (Exception ex) {
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -1995,7 +2095,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2031,7 +2131,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2073,7 +2173,7 @@ public class ZMSClient implements Closeable {
         try {
             token = new PrincipalToken(serviceToken);
         } catch (IllegalArgumentException ex) {
-            throw new ZMSClientException(ZMSClientException.UNAUTHORIZED,
+            throw new ZMSClientException(ResourceException.UNAUTHORIZED,
                     "Invalid service token provided: " + ex.getMessage());
         }
 
@@ -2089,22 +2189,22 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
 
         if (validatedPrincipal == null) {
-            throw new ZMSClientException(ZMSClientException.UNAUTHORIZED, "Invalid service token provided");
+            throw new ZMSClientException(ResourceException.UNAUTHORIZED, "Invalid service token provided");
         }
 
         // before returning let's validate that domain, name and
         // credentials match to what was passed to
 
         if (!servicePrincipal.getDomain().equalsIgnoreCase(validatedPrincipal.getDomain())) {
-            throw new ZMSClientException(ZMSClientException.UNAUTHORIZED, "Validated principal domain name mismatch");
+            throw new ZMSClientException(ResourceException.UNAUTHORIZED, "Validated principal domain name mismatch");
         }
 
         if (!servicePrincipal.getName().equalsIgnoreCase(validatedPrincipal.getService())) {
-            throw new ZMSClientException(ZMSClientException.UNAUTHORIZED, "Validated principal service name mismatch");
+            throw new ZMSClientException(ResourceException.UNAUTHORIZED, "Validated principal service name mismatch");
         }
 
         return servicePrincipal;
@@ -2134,7 +2234,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2160,7 +2260,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2183,7 +2283,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2201,7 +2301,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2221,7 +2321,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2238,7 +2338,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2257,7 +2357,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2277,7 +2377,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2296,7 +2396,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2314,7 +2414,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2337,7 +2437,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2355,7 +2455,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2374,7 +2474,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2392,7 +2492,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2411,7 +2511,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2430,7 +2530,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2447,7 +2547,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
     /**
@@ -2466,7 +2566,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2485,7 +2585,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2510,7 +2610,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2529,7 +2629,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2549,7 +2649,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2568,7 +2668,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2588,7 +2688,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2608,7 +2708,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2642,7 +2742,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2659,7 +2759,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2679,7 +2779,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2698,7 +2798,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2722,7 +2822,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2741,7 +2841,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2761,7 +2861,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2783,7 +2883,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2805,7 +2905,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2825,7 +2925,7 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
 
@@ -2847,7 +2947,95 @@ public class ZMSClient implements Closeable {
         } catch (ResourceException ex) {
             throw new ZMSClientException(ex.getCode(), ex.getData());
         } catch (Exception ex) {
-            throw new ZMSClientException(ZMSClientException.BAD_REQUEST, ex.getMessage());
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
         }
     }
+
+    /**
+     * Store multiple logical assertion conditions. It contains a list of AssertionCondition objects
+     * Each AssertionCondition object forms a single logical condition where multiple key, operator, value will be ANDed.
+     *
+     * @param domainName name of the domain
+     * @param policyName name of the policy
+     * @param assertionId id of the assertion associated with the conditions
+     * @param auditRef string containing audit specification or ticket number
+     * @param assertionConditions object containing conditions associated with the given assertion id
+     * @return AssertionConditions object
+     * @throws ZMSClientException in case of failure
+     */
+    public AssertionConditions putAssertionConditions(String domainName, String policyName, Long assertionId, String auditRef, AssertionConditions assertionConditions) {
+        updatePrincipal();
+        try {
+            return client.putAssertionConditions(domainName, policyName, assertionId, auditRef, assertionConditions);
+        } catch (ResourceException ex) {
+            throw new ZMSClientException(ex.getCode(), ex.getData());
+        } catch (Exception ex) {
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    /**
+     * Store a single logical assertion condition.
+     * AssertionCondition object forms a single logical condition where multiple key, operator, value will be ANDed.
+     *
+     * @param domainName name of the domain
+     * @param policyName name of the policy
+     * @param assertionId id of the assertion associated with the condition
+     * @param auditRef string containing audit specification or ticket number
+     * @param assertionCondition object containing a single logical condition associated with the given assertion id
+     * @return AssertionConditions object
+     * @throws ZMSClientException in case of failure
+     */
+    public AssertionCondition putAssertionCondition(String domainName, String policyName, Long assertionId, String auditRef, AssertionCondition assertionCondition) {
+        updatePrincipal();
+        try {
+            return client.putAssertionCondition(domainName, policyName, assertionId, auditRef, assertionCondition);
+        } catch (ResourceException ex) {
+            throw new ZMSClientException(ex.getCode(), ex.getData());
+        } catch (Exception ex) {
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    /**
+     * Delete all assertion conditions associated with the given assertion id.
+     *
+     * @param domainName name of the domain
+     * @param policyName name of the policy
+     * @param assertionId id of the assertion associated with the conditions
+     * @param auditRef string containing audit specification or ticket number
+     * @throws ZMSClientException in case of failure
+     */
+    public void deleteAssertionConditions(String domainName, String policyName, Long assertionId, String auditRef) {
+        updatePrincipal();
+        try {
+            client.deleteAssertionConditions(domainName, policyName, assertionId, auditRef);
+        } catch (ResourceException ex) {
+            throw new ZMSClientException(ex.getCode(), ex.getData());
+        } catch (Exception ex) {
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    /**
+     * Delete a single assertion condition associated with the given assertion id.
+     *
+     * @param domainName name of the domain
+     * @param policyName name of the policy
+     * @param assertionId id of the assertion associated with the conditions
+     * @param conditionId id of the condition to be deleted
+     * @param auditRef string containing audit specification or ticket number
+     * @throws ZMSClientException in case of failure
+     */
+    public void deleteAssertionCondition(String domainName, String policyName, Long assertionId, int conditionId, String auditRef) {
+        updatePrincipal();
+        try {
+            client.deleteAssertionCondition(domainName, policyName, assertionId, conditionId, auditRef);
+        } catch (ResourceException ex) {
+            throw new ZMSClientException(ex.getCode(), ex.getData());
+        } catch (Exception ex) {
+            throw new ZMSClientException(ResourceException.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
 }

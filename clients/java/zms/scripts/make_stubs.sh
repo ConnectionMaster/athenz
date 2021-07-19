@@ -5,7 +5,7 @@
 # however, we're not going to run this utility during our automated builds since
 # builds must be done based on files already checked-in into git
 
-if [ ! -z "${TRAVIS_PULL_REQUEST}" ] || [ ! -z "${TRAVIS_TAG}" ]; then
+if [ ! -z "${SCREWDRIVER}" ] || [ ! -z "${TRAVIS_PULL_REQUEST}" ] || [ ! -z "${TRAVIS_TAG}" ]; then
     echo >&2 "------------------------------------------------------------------------";
     echo >&2 "SOURCE NOTICE";
     echo >&2 "------------------------------------------------------------------------";
@@ -32,7 +32,7 @@ command -v rdl >/dev/null 2>&1 || {
 RDL_FILE=../../../core/zms/src/main/rdl/ZMS.rdl
 
 echo "Generate the client library..."
-rdl -s generate -o src/main/java -x clientclass=ZMSRDLGenerated java-client $RDL_FILE
+rdl -s generate -o src/main/java -x c=ZMSRDLGenerated athenz-java-client $RDL_FILE
 
 # Copyright 2016 Yahoo Inc.
 # Licensed under the terms of the Apache version 2.0 license. See LICENSE file for terms.

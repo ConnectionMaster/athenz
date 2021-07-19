@@ -1,4 +1,4 @@
-GOPKGNAME:=github.com/yahoo/athenz/provider/aws/sia-ec2
+GOPKGNAME:=github.com/AthenZ/athenz/provider/aws/sia-ec2
 export GOPATH ?= /tmp/go
 export GOPRIVATE=github.com
 
@@ -34,3 +34,14 @@ test: vet fmt
 
 clean:
 	go clean -i -x $(GOPKGNAME)/...
+
+ubuntu:
+	sed -i.bak s/SIA_PACKAGE_VERSION/$(PACKAGE_VERSION)/g debian/sia/DEBIAN/control
+	mkdir -p debian/sia/usr/lib/systemd/system/
+	cp -fp $(GOPATH)/src/$(GOPKGNAME)/build/service/sia.service debian/sia/usr/lib/systemd/system/
+	mkdir -p debian/sia/usr/sbin/
+	cp -fp $(GOPATH)/bin/siad debian/sia/usr/sbin/
+	cp debian/ubuntu/postinst debian/sia/DEBIAN/
+	cp debian/ubuntu/preinst debian/sia/DEBIAN/
+	mkdir -p debian/pkg
+	cd debian && dpkg-deb --build sia pkg

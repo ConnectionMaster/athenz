@@ -20,9 +20,11 @@ import Modal from '../denali/Modal';
 import Color from '../denali/Color';
 
 const MessageDiv = styled.div`
-    text-align: center;
+    text-align: left;
     font: 300 14px HelveticaNeue-Reg, Helvetica, Arial, sans-serif;
     padding-bottom: 15px;
+    max-height: ${(props) => props.height};
+    overflow-y: scroll;
 `;
 
 const ButtonDiv = styled.div`
@@ -35,17 +37,31 @@ const ModifiedButton = styled(Button)`
 `;
 
 const StyledAddModal = styled(Modal)`
-    width: 800px;
+    width: ${(props) => props.width};
+    height: ${(props) => props.height};
 `;
 
 export default class AddModal extends React.Component {
     render() {
+        let width = '805px';
+        let height = 'auto';
+        let modalHeight = this.props.modalHeight
+            ? this.props.modalHeight
+            : 'auto';
+        if (this.props.width) {
+            width = this.props.width;
+        }
+        if (this.props.bodyMaxHeight) {
+            height = this.props.bodyMaxHeight;
+        }
         return (
             <StyledAddModal
                 isOpen={this.props.isOpen}
                 noanim={true}
                 onClose={this.props.cancel}
                 title={this.props.title}
+                width={width}
+                height={modalHeight}
             >
                 {this.props.header != null && this.props.header && (
                     <MessageDiv data-testid='add-modal-message'>
@@ -53,7 +69,7 @@ export default class AddModal extends React.Component {
                         parameters
                     </MessageDiv>
                 )}
-                <MessageDiv data-testid='add-modal-message'>
+                <MessageDiv data-testid='add-modal-message' height={height}>
                     {this.props.sections}
                 </MessageDiv>
                 {this.props.errorMessage && (

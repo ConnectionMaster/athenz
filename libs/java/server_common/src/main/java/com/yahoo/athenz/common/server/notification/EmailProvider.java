@@ -16,16 +16,16 @@
 
 package com.yahoo.athenz.common.server.notification;
 
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMessage;
 import java.util.Collection;
 
 public interface EmailProvider {
 
     /**
      * Send an email through the provider
-     * @param recipients
-     * @param from
-     * @param mimeMessage
+     * @param recipients list of email recipients
+     * @param from the email address for the from field
+     * @param mimeMessage the notification message content
      * @return true if mail was sent
      */
     boolean sendEmail(Collection<String> recipients, String from, MimeMessage mimeMessage);

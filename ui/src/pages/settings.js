@@ -21,13 +21,13 @@ import styled from '@emotion/styled';
 import Head from 'next/head';
 
 import CollectionDetails from '../components/header/CollectionDetails';
-import SettingList from '../components/settings/SettingList';
 import RequestUtils from '../components/utils/RequestUtils';
 import RoleTabs from '../components/header/RoleTabs';
 import NameHeader from '../components/header/NameHeader';
 import Error from './_error';
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
+import SettingTable from '../components/settings/SettingTable';
 
 const AppContainerDiv = styled.div`
     align-items: stretch;
@@ -78,6 +78,7 @@ export default class SettingPage extends React.Component {
             ),
             api.getPendingDomainMembersList(),
             api.getForm(),
+            api.getAuthorityAttributes(),
         ]).catch((err) => {
             let response = RequestUtils.errorCheckHelper(err);
             reload = response.reload;
@@ -98,6 +99,7 @@ export default class SettingPage extends React.Component {
             domain: props.query.domain,
             pending: roles[4],
             _csrf: roles[5],
+            userAuthorityAttributes: roles[6],
             nonce: props.req.headers.rid,
         };
     }
@@ -165,7 +167,7 @@ export default class SettingPage extends React.Component {
                                             selectedName={'settings'}
                                         />
                                     </PageHeaderDiv>
-                                    <SettingList
+                                    <SettingTable
                                         api={this.api}
                                         domain={domain}
                                         collection={role}
@@ -179,6 +181,9 @@ export default class SettingPage extends React.Component {
                                                 .userLink
                                         }
                                         category={'role'}
+                                        userAuthorityAttributes={
+                                            this.props.userAuthorityAttributes
+                                        }
                                     />
                                 </RolesContentDiv>
                             </RolesContainerDiv>

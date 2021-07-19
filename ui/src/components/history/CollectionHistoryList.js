@@ -216,10 +216,10 @@ export default class CollectionHistoryList extends React.Component {
                 this.props.category
             )
             .then((data) => {
-                let successMsg = `Filtered history records for role ${this.props.collection} below. `;
+                let successMsg = `Filtered history records for ${this.props.category} ${this.props.collection} below. `;
                 let alertType = 'success';
                 if (data.length === 0) {
-                    successMsg = `No history records for role ${this.props.collection} found. `;
+                    successMsg = `No history records for ${this.props.category} ${this.props.collection} found. `;
                     alertType = 'warning';
                 }
                 let historyRows = data.auditLog
@@ -260,7 +260,7 @@ export default class CollectionHistoryList extends React.Component {
                 color = colors.row;
             }
             return (
-                <tr key={item.epoch}>
+                <tr key={i}>
                     <TDStyled color={color} align={left}>
                         {item.action}
                     </TDStyled>

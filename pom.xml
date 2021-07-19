@@ -20,16 +20,16 @@
   <groupId>com.yahoo.athenz</groupId>
   <artifactId>athenz</artifactId>
   <packaging>pom</packaging>
-  <version>1.9.30-SNAPSHOT</version>
+  <version>1.10.25-SNAPSHOT</version>
 
   <name>AthenZ</name>
   <description>
-    AthenZ is a set of services and libraries supporting
-    role-based authorization for provisioning and configuration
-    (centralized authorization) use cases as well as serving/runtime
-    (decentralized authorization) use cases.
+    Open source platform for X.509 certificate based service authentication
+    and fine grained access control in dynamic infrastructures. Athenz
+    supports provisioning and configuration (centralized authorization) use
+    cases as well as serving/runtime (decentralized authorization) use cases.
   </description>
-  <url>https://github.com/yahoo/athenz</url>
+  <url>https://github.com/AthenZ/athenz</url>
 
   <organization>
     <name>Yahoo Inc.</name>
@@ -39,8 +39,9 @@
 
   <developers>
     <developer>
-      <organization>Yahoo Inc.</organization>
-      <organizationUrl>https://www.yahoo.com/</organizationUrl>
+      <name>Athenz Maintainers</name>
+      <organization>Cloud Native Computing Foundation</organization>
+      <organizationUrl>https://www.cncf.io/sandbox-projects/</organizationUrl>
     </developer>
   </developers>
 
@@ -53,47 +54,60 @@
   </licenses>
 
   <scm>
-    <url>https://github.com/yahoo/athenz</url>
-    <connection>scm:git:https://github.com/yahoo/athenz.git</connection>
+    <url>https://github.com/AthenZ/athenz</url>
+    <connection>scm:git:ssh://git@github.com/AthenZ/athenz.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/AthenZ/athenz.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
     <system>Github</system>
-    <url>https://github.com/yahoo/athenz/issues</url>
+    <url>https://github.com/AthenZ/athenz/issues</url>
   </issueManagement>
 
   <ciManagement>
-    <system>Travis</system>
-    <url>https://travis-ci.org/yahoo/athenz</url>
+    <system>Screwdriver.cd</system>
+    <url>https://cd.screwdriver.cd/pipelines/6418</url>
   </ciManagement>
 
   <properties>
-    <jetty.version>9.4.35.v20201120</jetty.version>
-    <jersey.version>2.33</jersey.version>
-    <jackson.core.version>2.12.1</jackson.core.version>
-    <jackson.databind.version>2.12.1</jackson.databind.version>
-    <jackson.annotations.version>2.12.1</jackson.annotations.version>
-    <jackson.jaxrs.version>2.12.1</jackson.jaxrs.version>
-    <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-    <rdl.version>1.5.3</rdl.version>
-    <bouncycastle.version>1.68</bouncycastle.version>
-    <aws.version>1.11.940</aws.version>
-    <guava.version>30.1-jre</guava.version>
+    <jetty.version>9.4.43.v20210629</jetty.version>
+    <jersey.version>2.34</jersey.version>
+    <jackson.core.version>2.12.4</jackson.core.version>
+    <jackson.databind.version>2.12.4</jackson.databind.version>
+    <jackson.annotations.version>2.12.4</jackson.annotations.version>
+    <jackson.jaxrs.version>2.12.4</jackson.jaxrs.version>
+    <rdl.version>1.5.4</rdl.version>
+    <bouncycastle.version>1.69</bouncycastle.version>
+    <aws.version>1.12.19</aws.version>
+    <aws2.version>2.16.97</aws2.version>
+    <guava.version>30.1.1-jre</guava.version>
     <logback.version>1.2.3</logback.version>
     <javax.version>3.1.0</javax.version>
     <javax.ws.version>2.1.1</javax.ws.version>
-    <mockito.version>3.7.7</mockito.version>
+    <mockito.version>3.11.2</mockito.version>
     <jmockit.version>1.49</jmockit.version>
     <jjwt.version>0.11.2</jjwt.version>
-    <mysql.connector.version>8.0.23</mysql.connector.version>
-    <commons.daemon.version>1.2.3</commons.daemon.version>
+    <jaxb.version>2.3.3</jaxb.version>
+    <mysql.connector.version>8.0.25</mysql.connector.version>
+    <commons.daemon.version>1.2.4</commons.daemon.version>
     <apache.httpclient.version>4.5.13</apache.httpclient.version>
+    <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
+    <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
+    <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
+    <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <exec-maven-plugin.version>1.1.1</exec-maven-plugin.version>
+    <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+    <swagger.version>2.1.10</swagger.version>
+    <hamcrest.version>2.2</hamcrest.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <code.coverage.min>0.95</code.coverage.min>
-    <argLine>-Dlogback.configurationFile=src/test/resources/travis_logback.xml</argLine>
-    <swagger.version>2.1.6</swagger.version>
+    <argLine>-Dlogback.configurationFile=src/test/resources/sd_logback.xml</argLine>
+    <sonar.projectKey>AthenzSonar-${project.groupId}:${project.artifactId}</sonar.projectKey>
+    <sonar.organization>athenz</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
 
   <modules>
@@ -101,8 +115,10 @@
     <module>rdl/rdl-gen-athenz-go-model</module>
     <module>rdl/rdl-gen-athenz-go-client</module>
     <module>rdl/rdl-gen-athenz-java-model</module>
+    <module>rdl/rdl-gen-athenz-java-client</module>
     <module>core/zms</module>
     <module>core/zts</module>
+    <module>core/msd</module>
     <module>libs/java/auth_core</module>
     <module>libs/java/client_common</module>
     <module>libs/java/server_common</module>
@@ -112,11 +128,13 @@
     <module>clients/java/zts/core</module>
     <module>clients/java/zts/shade</module>
     <module>clients/java/zpe</module>
+    <module>clients/java/msd</module>
     <module>servers/zms</module>
     <module>servers/zts</module>
     <module>containers/jetty</module>
     <module>clients/go/zms</module>
     <module>clients/go/zts</module>
+    <module>clients/go/msd</module>
     <module>libs/go/zmscli</module>
     <module>libs/go/zmssvctoken</module>
     <module>libs/go/athenzutils</module>
@@ -130,14 +148,12 @@
     <module>utils/zts-accesstoken</module>
     <module>utils/zts-rolecert</module>
     <module>utils/zts-svccert</module>
-    <module>aws-setup/athenz-conf-aws</module>
     <module>libs/nodejs/auth_core</module>
     <module>clients/nodejs/zts</module>
     <module>clients/nodejs/zpe</module>
     <module>ui</module>
     <module>assembly/zms</module>
     <module>assembly/zts</module>
-    <module>assembly/zpu</module>
     <module>assembly/ui</module>
     <module>assembly/utils</module>
   </modules>
@@ -148,7 +164,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.5.1</version>
+          <version>${maven-compiler-plugin.version}</version>
           <configuration>
             <source>1.8</source>
             <target>1.8</target>
@@ -198,6 +214,7 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <version>3.0.1</version>
         <executions>
@@ -210,9 +227,25 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <configuration>
+              <source>8</source>
+            </configuration>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.5</version>
+        <version>${jacoco-maven-plugin.version}</version>
         <executions>
           <execution>
             <goals>
@@ -242,6 +275,8 @@
                 <exclude>**/ZMSConsts.class</exclude>
                 <exclude>**/FileConnection.class</exclude>
                 <exclude>**/FileObjectStore.class</exclude>
+                <exclude>**/FileWorkloadStore.class</exclude>
+                <exclude>**/*MSDRDLGeneratedClient.class</exclude>
               </excludes>
               <rules>
                 <rules>
@@ -285,7 +320,7 @@
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <version>7.3.0</version>
+      <version>7.4.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -294,19 +329,14 @@
       <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>${hamcrest.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
-
-  <repositories>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>bintray-yahoo-maven</id>
-      <name>bintray</name>
-      <url>https://yahoo.bintray.com/maven</url>
-    </repository>
-  </repositories>
-
+  
   <profiles>
     <profile>
       <id>coverage</id>
@@ -343,12 +373,69 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>ossrh</id>
+      <properties>
+        <gpg.executable>gpg</gpg.executable>
+        <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
+        <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+        <gpg.defaultKeyring>false</gpg.defaultKeyring>
+        <gpg.homedir>${env.SD_SOURCE_DIR}/screwdriver/deploy</gpg.homedir>
+        <gpg.publickeyring>pubring.gpg</gpg.publickeyring>
+        <gpg.secretkeyring>secring.gpg</gpg.secretkeyring>
+      </properties>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <gpgArguments>
+                    <arg>--pinentry-mode</arg>
+                    <arg>loopback</arg>
+                  </gpgArguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.7</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
   <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
     <repository>
-      <id>bintray-athenz-parent-repo</id>
-      <url>https://api.bintray.com/maven/yahoo/maven/athenz-parent/;publish=1</url>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
 

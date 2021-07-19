@@ -7,11 +7,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
+	"github.com/AthenZ/athenz/clients/go/zms"
 	"github.com/ardielle/ardielle-go/rdl"
-	"github.com/yahoo/athenz/clients/go/zms"
 )
 
 func providerRoleName(provider, group, action string) string {
@@ -32,15 +33,20 @@ func (cli Zms) roleNames(dn string) ([]string, error) {
 }
 
 func (cli Zms) ListRoles(dn string) (*string, error) {
-	var buf bytes.Buffer
 	roles, err := cli.roleNames(dn)
 	if err != nil {
 		return nil, err
 	}
-	buf.WriteString("roles:\n")
-	cli.dumpObjectList(&buf, roles, dn, "role")
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("roles:\n")
+		cli.dumpObjectList(&buf, roles, dn, "role")
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(roles, oldYamlConverter)
 }
 
 func (cli Zms) ShowRole(dn string, rn string, auditLog, expand bool, pending bool) (*string, error) {
@@ -67,11 +73,16 @@ func (cli Zms) ShowRole(dn string, rn string, auditLog, expand bool, pending boo
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	buf.WriteString("role:\n")
-	cli.dumpRole(&buf, *role, auditLog, indentLevel1Dash, indentLevel1DashLvl)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("role:\n")
+		cli.dumpRole(&buf, *role, auditLog, indentLevel1Dash, indentLevel1DashLvl)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(role, oldYamlConverter)
 }
 
 func (cli Zms) AddDelegatedRole(dn string, rn string, trusted string) (*string, error) {
@@ -158,7 +169,12 @@ func (cli Zms) DeleteRole(dn string, rn string) (*string, error) {
 		return nil, err
 	}
 	s := "[Deleted role: " + rn + "]"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) AddProviderRoleMembers(dn string, provider string, group string, action string, members []string) (*string, error) {
@@ -221,7 +237,13 @@ func (cli Zms) AddMembers(dn string, rn string, members []string) (*string, erro
 	} else {
 		s = "[Added to " + rn + ": " + strings.Join(ms, ",") + "]"
 	}
-	return &s, nil
+
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) AddDueDateMember(dn string, rn string, member string, expiration *rdl.Timestamp, reviewDate *rdl.Timestamp) (*string, error) {
@@ -247,7 +269,12 @@ func (cli Zms) AddDueDateMember(dn string, rn string, member string, expiration 
 	} else {
 		s = "[Added to " + rn + ": " + validatedUser + "]"
 	}
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) DeleteMembers(dn string, rn string, members []string) (*string, error) {
@@ -265,25 +292,39 @@ func (cli Zms) DeleteMembers(dn string, rn string, members []string) (*string, e
 	} else {
 		s = "[Deleted from " + rn + ": " + strings.Join(ms, ",") + "]"
 	}
-	return &s, nil
+
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) CheckMembers(dn string, rn string, members []string) (*string, error) {
-	var buf bytes.Buffer
 	ms := cli.validatedUsers(members, false)
+	var membership []*zms.Membership
 	for _, m := range ms {
 		member, err := cli.Zms.GetMembership(zms.DomainName(dn), zms.EntityName(rn), zms.MemberName(m), "")
 		if err != nil {
 			return nil, err
 		}
-		cli.dumpRoleMembership(&buf, *member)
+		membership = append(membership, member)
 	}
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		for _, m := range membership {
+			cli.dumpRoleMembership(&buf, *m)
+		}
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(membership, oldYamlConverter)
 }
 
 func (cli Zms) CheckActiveMember(dn string, rn string, mbr string) (*string, error) {
-	var buf bytes.Buffer
 	member, err := cli.Zms.GetMembership(zms.DomainName(dn), zms.EntityName(rn), zms.MemberName(mbr), "")
 	if err != nil {
 		return nil, err
@@ -291,9 +332,15 @@ func (cli Zms) CheckActiveMember(dn string, rn string, mbr string) (*string, err
 	if !*member.IsMember || !*member.Approved || !*member.Active {
 		return nil, errors.New("Member " + mbr + " is not active")
 	}
-	cli.dumpRoleMembership(&buf, *member)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		cli.dumpRoleMembership(&buf, *member)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(member, oldYamlConverter)
 }
 
 func (cli Zms) DeleteDomainRoleMember(dn, member string) (*string, error) {
@@ -302,30 +349,45 @@ func (cli Zms) DeleteDomainRoleMember(dn, member string) (*string, error) {
 		return nil, err
 	}
 	s := "[Deleted member: " + member + "]"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) ListDomainRoleMembers(dn string) (*string, error) {
-	var buf bytes.Buffer
 	roleMembers, err := cli.Zms.GetDomainRoleMembers(zms.DomainName(dn))
 	if err != nil {
 		return nil, err
 	}
-	buf.WriteString("role members:\n")
-	cli.dumpDomainRoleMembers(&buf, roleMembers, false)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("role members:\n")
+		cli.dumpDomainRoleMembers(&buf, roleMembers, false)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(roleMembers, oldYamlConverter)
 }
 
 func (cli Zms) ShowRolesPrincipal(principal string, dn string) (*string, error) {
-	var buf bytes.Buffer
 	domainRoleMember, err := cli.Zms.GetPrincipalRoles(zms.ResourceName(principal), zms.DomainName(dn))
 	if err != nil {
 		return nil, err
 	}
-	cli.dumpRolesPrincipal(&buf, domainRoleMember)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		cli.dumpRolesPrincipal(&buf, domainRoleMember)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(domainRoleMember, oldYamlConverter)
 }
 
 func (cli Zms) SetRoleAuditEnabled(dn string, rn string, auditEnabled bool) (*string, error) {
@@ -337,7 +399,12 @@ func (cli Zms) SetRoleAuditEnabled(dn string, rn string, auditEnabled bool) (*st
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " audit-enabled successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleReviewEnabled(dn string, rn string, reviewEnabled bool) (*string, error) {
@@ -353,7 +420,12 @@ func (cli Zms) SetRoleReviewEnabled(dn string, rn string, reviewEnabled bool) (*
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " review-enabled attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func getRoleMetaObject(role *zms.Role) zms.RoleMeta {
@@ -388,7 +460,12 @@ func (cli Zms) SetRoleSelfServe(dn string, rn string, selfServe bool) (*string, 
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " self-serve attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleUserAuthorityFilter(dn string, rn, filter string) (*string, error) {
@@ -404,7 +481,12 @@ func (cli Zms) SetRoleUserAuthorityFilter(dn string, rn, filter string) (*string
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " user-authority-filter attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleUserAuthorityExpiration(dn string, rn, filter string) (*string, error) {
@@ -420,7 +502,12 @@ func (cli Zms) SetRoleUserAuthorityExpiration(dn string, rn, filter string) (*st
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " user-authority-expiration attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) AddRoleTags(dn string, rn, tagKey string, tagValues []string) (*string, error) {
@@ -429,10 +516,10 @@ func (cli Zms) AddRoleTags(dn string, rn, tagKey string, tagValues []string) (*s
 		return nil, err
 	}
 
-	tagValueArr := make([]zms.CompoundName, 0)
+	tagValueArr := make([]zms.TagCompoundValue, 0)
 
 	if role.Tags == nil {
-		role.Tags = map[zms.CompoundName]*zms.StringList{}
+		role.Tags = map[zms.CompoundName]*zms.TagValueList{}
 	} else {
 		// append current tags
 		currentTagValues := role.Tags[zms.CompoundName(tagKey)]
@@ -442,10 +529,10 @@ func (cli Zms) AddRoleTags(dn string, rn, tagKey string, tagValues []string) (*s
 	}
 
 	for _, tagValue := range tagValues {
-		tagValueArr = append(tagValueArr, zms.CompoundName(tagValue))
+		tagValueArr = append(tagValueArr, zms.TagCompoundValue(tagValue))
 	}
 
-	role.Tags[zms.CompoundName(tagKey)] = &zms.StringList{List: tagValueArr}
+	role.Tags[zms.CompoundName(tagKey)] = &zms.TagValueList{List: tagValueArr}
 
 	err = cli.Zms.PutRole(zms.DomainName(dn), zms.EntityName(rn), cli.AuditRef, role)
 	if err != nil {
@@ -469,10 +556,10 @@ func (cli Zms) DeleteRoleTags(dn string, rn, tagKey string, tagValue string) (*s
 		return nil, err
 	}
 
-	tagValueArr := make([]zms.CompoundName, 0)
+	tagValueArr := make([]zms.TagCompoundValue, 0)
 
 	if role.Tags == nil {
-		role.Tags = map[zms.CompoundName]*zms.StringList{}
+		role.Tags = map[zms.CompoundName]*zms.TagValueList{}
 	}
 
 	// except given tagValue, set the same tags map
@@ -487,7 +574,7 @@ func (cli Zms) DeleteRoleTags(dn string, rn, tagKey string, tagValue string) (*s
 		}
 	}
 
-	role.Tags[zms.CompoundName(tagKey)] = &zms.StringList{List: tagValueArr}
+	role.Tags[zms.CompoundName(tagKey)] = &zms.TagValueList{List: tagValueArr}
 
 	err = cli.Zms.PutRole(zms.DomainName(dn), zms.EntityName(rn), cli.AuditRef, role)
 	if err != nil {
@@ -506,10 +593,19 @@ func (cli Zms) DeleteRoleTags(dn string, rn, tagKey string, tagValue string) (*s
 }
 
 func (cli Zms) ShowRoles(dn string, tagKey string, tagValue string) (*string, error) {
-	var buf bytes.Buffer
-	cli.dumpRoles(&buf, dn, tagKey, tagValue)
-	s := buf.String()
-	return &s, nil
+	if cli.OutputFormat == JSONOutputFormat || cli.OutputFormat == YAMLOutputFormat {
+		members := true
+		roles, err := cli.Zms.GetRoles(zms.DomainName(dn), &members, zms.CompoundName(tagKey), zms.CompoundName(tagValue))
+		if err != nil {
+			log.Fatalf("Unable to get role list - error: %v", err)
+		}
+		return cli.dumpByFormat(roles, cli.buildYAMLOutput)
+	} else {
+		var buf bytes.Buffer
+		cli.dumpRoles(&buf, dn, tagKey, tagValue)
+		s := buf.String()
+		return &s, nil
+	}
 }
 
 func (cli Zms) SetRoleMemberExpiryDays(dn string, rn string, days int32) (*string, error) {
@@ -525,7 +621,12 @@ func (cli Zms) SetRoleMemberExpiryDays(dn string, rn string, days int32) (*strin
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " member-expiry-days attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleServiceExpiryDays(dn string, rn string, days int32) (*string, error) {
@@ -541,7 +642,12 @@ func (cli Zms) SetRoleServiceExpiryDays(dn string, rn string, days int32) (*stri
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " service-expiry-days attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleGroupExpiryDays(dn string, rn string, days int32) (*string, error) {
@@ -557,7 +663,12 @@ func (cli Zms) SetRoleGroupExpiryDays(dn string, rn string, days int32) (*string
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " group-expiry-days attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleMemberReviewDays(dn string, rn string, days int32) (*string, error) {
@@ -573,7 +684,12 @@ func (cli Zms) SetRoleMemberReviewDays(dn string, rn string, days int32) (*strin
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " member-review-days attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleServiceReviewDays(dn string, rn string, days int32) (*string, error) {
@@ -589,7 +705,33 @@ func (cli Zms) SetRoleServiceReviewDays(dn string, rn string, days int32) (*stri
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " service-review-days attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
+}
+
+func (cli Zms) SetRoleGroupReviewDays(dn string, rn string, days int32) (*string, error) {
+	role, err := cli.Zms.GetRole(zms.DomainName(dn), zms.EntityName(rn), nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	meta := getRoleMetaObject(role)
+	meta.GroupReviewDays = &days
+
+	err = cli.Zms.PutRoleMeta(zms.DomainName(dn), zms.EntityName(rn), cli.AuditRef, &meta)
+	if err != nil {
+		return nil, err
+	}
+	s := "[domain " + dn + " role " + rn + " group-review-days attribute successfully updated]\n"
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleTokenExpiryMins(dn string, rn string, mins int32) (*string, error) {
@@ -605,7 +747,12 @@ func (cli Zms) SetRoleTokenExpiryMins(dn string, rn string, mins int32) (*string
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " token-expiry-mins attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleCertExpiryMins(dn string, rn string, mins int32) (*string, error) {
@@ -621,7 +768,12 @@ func (cli Zms) SetRoleCertExpiryMins(dn string, rn string, mins int32) (*string,
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " role-cert-expiry-mins attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleTokenSignAlgorithm(dn string, rn string, alg string) (*string, error) {
@@ -637,7 +789,12 @@ func (cli Zms) SetRoleTokenSignAlgorithm(dn string, rn string, alg string) (*str
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " role-token-sign-algorithm attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) SetRoleNotifyRoles(dn string, rn string, notifyRoles string) (*string, error) {
@@ -653,7 +810,12 @@ func (cli Zms) SetRoleNotifyRoles(dn string, rn string, notifyRoles string) (*st
 		return nil, err
 	}
 	s := "[domain " + dn + " role " + rn + " notify-roles attribute successfully updated]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) PutTempMembershipDecision(dn string, rn string, mbr string, expiration rdl.Timestamp, approval bool) (*string, error) {
@@ -674,7 +836,12 @@ func (cli Zms) PutTempMembershipDecision(dn string, rn string, mbr string, expir
 		s = s + " rejected."
 	}
 	s = s + "]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) PutMembershipDecision(dn string, rn string, mbr string, approval bool) (*string, error) {
@@ -694,5 +861,10 @@ func (cli Zms) PutMembershipDecision(dn string, rn string, mbr string, approval 
 		s = s + " rejected."
 	}
 	s = s + "]\n"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }

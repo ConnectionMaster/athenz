@@ -178,14 +178,14 @@ public class PrincipalToken extends Token {
         unsignedToken = strBuilder.toString();
         
         if (LOG.isDebugEnabled()) {
-            LOG.debug("PrincipalToken created: " + unsignedToken);
+            LOG.debug("PrincipalToken created: {}", unsignedToken);
         }
     }
 
     public PrincipalToken(String signedToken) {
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Constructing PrincipalToken with input string: " + signedToken);
+            LOG.debug("Constructing PrincipalToken with input string: {}", signedToken);
         }
         
         if (signedToken == null || signedToken.isEmpty()) {
@@ -319,25 +319,15 @@ public class PrincipalToken extends Token {
         this.signedToken = signedToken;
         
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Values extracted from token " +
-                    " version:" + version +
-                    " domain:" + domain +
-                    " service:" + name +
-                    " host:" + host +
-                    " ip: " + ip +
-                    " id: " + keyId +
-                    " keyService: " + keyService +
-                    " originalRequestor: " + originalRequestor +
-                    " salt:" + salt +
-                    " timestamp:" + timestamp +
-                    " expiryTime:" + expiryTime +
-                    " signature:" + signature);
+            LOG.debug("Values extracted from token version:{} domain:{} service:{} host:{}" +
+                    " ip:{} id:{} keyService:{} originalRequestor:{} salt:{} timestamp:{}" +
+                    " expiryTime:{} signature:{}", version, domain, name, host, ip, keyId,
+                    keyService, originalRequestor, salt, timestamp, expiryTime, signature);
             if (authorizedServices != null) {
-                LOG.debug("Authorized service details from token " +
-                    " authorizedServices:" + String.join(",", authorizedServices) +
-                    " authorizedServiceName:" + authorizedServiceName +
-                    " authorizedServiceKeyId:" + authorizedServiceKeyId +
-                    " authorizedServiceSignature:" + authorizedServiceSignature);
+                LOG.debug("Authorized service details from token authorizedServices:{}" +
+                        " authorizedServiceName:{} authorizedServiceKeyId:{} authorizedServiceSignature:{}",
+                        String.join(",", authorizedServices), authorizedServiceName, authorizedServiceKeyId,
+                        authorizedServiceSignature);
             }
         }
     }
@@ -393,15 +383,11 @@ public class PrincipalToken extends Token {
             LOG.error(errMsg.toString());
             return false;
         }
-        
+
+        // since at this point authorizedServiceSignature is not null
+        // our signed token has the ";bs=" component
+
         int idx = signedToken.indexOf(";bs=");
-        if (idx == -1) {
-            errMsg.append("PrincipalToken:validateForAuthorizedService: token=").
-                   append(unsignedToken).append(" : not signed by any authorized service");
-            LOG.error(errMsg.toString());
-            return false;
-        }
-        
         String unsignedAuthorizedServiceToken = signedToken.substring(0, idx);
         
         if (pubKey == null) {
@@ -423,8 +409,7 @@ public class PrincipalToken extends Token {
                        append(pubKey);
                 LOG.error(errMsg.toString());
             } else if (LOG.isDebugEnabled()) {
-                LOG.debug("validateForAuthorizedService: Token: " + unsignedToken +
-                        " -  successfully authenticated");
+                LOG.debug("validateForAuthorizedService: Token: {} -  successfully authenticated", unsignedToken);
             }
             ///CLOVER:ON
         } catch (Exception e) {

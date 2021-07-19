@@ -16,8 +16,9 @@
 import React from 'react';
 import styled from '@emotion/styled';
 import RoleGroup from '../role/RoleGroup';
+import { GROUP_ROLES_CATEGORY } from '../constants/constants';
 
-const StyleTable = styled.table`
+const StyleTable = styled.div`
     width: 100%;
     border-spacing: 0 15px;
     display: table;
@@ -25,30 +26,24 @@ const StyleTable = styled.table`
     border-color: grey;
 `;
 
-const TableHeadStyled = styled.th`
-    text-align: ${(props) => props.align};
-    border-bottom: 2px solid #d5d5d5;
-    color: #9a9a9a;
-    font-weight: 600;
-    font-size: 0.8rem;
-    padding-bottom: 5px;
-    vertical-align: top;
-    text-transform: uppercase;
-    padding: 5px 0 5px 15px;
-    word-break: break-all;
+const GroupRoleDiv = styled.div`
+    padding-top: 20px;
 `;
 
-const TableHeadStyledRoleName = styled.th`
-    text-align: ${(props) => props.align};
-    border-bottom: 2px solid #d5d5d5;
-    color: #9a9a9a;
-    font-weight: 600;
+const TableHeadStyled = styled.div`
+    border-bottom: 2px solid rgb(213, 213, 213);
+    color: rgb(154, 154, 154);
     font-size: 0.8rem;
-    padding-bottom: 5px;
     vertical-align: top;
     text-transform: uppercase;
-    padding: 5px 0 5px 35px;
+    padding: 5px 0px 5px 15px;
     word-break: break-all;
+    display: flex;
+`;
+
+const TableHeadStyledLabel = styled.div`
+    text-align: ${(props) => props.align};
+    width: ${(props) => props.width};
 `;
 
 export default class GroupRoleTable extends React.Component {
@@ -107,7 +102,8 @@ export default class GroupRoleTable extends React.Component {
                     // group rows
                     let roleGroup = (
                         <RoleGroup
-                            category={'group-roles'}
+                            category={GROUP_ROLES_CATEGORY}
+                            key={'group-role:' + name}
                             api={this.api}
                             domain={name}
                             name={name}
@@ -121,21 +117,27 @@ export default class GroupRoleTable extends React.Component {
             }
         }
 
+        if (!this.props.displayTable) {
+            return (
+                <GroupRoleDiv>
+                    The group isn't a member of any role.
+                </GroupRoleDiv>
+            );
+        }
+
         return (
             <StyleTable key='role-table' data-testid='roletable'>
-                <thead>
-                    <tr>
-                        <TableHeadStyledRoleName align={left}>
-                            Role
-                        </TableHeadStyledRoleName>
-                        <TableHeadStyled align={center}>
-                            Expiry Date
-                        </TableHeadStyled>
-                        <TableHeadStyled align={center}>
-                            Members
-                        </TableHeadStyled>
-                    </tr>
-                </thead>
+                <TableHeadStyled>
+                    <TableHeadStyledLabel align={left} width={'50%'}>
+                        Role
+                    </TableHeadStyledLabel>
+                    <TableHeadStyledLabel align={left} width={'25%'}>
+                        Expiry Date
+                    </TableHeadStyledLabel>
+                    <TableHeadStyledLabel align={center} width={'25%'}>
+                        Members
+                    </TableHeadStyledLabel>
+                </TableHeadStyled>
                 <tbody>{rows}</tbody>
             </StyleTable>
         );

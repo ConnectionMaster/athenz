@@ -22,6 +22,8 @@ import Alert from '../denali/Alert';
 import { MODAL_TIME_OUT } from '../constants/constants';
 import AddModal from '../modal/AddModal';
 import RequestUtils from '../utils/RequestUtils';
+import BusinessServiceModal from '../modal/BusinessServiceModal';
+import { colors } from '../denali/styles';
 
 const DomainSectionDiv = styled.div`
     margin: 20px 0;
@@ -52,6 +54,23 @@ const StyledAnchorDiv = styled.div`
     cursor: pointer;
 `;
 
+const DivStyledBusinessService = styled.div`
+    font-weight: 600;
+    title: ${(props) => props.title};
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 400px;
+`;
+
+const StyledAnchor = styled.a`
+    color: ${colors.linkActive};
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: '';
+`;
+
 export default class DomainDetails extends React.Component {
     constructor(props) {
         super(props);
@@ -59,10 +78,124 @@ export default class DomainDetails extends React.Component {
         this.state = {
             showOnBoardToAWSModal: false,
             showSuccess: false,
+            showBusinessService: false,
+            businessServiceName: this.props.domainDetails.businessService,
+            tempBusinessServiceName: this.props.domainDetails.businessService,
+            category: 'domain',
+            errorMessageForModal: '',
+            errorMessage: null,
         };
         this.closeModal = this.closeModal.bind(this);
         this.onClickOnboardToAWS = this.onClickOnboardToAWS.bind(this);
         this.toggleOnboardToAWSModal = this.toggleOnboardToAWSModal.bind(this);
+        this.saveBusinessService = this.saveBusinessService.bind(this);
+        this.saveJustification = this.saveJustification.bind(this);
+    }
+
+    onClickBusinessService(domainName, businessServiceName, auditEnabled) {
+        this.setState({
+            showBusinessService: true,
+            tempBusinessServiceName: businessServiceName,
+        });
+    }
+
+    onClickBusinessServiceCancel() {
+        this.setState({
+            showBusinessService: false,
+            errorMessage: null,
+            errorMessageForModal: '',
+            auditRef: '',
+        });
+    }
+
+    saveJustification(val) {
+        this.setState({
+            auditRef: val,
+        });
+    }
+    saveBusinessService(val) {
+        this.setState({
+            tempBusinessServiceName: val,
+        });
+    }
+
+    updateMeta(meta, domainName, csrf, successMessage) {
+        let auditMsg = this.state.auditRef;
+        if (!auditMsg) {
+            auditMsg = 'Updated ' + domainName + ' Meta using Athenz UI';
+        }
+        this.api
+            .putMeta(
+                domainName,
+                domainName,
+                meta,
+                auditMsg,
+                csrf,
+                this.state.category
+            )
+            .then(() => {
+                this.setState({
+                    auditRef: '',
+                    errorMessage: null,
+                    errorMessageForModal: '',
+                    showBusinessService: false,
+                    businessServiceName: meta.businessService,
+                    successMessage: successMessage,
+                    showSuccess: true,
+                });
+                // this is to close the success alert
+                setTimeout(
+                    () =>
+                        this.setState({
+                            showSuccess: false,
+                        }),
+                    MODAL_TIME_OUT + 1000
+                );
+            })
+            .catch((err) => {
+                this.setState({
+                    errorMessage: RequestUtils.xhrErrorCheckHelper(err),
+                    errorMessageForModal: RequestUtils.xhrErrorCheckHelper(err),
+                });
+            });
+    }
+
+    onSubmitBusinessService() {
+        if (this.props.domainDetails.auditEnabled && !this.state.auditRef) {
+            this.setState({
+                errorMessageForModal: 'Justification is mandatory',
+            });
+            return;
+        }
+
+        if (this.state.tempBusinessServiceName) {
+            var index = this.props.validBusinessServicesAll.findIndex(
+                (x) =>
+                    x.value ==
+                    this.state.tempBusinessServiceName.substring(
+                        0,
+                        this.state.tempBusinessServiceName.indexOf(':')
+                    )
+            );
+            if (index === -1) {
+                this.setState({
+                    errorMessageForModal: 'Invalid business service value',
+                });
+                return;
+            }
+        }
+
+        let domainName = this.props.domainDetails.name;
+        let businessServiceName = this.state.tempBusinessServiceName;
+        let domainMeta = {};
+        domainMeta.businessService = businessServiceName;
+        let successMessage = `Successfully set business service for domain ${domainName}`;
+        this.updateMeta(
+            domainMeta,
+            domainName,
+            this.props._csrf,
+            successMessage
+        );
     }
 
     onClickOnboardToAWS() {
@@ -119,6 +252,26 @@ export default class DomainDetails extends React.Component {
         ) {
             showOnBoardToAWS = true;
         }
+        let businessServiceItem = this.onClickBusinessService.bind(
+            this,
+            this.props.domainDetails.name,
+            this.state.businessServiceName,
+            this.props.domainDetails.auditEnabled
+        );
+        let businessServiceTitle = this.state.businessServiceName
+            ? this.state.businessServiceName.substring(
+                  this.state.businessServiceName.indexOf(':') + 1
+              )
+            : 'add';
+        if (!businessServiceTitle) {
+            businessServiceTitle = this.state.businessServiceName
+                ? this.state.businessServiceName
+                : 'add';
+        }
+        let clickBusinessServiceCancel =
+            this.onClickBusinessServiceCancel.bind(this);
+        let clickBusinessServiceSubmit =
+            this.onSubmitBusinessService.bind(this);
         return (
             <DomainSectionDiv data-testid='domain-details'>
                 <DetailsDiv>
@@ -174,6 +327,14 @@ export default class DomainDetails extends React.Component {
                         </ValueDiv>
                         <LabelDiv>AWS ACCOUNT ID</LabelDiv>
                     </SectionDiv>
+                    <SectionDiv>
+                        <DivStyledBusinessService title={businessServiceTitle}>
+                            <StyledAnchor onClick={businessServiceItem}>
+                                {businessServiceTitle}
+                            </StyledAnchor>
+                        </DivStyledBusinessService>
+                        <LabelDiv>BUSINESS SERVICE</LabelDiv>
+                    </SectionDiv>
                     {showOnBoardToAWS && (
                         <SectionDiv>
                             <Button
@@ -200,6 +361,30 @@ export default class DomainDetails extends React.Component {
                             title={this.state.successMessage}
                             onClose={this.closeModal}
                             type='success'
+                        />
+                    ) : null}
+                    {this.state.showBusinessService ? (
+                        <BusinessServiceModal
+                            isOpen={this.state.showBusinessService}
+                            cancel={clickBusinessServiceCancel}
+                            businessServiceName={this.state.businessServiceName}
+                            domainName={this.props.domainDetails.name}
+                            submit={clickBusinessServiceSubmit}
+                            showJustification={
+                                this.props.domainDetails.auditEnabled
+                            }
+                            onJustification={this.saveJustification}
+                            onBusinessService={this.saveBusinessService}
+                            key={'business-service-modal'}
+                            errorMessage={this.state.errorMessageForModal}
+                            api={this.api}
+                            userId={this.state.userId}
+                            validBusinessServices={
+                                this.props.validBusinessServices
+                            }
+                            validBusinessServicesAll={
+                                this.props.validBusinessServicesAll
+                            }
                         />
                     ) : null}
                 </DetailsDiv>

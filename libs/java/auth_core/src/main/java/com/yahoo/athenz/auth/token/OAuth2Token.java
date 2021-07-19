@@ -16,9 +16,7 @@
 package com.yahoo.athenz.auth.token;
 
 import com.yahoo.athenz.auth.token.jwts.JwtsSigningKeyResolver;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 
 import java.security.PublicKey;
 import java.util.Date;
@@ -38,31 +36,57 @@ public class OAuth2Token {
     protected String audience;
     protected String issuer;
     protected String subject;
-    protected Jws<Claims> claims = null;
+    protected String jwtId;
+    protected Claims body = null;
 
     public OAuth2Token() {
     }
 
     public OAuth2Token(final String token, JwtsSigningKeyResolver keyResolver) {
 
-        claims = Jwts.parserBuilder()
-                .setSigningKeyResolver(keyResolver)
-                .setAllowedClockSkewSeconds(60)
-                .build()
-                .parseClaimsJws(token);
+        // if the keyresolver is null and the token does not have
+        // a signature we're going to treat and parse it as a jwt
+
+        if (keyResolver == null && isSignatureMissing(token)) {
+            Jwt<Header, Claims> claims = Jwts.parserBuilder()
+                    .setAllowedClockSkewSeconds(60)
+                    .build()
+                    .parseClaimsJwt(token);
+            body = claims.getBody();
+        } else {
+            Jws<Claims> claims = Jwts.parserBuilder()
+                    .setSigningKeyResolver(keyResolver)
+                    .setAllowedClockSkewSeconds(60)
+                    .build()
+                    .parseClaimsJws(token);
+            body = claims.getBody();
+        }
 
         setTokenFields();
     }
 
     public OAuth2Token(final String token, PublicKey publicKey) {
 
-        claims = Jwts.parserBuilder()
-                .setSigningKey(publicKey)
-                .setAllowedClockSkewSeconds(60)
-                .build()
-                .parseClaimsJws(token);
+        if (publicKey == null && isSignatureMissing(token)) {
+            Jwt<Header, Claims> claims = Jwts.parserBuilder()
+                    .setAllowedClockSkewSeconds(60)
+                    .build()
+                    .parseClaimsJwt(token);
+            body = claims.getBody();
+        } else {
+            Jws<Claims> claims = Jwts.parserBuilder()
+                    .setSigningKey(publicKey)
+                    .setAllowedClockSkewSeconds(60)
+                    .build()
+                    .parseClaimsJws(token);
+            body = claims.getBody();
+        }
 
         setTokenFields();
+    }
+
+    boolean isSignatureMissing(final String token) {
+        return token.length() == token.lastIndexOf('.') + 1;
     }
 
     int parseIntegerValue(Claims body, final String claimName) {
@@ -97,8 +121,6 @@ public class OAuth2Token {
     }
 
     void setTokenFields() {
-        final Claims body = claims.getBody();
-
         setVersion(parseIntegerValue(body, CLAIM_VERSION));
         setAudience(body.getAudience());
         setExpiryTime(parseDateValue(body.getExpiration()));
@@ -107,6 +129,7 @@ public class OAuth2Token {
         setAuthTime(parseLongValue(body, CLAIM_AUTH_TIME));
         setIssuer(body.getIssuer());
         setSubject(body.getSubject());
+        setJwtId(body.getId());
     }
 
     public int getVersion() {
@@ -171,5 +194,13 @@ public class OAuth2Token {
 
     public void setAuthTime(long authTime) {
         this.authTime = authTime;
+    }
+
+    public String getJwtId() {
+        return jwtId;
+    }
+
+    public void setJwtId(String jwtId) {
+        this.jwtId = jwtId;
     }
 }

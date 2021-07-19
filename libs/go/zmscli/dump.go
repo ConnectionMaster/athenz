@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yahoo/athenz/clients/go/zms"
+	"github.com/AthenZ/athenz/clients/go/zms"
 )
 
 var (
@@ -28,6 +28,8 @@ func (cli Zms) dumpDomain(buf *bytes.Buffer, domain *zms.Domain) {
 	dumpStringValue(buf, indentLevel1, "description", domain.Description)
 	dumpStringValue(buf, indentLevel1, "aws_account", domain.Account)
 	dumpStringValue(buf, indentLevel1, "azure_subscription", domain.AzureSubscription)
+	dumpStringValue(buf, indentLevel1, "application_id", domain.ApplicationId)
+	dumpStringValue(buf, indentLevel1, "business_service", domain.BusinessService)
 	dumpInt32Value(buf, indentLevel1, "product_id", domain.YpmId)
 	dumpStringValue(buf, indentLevel1, "org", string(domain.Org))
 	dumpBoolValue(buf, indentLevel1, "audit_enabled", domain.AuditEnabled)
@@ -127,6 +129,8 @@ func (cli Zms) dumpRole(buf *bytes.Buffer, role zms.Role, auditLog bool, indent1
 	dumpInt32Value(buf, indent2, "cert_expiry_mins", role.CertExpiryMins)
 	dumpInt32Value(buf, indent2, "member_review_days", role.MemberReviewDays)
 	dumpInt32Value(buf, indent2, "service_review_days", role.ServiceReviewDays)
+	dumpInt32Value(buf, indent2, "group_expiry_days", role.GroupExpiryDays)
+	dumpInt32Value(buf, indent2, "group_review_days", role.GroupReviewDays)
 	dumpBoolValue(buf, indent2, "audit_enabled", role.AuditEnabled)
 	dumpBoolValue(buf, indent2, "review_enabled", role.ReviewEnabled)
 	dumpBoolValue(buf, indent2, "self_serve", role.SelfServe)
@@ -157,7 +161,7 @@ func (cli Zms) dumpRole(buf *bytes.Buffer, role zms.Role, auditLog bool, indent1
 			buf.WriteString("\n")
 		}
 	}
-	cli.dumpTags(buf, true, indent2, role.Tags)
+	cli.dumpTags(buf, true, "", indent2, role.Tags)
 	if auditLog {
 		buf.WriteString(indent2)
 		buf.WriteString("changes: \n")
@@ -179,14 +183,14 @@ func (cli Zms) dumpRole(buf *bytes.Buffer, role zms.Role, auditLog bool, indent1
 	}
 }
 
-func (cli Zms) dumpTags(buf *bytes.Buffer, indentFirst bool, indent2 string, tags map[zms.CompoundName]*zms.StringList) {
+func (cli Zms) dumpTags(buf *bytes.Buffer, indentFirst bool, indent1, indent2 string, tags map[zms.CompoundName]*zms.TagValueList) {
 	if tags != nil {
 		if indentFirst {
 			buf.WriteString(indent2)
 		}
 		buf.WriteString("tags:\n")
-		indent3 := indent2 + "  - "
-		indent4 := indent2 + "    "
+		indent3 := indent2 + indent1 + "  - "
+		indent4 := indent2 + indent1 + "    "
 		indent5 := indent4 + "  - "
 		for tagKey, tagValues := range tags {
 			buf.WriteString(indent3 + "key: ")
@@ -214,6 +218,8 @@ func (cli Zms) dumpRoles(buf *bytes.Buffer, dn string, tagKey string, tagValue s
 
 func (cli Zms) dumpGroup(buf *bytes.Buffer, group zms.Group, auditLog bool, indent1 string, indent2 string) {
 	cli.displayObjectName(buf, string(group.Name), ":group.", indent1)
+	dumpInt32Value(buf, indent2, "member_expiry_days", group.MemberExpiryDays)
+    dumpInt32Value(buf, indent2, "service_expiry_days", group.ServiceExpiryDays)
 	dumpBoolValue(buf, indent2, "audit_enabled", group.AuditEnabled)
 	dumpBoolValue(buf, indent2, "review_enabled", group.ReviewEnabled)
 	dumpBoolValue(buf, indent2, "self_serve", group.SelfServe)
@@ -533,14 +539,20 @@ func (cli Zms) dumpSignedDomain(buf *bytes.Buffer, signedDomain *zms.SignedDomai
 		buf.WriteString("\n")
 		if domainData.Account != "" {
 			buf.WriteString(indentLevel1)
-			buf.WriteString("account: ")
+			buf.WriteString("aws_account: ")
 			buf.WriteString(domainData.Account)
 			buf.WriteString("\n")
 		}
 		if domainData.AzureSubscription != "" {
 			buf.WriteString(indentLevel1)
-			buf.WriteString("azureSubscription: ")
+			buf.WriteString("azure_subscription: ")
 			buf.WriteString(domainData.AzureSubscription)
+			buf.WriteString("\n")
+		}
+		if domainData.BusinessService != "" {
+			buf.WriteString(indentLevel1)
+			buf.WriteString("business_service: ")
+			buf.WriteString(domainData.BusinessService)
 			buf.WriteString("\n")
 		}
 		buf.WriteString(indentLevel1)
@@ -557,9 +569,10 @@ func (cli Zms) dumpSignedDomain(buf *bytes.Buffer, signedDomain *zms.SignedDomai
 	buf.WriteString(domainData.Modified.String())
 	buf.WriteString("\n")
 
-	buf.WriteString(indentLevel1)
-	cli.dumpTags(buf, false, indentLevel1, domainData.Tags)
-
+	if domainData.Tags != nil {
+		buf.WriteString(indentLevel1)
+		cli.dumpTags(buf, false, "  ", indentLevel1, domainData.Tags)
+	}
 	buf.WriteString(indentLevel1)
 	buf.WriteString("roles:\n")
 	for _, role := range domainData.Roles {
@@ -610,6 +623,14 @@ func (cli Zms) dumpQuota(buf *bytes.Buffer, quota *zms.Quota) {
 	buf.WriteString(indentLevel1)
 	buf.WriteString("role-member: ")
 	buf.WriteString(strconv.Itoa(int(quota.RoleMember)))
+	buf.WriteString("\n")
+	buf.WriteString(indentLevel1)
+	buf.WriteString("group: ")
+	buf.WriteString(strconv.Itoa(int(quota.Group)))
+	buf.WriteString("\n")
+	buf.WriteString(indentLevel1)
+	buf.WriteString("group-member: ")
+	buf.WriteString(strconv.Itoa(int(quota.GroupMember)))
 	buf.WriteString("\n")
 	buf.WriteString(indentLevel1)
 	buf.WriteString("policy: ")

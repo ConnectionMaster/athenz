@@ -70,6 +70,15 @@ export default class RolePage extends React.Component {
         let reload = false;
         let notFound = false;
         let error = undefined;
+        var bServicesParams = {
+            category: 'domain',
+            attributeName: 'businessService',
+            userName: props.req.session.shortId,
+        };
+        var bServicesParamsAll = {
+            category: 'domain',
+            attributeName: 'businessService',
+        };
         const domains = await Promise.all([
             api.listUserDomains(),
             api.getHeaderDetails(),
@@ -79,12 +88,47 @@ export default class RolePage extends React.Component {
             api.getForm(),
             api.isAWSTemplateApplied(props.query.domain),
             api.getRolePrefix(),
+            api.getFeatureFlag(),
+            api.getMeta(bServicesParams),
+            api.getMeta(bServicesParamsAll),
         ]).catch((err) => {
             let response = RequestUtils.errorCheckHelper(err);
             reload = response.reload;
             error = response.error;
-            return [{}, {}, {}, {}, {}, {}, {}, {}];
+            return [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
         });
+        let businessServiceOptions = [];
+        if (domains[9] && domains[9].validValues) {
+            domains[9].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptions.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
+        let businessServiceOptionsAll = [];
+        if (domains[10] && domains[10].validValues) {
+            domains[10].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptionsAll.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
         let domainDetails = domains[2];
         domainDetails.isAWSTemplateApplied = !!domains[6];
         return {
@@ -102,6 +146,9 @@ export default class RolePage extends React.Component {
             _csrf: domains[5],
             prefixes: domains[7].allPrefixes,
             nonce: props.req.headers.rid,
+            featureFlag: domains[8],
+            validBusinessServices: businessServiceOptions,
+            validBusinessServicesAll: businessServiceOptionsAll,
         };
     }
 
@@ -115,15 +162,8 @@ export default class RolePage extends React.Component {
     }
 
     render() {
-        const {
-            domain,
-            reload,
-            domainDetails,
-            roles,
-            users,
-            prefixes,
-            _csrf,
-        } = this.props;
+        const { domain, reload, domainDetails, roles, users, prefixes, _csrf } =
+            this.props;
         if (reload) {
             window.location.reload();
             return <div />;
@@ -157,11 +197,19 @@ export default class RolePage extends React.Component {
                                                 this.props.headerDetails
                                                     .productMasterLink
                                             }
+                                            validBusinessServices={
+                                                this.props.validBusinessServices
+                                            }
+                                            validBusinessServicesAll={
+                                                this.props
+                                                    .validBusinessServicesAll
+                                            }
                                         />
                                         <Tabs
                                             api={this.api}
                                             domain={domain}
                                             selectedName={'roles'}
+                                            featureFlag={this.props.featureFlag}
                                         />
                                     </PageHeaderDiv>
                                     <RoleList

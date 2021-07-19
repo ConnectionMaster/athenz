@@ -62,6 +62,67 @@ Fetchr.registerService({
 });
 
 Fetchr.registerService({
+    name: 'assertionConditions',
+    create(req, resource, params, body, config, callback) {
+        let assertionConditions = [];
+        let assertionConditionData = {
+            operator: 'EQUALS',
+            value: '',
+        };
+
+        var assertionCondition;
+
+        for (var i = 0; i < params.assertionConditions.length; i++) {
+            let condition = {};
+            assertionCondition = {
+                conditionsMap: {},
+            };
+            Object.keys(params.assertionConditions[i]).forEach((key) => {
+                let copyAssertionConditionData = JSON.parse(
+                    JSON.stringify(assertionConditionData)
+                );
+                copyAssertionConditionData['value'] =
+                    params.assertionConditions[i][key];
+                if (copyAssertionConditionData['value'] === '') {
+                    copyAssertionConditionData['value'] = '*';
+                }
+                condition[key] = copyAssertionConditionData;
+            });
+            assertionCondition['conditionsMap'] = condition;
+            assertionConditions.push(assertionCondition);
+        }
+        let finalData = {
+            conditionsList: assertionConditions,
+        };
+        params.assertionConditions = finalData;
+
+        req.clients.zms.putAssertionConditions(
+            params,
+            responseHandler.bind({
+                caller: 'putAssertionConditions',
+                callback,
+                req,
+            })
+        );
+    },
+});
+
+Fetchr.registerService({
+    name: 'assertionCondition',
+
+    delete(req, resource, params, config, callback) {
+        req.clients.zms.deleteAssertionCondition(
+            params,
+            responseHandler.bind({
+                caller: 'deleteAssertionCondition',
+                callback,
+                req,
+            })
+        );
+    },
+});
+
+Fetchr.registerService({
     name: 'domain',
     read(req, resource, params, config, callback) {
         req.clients.zms.getDomain(
@@ -78,6 +139,7 @@ Fetchr.registerService({
                 responseHandler.bind({ caller: 'postSubDomain', callback, req })
             );
         } else {
+            params.detail.templates.templateNames = appConfig.templates;
             req.clients.zms.postUserDomain(
                 params,
                 responseHandler.bind({
@@ -172,9 +234,24 @@ Fetchr.registerService({
     name: 'templates',
     read(req, resource, params, config, callback) {
         new Promise((resolve, reject) => {
-            req.clients.zms.getDomainTemplateDetailsList(
-                params,
-                function (err, json) {
+            if (params) {
+                req.clients.zms.getDomainTemplateDetailsList(
+                    params,
+                    function (err, json) {
+                        if (err) {
+                            return reject(err);
+                        }
+                        if (!err && Array.isArray(json.metaData)) {
+                            return resolve(json.metaData);
+                        }
+                        return resolve([]);
+                    }
+                );
+            } else {
+                req.clients.zms.getServerTemplateDetailsList(function (
+                    err,
+                    json
+                ) {
                     if (err) {
                         return reject(err);
                     }
@@ -182,8 +259,8 @@ Fetchr.registerService({
                         return resolve(json.metaData);
                     }
                     return resolve([]);
-                }
-            );
+                });
+            }
         })
             .then((data) => {
                 return callback(null, data);
@@ -364,6 +441,16 @@ Fetchr.registerService({
 });
 
 Fetchr.registerService({
+    name: 'get-service-host',
+    read(req, resource, params, config, callback) {
+        req.clients.zms.getServiceIdentity(
+            params,
+            responseHandler.bind({ caller: 'get-service-host', callback, req })
+        );
+    },
+});
+
+Fetchr.registerService({
     name: 'member',
     create(req, resource, params, body, config, callback) {
         if (params.category === 'group') {
@@ -401,7 +488,7 @@ Fetchr.registerService({
                 req.clients.zms.deletePendingGroupMembership(
                     {
                         domainName: params.domainName,
-                        groupName: params.principalName,
+                        groupName: params.collectionName,
                         memberName: params.memberName,
                         auditRef: params.auditRef,
                     },
@@ -415,7 +502,7 @@ Fetchr.registerService({
                 req.clients.zms.deleteGroupMembership(
                     {
                         domainName: params.domainName,
-                        groupName: params.principalName,
+                        groupName: params.collectionName,
                         memberName: params.memberName,
                         auditRef: params.auditRef,
                     },
@@ -431,7 +518,7 @@ Fetchr.registerService({
                 req.clients.zms.deletePendingMembership(
                     {
                         domainName: params.domainName,
-                        roleName: params.principalName,
+                        roleName: params.collectionName,
                         memberName: params.memberName,
                         auditRef: params.auditRef,
                     },
@@ -445,7 +532,7 @@ Fetchr.registerService({
                 req.clients.zms.deleteMembership(
                     {
                         domainName: params.domainName,
-                        roleName: params.principalName,
+                        roleName: params.collectionName,
                         memberName: params.memberName,
                         auditRef: params.auditRef,
                     },
@@ -631,6 +718,67 @@ Fetchr.registerService({
 });
 
 Fetchr.registerService({
+    name: 'assertionId',
+    read(req, resource, params, config, callback) {
+        new Promise((resolve, reject) => {
+            req.clients.zms.getPolicy(
+                {
+                    policyName: params.policyName,
+                    domainName: params.domainName,
+                },
+                (err, data) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    if (data) {
+                        resolve(data);
+                    }
+                }
+            );
+        })
+            .then((policyData) => {
+                let flag = 0;
+                policyData.assertions.forEach((assertion) => {
+                    if (
+                        assertion.role ===
+                            params.domainName + ':role.' + params.roleName &&
+                        assertion.resource ===
+                            params.domainName + ':' + params.resource &&
+                        assertion.action === params.action &&
+                        assertion.effect === params.effect
+                    ) {
+                        flag = 1;
+                        callback(null, assertion.id);
+                    }
+                });
+
+                if (!flag) {
+                    let error = {
+                        status: 404,
+                        message: {
+                            message:
+                                'Failed to get assertion for policy' +
+                                params.policyName +
+                                '.',
+                        },
+                    };
+                    callback(errorHandler.fetcherError(error));
+                }
+            })
+            .catch((err) => {
+                debug(
+                    `principal: ${req.session.shortId} rid: ${
+                        req.headers.rid
+                    } Error from ZMS while calling getPolicy API for microsegmentation: ${JSON.stringify(
+                        err
+                    )}`
+                );
+                callback(errorHandler.fetcherError(err));
+            });
+    },
+});
+
+Fetchr.registerService({
     name: 'process-pending',
     create(req, resource, params, body, config, callback) {
         if (params.category === 'group') {
@@ -766,9 +914,10 @@ Fetchr.registerService({
                         if (data && data.groupMembers) {
                             roleMember.groupMembers = data.groupMembers;
                             roleMember.groupMembers.forEach((member) => {
-                                member.memberFullName = userService.getUserFullName(
-                                    member.memberName
-                                );
+                                member.memberFullName =
+                                    userService.getUserFullName(
+                                        member.memberName
+                                    );
                             });
                         }
                         resolve();
@@ -811,20 +960,19 @@ Fetchr.registerService({
                         if (data) {
                             if (data.auditLog) {
                                 data.auditLog.forEach((m) => {
-                                    m.memberFullName = userService.getUserFullName(
-                                        m.member
-                                    );
-                                    m.adminFullName = userService.getUserFullName(
-                                        m.admin
-                                    );
+                                    m.memberFullName =
+                                        userService.getUserFullName(m.member);
+                                    m.adminFullName =
+                                        userService.getUserFullName(m.admin);
                                 });
                             }
                             if (data.roleMembers) {
                                 let roleMembers = data.roleMembers;
                                 roleMembers.forEach((member) => {
-                                    member.memberFullName = userService.getUserFullName(
-                                        member.memberName
-                                    );
+                                    member.memberFullName =
+                                        userService.getUserFullName(
+                                            member.memberName
+                                        );
                                 });
 
                                 roleMembers.forEach((member) => {
@@ -851,9 +999,9 @@ Fetchr.registerService({
                                             errorHandler.fetcherError(err)
                                         );
                                     });
+                            } else {
+                                callback(null, data);
                             }
-                        } else {
-                            callback(null, data);
                         }
                     }
                 );
@@ -924,7 +1072,7 @@ Fetchr.registerService({
             req.clients.zms.putGroupMeta(
                 {
                     domainName: params.domainName,
-                    groupName: params.principalName,
+                    groupName: params.collectionName,
                     auditRef: params.auditRef,
                     detail: params.detail,
                 },
@@ -934,11 +1082,32 @@ Fetchr.registerService({
             req.clients.zms.putRoleMeta(
                 {
                     domainName: params.domainName,
-                    roleName: params.principalName,
+                    roleName: params.collectionName,
                     auditRef: params.auditRef,
                     detail: params.detail,
                 },
                 responseHandler.bind({ caller: 'putRoleMeta', callback, req })
+            );
+        } else if (params.category === 'domain') {
+            req.clients.zms.putDomainMeta(
+                {
+                    name: params.domainName,
+                    auditRef: params.auditRef,
+                    detail: params.detail,
+                },
+                responseHandler.bind({ caller: 'putDomainMeta', callback, req })
+            );
+        }
+    },
+    read(req, resource, params, config, callback) {
+        if (params.category === 'domain') {
+            req.clients.zms.getDomainMetaStoreValidValuesList(
+                params,
+                responseHandler.bind({
+                    caller: 'getDomainMetaStoreValidValuesList',
+                    callback,
+                    req,
+                })
             );
         }
     },
@@ -957,10 +1126,47 @@ Fetchr.registerService({
 Fetchr.registerService({
     name: 'groups',
     read(req, resource, params, config, callback) {
-        req.clients.zms.getGroups(
-            params,
-            responseHandler.bind({ caller: 'getGroups', callback, req })
-        );
+        req.clients.zms.getGroups(params, function (err, data) {
+            if (err) {
+                debug(
+                    `principal: ${req.session.shortId} rid: ${
+                        req.headers.rid
+                    } Error from ZMS while calling getGroups API: ${JSON.stringify(
+                        err
+                    )}`
+                );
+                callback(errorHandler.fetcherError(err));
+            }
+            if (params.groupName) {
+                let groupName =
+                    params.domainName + ':group.' + params.groupName;
+                let found = false;
+                if (data && data.list) {
+                    for (let item of data.list) {
+                        if (item.name === groupName) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        callback(null, data);
+                    } else {
+                        setTimeout(() => {
+                            req.clients.zms.getGroups(
+                                params,
+                                responseHandler.bind({
+                                    caller: 'getGroups',
+                                    callback,
+                                    req,
+                                })
+                            );
+                        }, 500);
+                    }
+                }
+            } else {
+                callback(null, data);
+            }
+        });
     },
 });
 
@@ -970,6 +1176,41 @@ Fetchr.registerService({
         req.clients.zms.getRoleList(
             params,
             responseHandler.bind({ caller: 'getRoleList', callback, req })
+        );
+    },
+});
+
+Fetchr.registerService({
+    name: 'groups-list',
+    read(req, resource, params, config, callback) {
+        req.clients.zms.getGroups(params, function (err, data) {
+            if (err) {
+                debug(
+                    `principal: ${req.session.shortId} rid: ${
+                        req.headers.rid
+                    } Error from ZMS while calling getGroups API: ${JSON.stringify(
+                        err
+                    )}`
+                );
+                callback(errorHandler.fetcherError(err));
+            }
+            let newData = [];
+            if (data && data.list) {
+                data.list.forEach((item) => {
+                    newData.push(item.name);
+                });
+            }
+            callback(null, newData);
+        });
+    },
+});
+
+Fetchr.registerService({
+    name: 'add-service-host',
+    update(req, resource, params, body, config, callback) {
+        req.clients.zms.putServiceIdentity(
+            params,
+            responseHandler.bind({ caller: 'add-service-host', callback, req })
         );
     },
 });
@@ -1027,16 +1268,16 @@ Fetchr.registerService({
                                 category: 'role',
                                 domainName: domainName,
                                 memberName: memberName,
-                                memberNameFull: userService.getUserFullName(
-                                    memberName
-                                ),
+                                memberNameFull:
+                                    userService.getUserFullName(memberName),
                                 roleName: roleName,
                                 userComment: userComment,
                                 auditRef: '',
                                 requestPrincipal: role.requestPrincipal,
-                                requestPrincipalFull: userService.getUserFullName(
-                                    role.requestPrincipal
-                                ),
+                                requestPrincipalFull:
+                                    userService.getUserFullName(
+                                        role.requestPrincipal
+                                    ),
                                 requestTime: role.requestTime,
                                 expiryDate: expiryDate,
                             };
@@ -1056,16 +1297,16 @@ Fetchr.registerService({
                                 category: 'group',
                                 domainName: domainName,
                                 memberName: memberName,
-                                memberNameFull: userService.getUserFullName(
-                                    memberName
-                                ),
+                                memberNameFull:
+                                    userService.getUserFullName(memberName),
                                 roleName: groupName,
                                 userComment: userComment,
                                 auditRef: '',
                                 requestPrincipal: group.requestPrincipal,
-                                requestPrincipalFull: userService.getUserFullName(
-                                    group.requestPrincipal
-                                ),
+                                requestPrincipalFull:
+                                    userService.getUserFullName(
+                                        group.requestPrincipal
+                                    ),
                                 requestTime: group.requestTime,
                                 expiryDate: expiryDate,
                             };
@@ -1385,9 +1626,10 @@ Fetchr.registerService({
                         if (data.groupMembers) {
                             let groupMembers = data.groupMembers;
                             groupMembers.forEach((member) => {
-                                member.memberFullName = userService.getUserFullName(
-                                    member.memberName
-                                );
+                                member.memberFullName =
+                                    userService.getUserFullName(
+                                        member.memberName
+                                    );
                             });
                         }
                     }
@@ -1410,9 +1652,10 @@ Fetchr.registerService({
                                     roleMember.groupMembers = data.groupMembers;
                                     roleMember.groupMembers.forEach(
                                         (member) => {
-                                            member.memberFullName = userService.getUserFullName(
-                                                member.memberName
-                                            );
+                                            member.memberFullName =
+                                                userService.getUserFullName(
+                                                    member.memberName
+                                                );
                                         }
                                     );
                                 }
@@ -1444,20 +1687,19 @@ Fetchr.registerService({
                         if (data) {
                             if (data.auditLog) {
                                 data.auditLog.forEach((m) => {
-                                    m.memberFullName = userService.getUserFullName(
-                                        m.member
-                                    );
-                                    m.adminFullName = userService.getUserFullName(
-                                        m.admin
-                                    );
+                                    m.memberFullName =
+                                        userService.getUserFullName(m.member);
+                                    m.adminFullName =
+                                        userService.getUserFullName(m.admin);
                                 });
                             }
                             if (data.roleMembers) {
                                 let roleMembers = data.roleMembers;
                                 roleMembers.forEach((member) => {
-                                    member.memberFullName = userService.getUserFullName(
-                                        member.memberName
-                                    );
+                                    member.memberFullName =
+                                        userService.getUserFullName(
+                                            member.memberName
+                                        );
                                 });
 
                                 roleMembers.forEach((member) => {
@@ -1505,9 +1747,10 @@ Fetchr.registerService({
                                     roleMember.groupMembers = data.groupMembers;
                                     roleMember.groupMembers.forEach(
                                         (member) => {
-                                            member.memberFullName = userService.getUserFullName(
-                                                member.memberName
-                                            );
+                                            member.memberFullName =
+                                                userService.getUserFullName(
+                                                    member.memberName
+                                                );
                                         }
                                     );
                                 }
@@ -1539,20 +1782,19 @@ Fetchr.registerService({
                         if (data) {
                             if (data.auditLog) {
                                 data.auditLog.forEach((m) => {
-                                    m.memberFullName = userService.getUserFullName(
-                                        m.member
-                                    );
-                                    m.adminFullName = userService.getUserFullName(
-                                        m.admin
-                                    );
+                                    m.memberFullName =
+                                        userService.getUserFullName(m.member);
+                                    m.adminFullName =
+                                        userService.getUserFullName(m.admin);
                                 });
                             }
                             if (data.roleMembers) {
                                 let roleMembers = data.roleMembers;
                                 roleMembers.forEach((member) => {
-                                    member.memberFullName = userService.getUserFullName(
-                                        member.memberName
-                                    );
+                                    member.memberFullName =
+                                        userService.getUserFullName(
+                                            member.memberName
+                                        );
                                 });
 
                                 roleMembers.forEach((member) => {
@@ -1632,11 +1874,486 @@ Fetchr.registerService({
 });
 
 Fetchr.registerService({
+    name: 'service-header-details',
+    read(req, resource, params, config, callback) {
+        callback(null, {
+            static: appConfig.serviceHeaderLinks[0],
+            dynamic: appConfig.serviceHeaderLinks[1],
+        });
+    },
+});
+
+Fetchr.registerService({
     name: 'service-page-config',
     read(req, resource, params, config, callback) {
         callback(null, {
             servicePageConfig: appConfig.servicePageConfig,
         });
+    },
+});
+
+Fetchr.registerService({
+    name: 'feature-flag',
+    read(req, resource, params, config, callback) {
+        callback(null, appConfig.featureFlag);
+    },
+});
+
+Fetchr.registerService({
+    name: 'microsegmentation',
+    read(req, resource, params, config, callback) {
+        let jsonData = {
+            inbound: [],
+            outbound: [],
+        };
+
+        let promises = [];
+
+        req.clients.zms.getPolicies(
+            { domainName: params.domainName, assertions: true },
+            (err, data) => {
+                if (!err && Array.isArray(data.list)) {
+                    data.list.forEach((item, index) => {
+                        if (
+                            item.name.startsWith(
+                                params.domainName + ':policy.' + 'acl.'
+                            )
+                        ) {
+                            let temp = item.name.split('.');
+                            //sample policy name - ACL.<service-name>.[inbound/outbound]
+                            let serviceName = temp[temp.length - 2];
+                            let category = '';
+
+                            item.assertions &&
+                                item.assertions.forEach(
+                                    (assertionItem, assertionIdx) => {
+                                        let tempData = {};
+                                        let tempProtocol =
+                                            assertionItem.action.split('-');
+                                        tempData['layer'] = tempProtocol[0];
+                                        let tempPort =
+                                            assertionItem.action.split(':');
+                                        tempData['source_port'] = tempPort[1];
+                                        tempData['destination_port'] =
+                                            tempPort[2];
+                                        if (assertionItem.conditions) {
+                                            tempData['conditionsList'] = [];
+
+                                            assertionItem.conditions[
+                                                'conditionsList'
+                                            ].forEach((condition) => {
+                                                let tempCondition = {};
+                                                Object.keys(
+                                                    condition['conditionsMap']
+                                                ).forEach((key) => {
+                                                    tempCondition[key] =
+                                                        condition[
+                                                            'conditionsMap'
+                                                        ][key]['value'];
+                                                });
+                                                tempCondition['id'] =
+                                                    condition['id'];
+                                                tempCondition['assertionId'] =
+                                                    assertionItem['id'];
+                                                tempCondition['policyName'] =
+                                                    item.name;
+                                                tempData['conditionsList'].push(
+                                                    tempCondition
+                                                );
+                                            });
+                                        }
+                                        let index = 0;
+                                        if (item.name.includes('inbound')) {
+                                            category = 'inbound';
+                                            tempData['destination_service'] =
+                                                serviceName;
+                                            tempData['source_services'] = [];
+                                            tempData['assertionIdx'] =
+                                                assertionItem.id;
+                                            jsonData['inbound'].push(tempData);
+                                            index = jsonData['inbound'].length;
+                                        } else if (
+                                            item.name.includes('outbound')
+                                        ) {
+                                            category = 'outbound';
+                                            tempData['source_service'] =
+                                                serviceName;
+                                            tempData['destination_services'] =
+                                                [];
+                                            tempData['assertionIdx'] =
+                                                assertionItem.id;
+                                            jsonData['outbound'].push(tempData);
+                                            index = jsonData['outbound'].length;
+                                        }
+                                        //assertion convention for micro-segmentation:
+                                        //GRANT [Action: <transport layer>-IN / <transport layer>-OUT]:[Source Port]:[Destination Port] [Resource:<service-name>] ON <role-name>
+                                        // role name will be of the form : <domain>:role.<roleName>
+                                        let roleName =
+                                            assertionItem.role.substring(
+                                                params.domainName.length + 6
+                                            );
+                                        promises.push(
+                                            getRole(
+                                                roleName,
+                                                params.domainName,
+                                                category,
+                                                index
+                                            )
+                                        );
+
+                                        promises.push(
+                                            getIdentifier(
+                                                roleName,
+                                                category,
+                                                index
+                                            )
+                                        );
+                                    }
+                                );
+                        }
+                    });
+                } else if (err) {
+                    return this.callback(errorHandler.fetcherError(err));
+                }
+                Promise.all(promises)
+                    .then(() => {
+                        return callback(null, jsonData);
+                    })
+                    .catch((err) => {
+                        return this.callback(errorHandler.fetcherError(err));
+                    });
+            }
+        );
+
+        function getIdentifier(roleName, category, jsonIndex) {
+            return new Promise((resolve, reject) => {
+                let substringPrefix = '.' + category + '-';
+                let identifier = roleName.substring(
+                    roleName.indexOf(substringPrefix) + substringPrefix.length
+                );
+                jsonData[category][jsonIndex - 1]['identifier'] = identifier;
+                resolve();
+            });
+        }
+
+        function getRole(roleName, domainName, category, jsonIndex) {
+            return new Promise((resolve, reject) => {
+                req.clients.zms.getRole(
+                    {
+                        domainName: params.domainName,
+                        roleName: roleName,
+                        auditLog: false,
+                        pending: false,
+                        expand: false,
+                    },
+                    (err, data) => {
+                        if (data) {
+                            if (data.roleMembers) {
+                                data.roleMembers.forEach((roleMember, idx) => {
+                                    if (category === 'inbound') {
+                                        jsonData[category][jsonIndex - 1][
+                                            'source_services'
+                                        ].push(roleMember.memberName);
+                                    } else if (category === 'outbound') {
+                                        jsonData[category][jsonIndex - 1][
+                                            'destination_services'
+                                        ].push(roleMember.memberName);
+                                    }
+                                });
+                                resolve();
+                            } else {
+                                resolve();
+                            }
+                        } else if (err) {
+                            reject(err);
+                        }
+                    }
+                );
+            });
+        }
+    },
+
+    update(req, resource, params, body, config, callback) {
+        let roleName = '';
+        let policyName = '';
+        let resourceName = '';
+        let action = '';
+        let promises = [];
+        let tempMembers = [];
+        let finalData;
+        let auditRef = 'Updated using MicroSegmentation UI';
+
+        if (params.data['category'] === 'inbound') {
+            roleName =
+                'acl.' +
+                params.data['destination_service'] +
+                '.inbound-' +
+                params.data['identifier'];
+            policyName =
+                'acl.' + params.data['destination_service'] + '.inbound';
+            resourceName =
+                params.domainName + ':' + params.data['destination_service'];
+            tempMembers = params.data['source_services'];
+            action =
+                params.data['layer'] +
+                '-IN:' +
+                params.data['source_port'] +
+                ':' +
+                params.data['destination_port'];
+        } else {
+            roleName =
+                'acl.' +
+                params.data['source_service'] +
+                '.outbound-' +
+                params.data['identifier'];
+            policyName = 'acl.' + params.data['source_service'] + '.outbound';
+            resourceName =
+                params.domainName + ':' + params.data['source_service'];
+            tempMembers = params.data['destination_services'];
+            action =
+                params.data['layer'] +
+                '-OUT:' +
+                params.data['source_port'] +
+                ':' +
+                params.data['destination_port'];
+        }
+
+        if (params.assertionChanged || params.assertionConditionChanged) {
+            let assertionConditions = [];
+            let assertionConditionData = {
+                operator: 'EQUALS',
+                value: '',
+            };
+
+            var assertionCondition;
+
+            for (var i = 0; i < params.data['conditionsList'].length; i++) {
+                let condition = {};
+                assertionCondition = {
+                    conditionsMap: {},
+                };
+                Object.keys(params.data['conditionsList'][i]).forEach((key) => {
+                    if (key === 'enforcementstate' || key === 'instances') {
+                        let copyAssertionConditionData = JSON.parse(
+                            JSON.stringify(assertionConditionData)
+                        );
+                        copyAssertionConditionData['value'] =
+                            params.data['conditionsList'][i][key];
+                        if (copyAssertionConditionData['value'] === '') {
+                            copyAssertionConditionData['value'] = '*';
+                        }
+                        condition[key] = copyAssertionConditionData;
+                    }
+                });
+                assertionCondition['conditionsMap'] = condition;
+                assertionConditions.push(assertionCondition);
+            }
+            finalData = {
+                conditionsList: assertionConditions,
+            };
+        }
+
+        if (params.roleChanged) {
+            let role = {
+                name: roleName,
+                members: tempMembers,
+            };
+
+            promises.push(
+                new Promise((resolve, reject) => {
+                    req.clients.zms.putRole(
+                        {
+                            domainName: params.domainName,
+                            roleName,
+                            role,
+                            auditRef,
+                        },
+                        (err, json) => {
+                            if (err) {
+                                return reject(err);
+                            } else {
+                                return resolve();
+                            }
+                        }
+                    );
+                })
+            );
+        }
+
+        if (params.assertionChanged) {
+            let assertion = {
+                role: params.domainName + ':role.' + roleName,
+                resource: resourceName,
+                effect: 'ALLOW',
+                action: action,
+                caseSensitive: true,
+            };
+            promises.push(
+                new Promise((resolve, reject) => {
+                    req.clients.zms.getPolicy(
+                        {
+                            domainName: params.domainName,
+                            policyName,
+                        },
+                        (err, data) => {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                let foundAssertionMatch = false;
+                                data.assertions.forEach((element) => {
+                                    if (
+                                        element.action.localeCompare(action) ===
+                                        0
+                                    ) {
+                                        foundAssertionMatch = true;
+                                    }
+                                });
+                                if (foundAssertionMatch) {
+                                    let err = {
+                                        status: '500',
+                                        message: {
+                                            message:
+                                                'Policy with the assertion already exists',
+                                        },
+                                    };
+                                    return reject(err);
+                                }
+                                return resolve(data);
+                            }
+                        }
+                    );
+                })
+                    .then((data) => {
+                        return new Promise((resolve, reject) => {
+                            req.clients.zms.putAssertion(
+                                {
+                                    domainName: params.domainName,
+                                    policyName,
+                                    assertion,
+                                },
+                                (err, data) => {
+                                    if (err) {
+                                        reject(err);
+                                    } else {
+                                        return resolve(data);
+                                    }
+                                }
+                            );
+                        });
+                    })
+                    .then((data) => {
+                        return new Promise((resolve, reject) => {
+                            req.clients.zms.putAssertionConditions(
+                                {
+                                    domainName: params.domainName,
+                                    policyName,
+                                    assertionId: data.id,
+                                    assertionConditions: finalData,
+                                },
+                                (err, data) => {
+                                    if (err) {
+                                        reject(err);
+                                    } else {
+                                        resolve(data);
+                                    }
+                                }
+                            );
+                        });
+                    })
+                    .then((assertionConditionData) => {
+                        return new Promise((resolve, reject) => {
+                            req.clients.zms.deleteAssertion(
+                                {
+                                    domainName: params.domainName,
+                                    policyName,
+                                    assertionId: params.data['assertionIdx'],
+                                },
+                                (err, data) => {
+                                    if (err) {
+                                        reject(err);
+                                    } else {
+                                        resolve(data);
+                                    }
+                                }
+                            );
+                        });
+                    })
+            );
+        } else if (params.assertionConditionChanged) {
+            promises.push(
+                new Promise((resolve, reject) => {
+                    req.clients.zms.deleteAssertionConditions(
+                        {
+                            domainName: params.domainName,
+                            policyName,
+                            assertionId: params.data['assertionIdx'],
+                        },
+                        (err, data) => {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                return resolve(data);
+                            }
+                        }
+                    );
+                }).then(() => {
+                    return new Promise((resolve, reject) => {
+                        req.clients.zms.putAssertionConditions(
+                            {
+                                domainName: params.domainName,
+                                policyName,
+                                assertionId: params.data['assertionIdx'],
+                                assertionConditions: finalData,
+                            },
+                            (err, data) => {
+                                if (err) {
+                                    reject(err);
+                                } else {
+                                    resolve(data);
+                                }
+                            }
+                        );
+                    });
+                })
+            );
+        }
+
+        Promise.all(promises)
+            .then((data) => {
+                return callback(null, data);
+            })
+            .catch((err) => {
+                return callback(errorHandler.fetcherError(err));
+            });
+    },
+});
+
+Fetchr.registerService({
+    name: 'instances',
+    read(req, resource, params, config, callback) {
+        req.clients.zts.getWorkloadsByService(
+            { domainName: params.domainName, serviceName: params.serviceName },
+            (err, data) => {
+                if (data && data.workloadList != null) {
+                    return callback(null, data);
+                } else {
+                    return callback(errorHandler.fetcherError(err));
+                }
+            }
+        );
+    },
+});
+
+Fetchr.registerService({
+    name: 'authority',
+    read(req, resource, params, config, callback) {
+        req.clients.zms.getUserAuthorityAttributeMap(
+            responseHandler.bind({
+                caller: 'getUserAuthorityAttributeMap',
+                callback,
+                req,
+            })
+        );
     },
 });
 
@@ -1652,6 +2369,9 @@ module.exports.load = function (config, secrets) {
         productMasterLink: config.productMasterLink,
         allPrefixes: config.allPrefixes,
         zmsLoginUrl: config.zmsLoginUrl,
+        featureFlag: config.featureFlag,
+        serviceHeaderLinks: config.serviceHeaderLinks,
+        templates: config.templates,
     };
     return CLIENTS.load(config, secrets);
 };

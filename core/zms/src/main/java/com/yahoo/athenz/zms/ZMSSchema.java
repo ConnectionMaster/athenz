@@ -89,13 +89,33 @@ public class ZMSSchema {
         sb.stringType("AuthorityKeywords")
             .pattern("([a-zA-Z0-9_][a-zA-Z0-9_-]*,)*[a-zA-Z0-9_][a-zA-Z0-9_-]*");
 
-        sb.structType("StringList")
-            .arrayField("list", "CompoundName", false, "generic list of strings");
+        sb.stringType("TagValue")
+            .comment("TagValue to contain generic string patterns")
+            .pattern("[a-zA-Z0-9_:,\\/][a-zA-Z0-9_:,\\/-]*");
+
+        sb.stringType("TagCompoundValue")
+            .comment("A compound value of TagValue")
+            .pattern("([a-zA-Z0-9_:,\\/][a-zA-Z0-9_:,\\/-]*\\.)*[a-zA-Z0-9_:,\\/][a-zA-Z0-9_:,\\/-]*");
+
+        sb.structType("TagValueList")
+            .arrayField("list", "TagCompoundValue", false, "list of tag values");
+
+        sb.stringType("AssertionConditionKeyPattern")
+            .pattern("[a-zA-Z][a-zA-Z0-9_-]+");
+
+        sb.stringType("AssertionConditionKey")
+            .pattern("([a-zA-Z][a-zA-Z0-9_-]+\\.)*[a-zA-Z][a-zA-Z0-9_-]+");
+
+        sb.stringType("AssertionConditionValuePattern")
+            .pattern("[a-zA-Z0-9\\*][a-zA-Z0-9_\\.\\*-]*");
+
+        sb.stringType("AssertionConditionValue")
+            .pattern("([a-zA-Z0-9\\*][a-zA-Z0-9_\\.\\*-]*,)*[a-zA-Z0-9\\*][a-zA-Z0-9_\\.\\*-]*");
 
         sb.structType("DomainMeta")
             .comment("Set of metadata attributes that all domains may have and can be changed.")
             .field("description", "String", true, "a description of the domain")
-            .field("org", "ResourceName", true, "a reference to an Organization. (i.e. org:media)")
+            .field("org", "ResourceName", true, "a reference to an audit organization defined in athenz")
             .field("enabled", "Bool", true, "Future use only, currently not used", true)
             .field("auditEnabled", "Bool", true, "Flag indicates whether or not domain modifications should be logged for SOX+Auditing. If true, the auditRef parameter must be supplied(not empty) for any API defining it.", false)
             .field("account", "String", true, "associated aws account id (system attribute - uniqueness check)")
@@ -111,7 +131,8 @@ public class ZMSSchema {
             .field("groupExpiryDays", "Int32", true, "all groups in the domain roles will have specified max expiry days")
             .field("userAuthorityFilter", "String", true, "membership filtered based on user authority configured attributes")
             .field("azureSubscription", "String", true, "associated azure subscription id (system attribute - uniqueness check)")
-            .mapField("tags", "CompoundName", "StringList", true, "key-value pair tags, tag might contain multiple values");
+            .mapField("tags", "CompoundName", "TagValueList", true, "key-value pair tags, tag might contain multiple values")
+            .field("businessService", "String", true, "associated business service with domain");
 
         sb.structType("Domain", "DomainMeta")
             .comment("A domain is an independent partition of users, roles, and resources. Its name represents the definition of a namespace; the only way a new namespace can be created, from the top, is by creating Domains. Administration of a domain is governed by the parent domain (using reverse-DNS namespaces). The top level domains are governed by the special \"sys.auth\" domain.")
@@ -165,7 +186,8 @@ public class ZMSSchema {
             .field("userAuthorityFilter", "String", true, "membership filtered based on user authority configured attributes")
             .field("userAuthorityExpiration", "String", true, "expiration enforced by a user authority configured attribute")
             .field("groupExpiryDays", "Int32", true, "all groups in the domain roles will have specified max expiry days")
-            .mapField("tags", "CompoundName", "StringList", true, "key-value pair tags, tag might contain multiple values");
+            .field("groupReviewDays", "Int32", true, "all groups in the domain roles will have specified max review days")
+            .mapField("tags", "CompoundName", "TagValueList", true, "key-value pair tags, tag might contain multiple values");
 
         sb.structType("Role", "RoleMeta")
             .comment("The representation for a Role with set of members.")
@@ -228,6 +250,24 @@ public class ZMSSchema {
             .element("ALLOW")
             .element("DENY");
 
+        sb.enumType("AssertionConditionOperator")
+            .comment("Allowed operators for assertion conditions")
+            .element("EQUALS");
+
+        sb.structType("AssertionConditionData")
+            .comment("A representation of details associated with an assertion condition key")
+            .field("operator", "AssertionConditionOperator", false, "Operator for the assertion condition")
+            .field("value", "AssertionConditionValue", false, "Value of the assertion condition");
+
+        sb.structType("AssertionCondition")
+            .comment("A representation of condition associated with an assertion")
+            .field("id", "Int32", true, "condition id - auto generated by server. Not required during put operations.")
+            .mapField("conditionsMap", "AssertionConditionKey", "AssertionConditionData", false, "each key in the map represents a unique condition. All the keys present in the map form a logical condition with AND operation.");
+
+        sb.structType("AssertionConditions")
+            .comment("The representation of list of assertion conditions")
+            .arrayField("conditionsList", "AssertionCondition", false, "list of assertion conditions.");
+
         sb.structType("Assertion")
             .comment("A representation for the encapsulation of an action to be performed on a resource by a principal.")
             .field("role", "String", false, "the subject of the assertion - a role")
@@ -235,7 +275,8 @@ public class ZMSSchema {
             .field("action", "String", false, "the predicate of the assertion. Can contain wildcards")
             .field("effect", "AssertionEffect", true, "the effect of the assertion in the policy language", AssertionEffect.ALLOW)
             .field("id", "Int64", true, "assertion id - auto generated by server. Not required during put operations.")
-            .field("caseSensitive", "Bool", true, "If true, we should store action and resource in their original case");
+            .field("caseSensitive", "Bool", true, "If true, we should store action and resource in their original case")
+            .field("conditions", "AssertionConditions", true, "optional list of assertion conditions associated with given assertion");
 
         sb.structType("Policy")
             .comment("The representation for a Policy with set of assertions.")
@@ -337,6 +378,10 @@ public class ZMSSchema {
             .field("name", "SimpleName", false, "user id which will be the domain name")
             .field("templates", "DomainTemplateList", true, "list of solution template names");
 
+        sb.structType("DomainMetaStoreValidValuesList")
+            .comment("List of valid domain meta attribute values")
+            .arrayField("validValues", "String", false, "list of valid values for attribute");
+
         sb.structType("DanglingPolicy")
             .comment("A dangling policy where the assertion is referencing a role name that doesn't exist in the domain")
             .field("policyName", "EntityName", false, "")
@@ -402,7 +447,9 @@ public class ZMSSchema {
             .field("reviewEnabled", "Bool", true, "Flag indicates whether or not group updates require another review and approval", false)
             .field("notifyRoles", "String", true, "list of roles whose members should be notified for member review/approval")
             .field("userAuthorityFilter", "String", true, "membership filtered based on user authority configured attributes")
-            .field("userAuthorityExpiration", "String", true, "expiration enforced by a user authority configured attribute");
+            .field("userAuthorityExpiration", "String", true, "expiration enforced by a user authority configured attribute")
+            .field("memberExpiryDays", "Int32", true, "all user members in the group will have specified max expiry days")
+            .field("serviceExpiryDays", "Int32", true, "all services in the group will have specified max expiry days");
 
         sb.structType("Group", "GroupMeta")
             .comment("The representation for a Group with set of members.")
@@ -557,6 +604,14 @@ public class ZMSSchema {
         sb.structType("DomainRoleMembership")
             .arrayField("domainRoleMembersList", "DomainRoleMembers", false, "");
 
+        sb.structType("UserAuthorityAttributes")
+            .comment("Copyright Athenz Authors Licensed under the terms of the Apache version 2.0 license. See LICENSE file for terms.")
+            .arrayField("values", "String", false, "");
+
+        sb.structType("UserAuthorityAttributeMap")
+            .comment("Map of user authority attributes")
+            .mapField("attributes", "SimpleName", "UserAuthorityAttributes", false, "map of type to attribute values");
+
 
         sb.resource("Domain", "GET", "/domain/{domain}")
             .comment("Get info for the specified domain, by name. This request only returns the configured domain attributes and not any domain objects like roles, policies or service identities.")
@@ -575,7 +630,7 @@ public class ZMSSchema {
 ;
 
         sb.resource("DomainList", "GET", "/domain")
-            .comment("Enumerate domains. Can be filtered by prefix and depth, and paginated. This operation can be expensive, as it may span multiple domains.")
+            .comment("Enumerate domains. Can be filtered by prefix and depth, and paginated. Most of the query options that are looking for specific domain attributes (e.g. aws account, azure subscriptions, business service, tags, etc) are mutually exclusive. The server will only process the first query argument and ignore the others.")
             .queryParam("limit", "limit", "Int32", null, "restrict the number of results in this call")
             .queryParam("skip", "skip", "String", null, "restrict the set to those after the specified \"next\" token returned from a previous call")
             .queryParam("prefix", "prefix", "String", null, "restrict to names that start with the prefix")
@@ -587,6 +642,7 @@ public class ZMSSchema {
             .queryParam("azure", "subscription", "String", null, "restrict to domain names that have specified azure subscription name")
             .queryParam("tagKey", "tagKey", "CompoundName", null, "flag to query all domains that have a given tagName")
             .queryParam("tagValue", "tagValue", "CompoundName", null, "flag to query all domains that have a given tag name and value")
+            .queryParam("businessService", "businessService", "String", null, "restrict to domain names that have specified business service name")
             .headerParam("If-Modified-Since", "modifiedSince", "String", null, "This header specifies to the server to return any domains modified since this HTTP date")
             .auth("", "", true)
             .expected("OK")
@@ -808,6 +864,21 @@ public class ZMSSchema {
             .exception("CONFLICT", "ResourceError", "")
 
             .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("DomainMetaStoreValidValuesList", "GET", "/domain/metastore")
+            .comment("List all valid values for the given attribute and user")
+            .queryParam("attribute", "attributeName", "String", null, "name of attribute")
+            .queryParam("user", "userName", "String", null, "restrict to values associated with the given user")
+            .auth("", "", true)
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
 
             .exception("NOT_FOUND", "ResourceError", "")
 
@@ -1672,6 +1743,93 @@ public class ZMSSchema {
             .exception("UNAUTHORIZED", "ResourceError", "")
 ;
 
+        sb.resource("AssertionConditions", "PUT", "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/conditions")
+            .comment("Add the specified conditions to the given assertion")
+            .pathParam("domainName", "DomainName", "name of the domain")
+            .pathParam("policyName", "EntityName", "name of the policy")
+            .pathParam("assertionId", "Int64", "assertion id")
+            .headerParam("Y-Audit-Ref", "auditRef", "String", null, "Audit param required(not empty) if domain auditEnabled is true.")
+            .input("assertionConditions", "AssertionConditions", "Assertion conditions object to be added to the given assertion")
+            .auth("update", "{domainName}:policy.{policyName}")
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("CONFLICT", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("AssertionCondition", "PUT", "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/condition")
+            .comment("Add the specified condition to the existing assertion conditions of an assertion")
+            .pathParam("domainName", "DomainName", "name of the domain")
+            .pathParam("policyName", "EntityName", "name of the policy")
+            .pathParam("assertionId", "Int64", "assertion id")
+            .headerParam("Y-Audit-Ref", "auditRef", "String", null, "Audit param required(not empty) if domain auditEnabled is true.")
+            .input("assertionCondition", "AssertionCondition", "Assertion conditions object to be added to the given assertion")
+            .auth("update", "{domainName}:policy.{policyName}")
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("CONFLICT", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("AssertionConditions", "DELETE", "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/conditions")
+            .comment("Delete all assertion conditions for specified assertion id. Upon successful completion of this delete request, the server will return NO_CONTENT status code without any data (no object will be returned).")
+            .pathParam("domainName", "DomainName", "name of the domain")
+            .pathParam("policyName", "EntityName", "name of the policy")
+            .pathParam("assertionId", "Int64", "assertion id")
+            .headerParam("Y-Audit-Ref", "auditRef", "String", null, "Audit param required(not empty) if domain auditEnabled is true.")
+            .auth("update", "{domainName}:policy.{policyName}")
+            .expected("NO_CONTENT")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("CONFLICT", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("AssertionCondition", "DELETE", "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/condition/{conditionId}")
+            .comment("Delete the assertion condition(s) for specified assertion id and condition id. Upon successful completion of this delete request, the server will return NO_CONTENT status code without any data (no object will be returned).")
+            .pathParam("domainName", "DomainName", "name of the domain")
+            .pathParam("policyName", "EntityName", "name of the policy")
+            .pathParam("assertionId", "Int64", "assertion id")
+            .pathParam("conditionId", "Int32", "condition id")
+            .headerParam("Y-Audit-Ref", "auditRef", "String", null, "Audit param required(not empty) if domain auditEnabled is true.")
+            .auth("update", "{domainName}:policy.{policyName}")
+            .expected("NO_CONTENT")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("CONFLICT", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
         sb.resource("ServiceIdentity", "PUT", "/domain/{domain}/service/{service}")
             .comment("Register the specified ServiceIdentity in the specified domain")
             .pathParam("domain", "DomainName", "name of the domain")
@@ -2101,7 +2259,7 @@ public class ZMSSchema {
 ;
 
         sb.resource("ResourceAccessList", "GET", "/resource")
-            .comment("Return list of resources that the given principal has access to. Even though the principal is marked as optional, it must be specified unless the caller has authorization from sys.auth domain to check access for all user principals. (action: access, resource: resource-lookup-all)")
+            .comment("Return list of resources that the given principal has access to. Even though the principal is marked as optional, it must be specified")
             .queryParam("principal", "principal", "ResourceName", null, "specifies principal to query the resource list for")
             .queryParam("action", "action", "ActionName", null, "action as specified in the policy assertion")
             .auth("", "", true)
@@ -2123,6 +2281,7 @@ public class ZMSSchema {
             .queryParam("metaonly", "metaOnly", "String", null, "valid values are \"true\" or \"false\"")
             .queryParam("metaattr", "metaAttr", "SimpleName", null, "domain meta attribute to filter/return, valid values \"account\", \"ypmId\", or \"all\"")
             .queryParam("master", "master", "Bool", null, "for system principals only - request data from master data store and not read replicas if any are configured")
+            .queryParam("conditions", "conditions", "Bool", null, "for specific purpose only. If this flag is passed, assertion id and assertion conditions will be included in the response assertions if available")
             .headerParam("If-None-Match", "matchingTag", "String", null, "Retrieved from the previous request, this timestamp specifies to the server to return any domains modified since this time")
             .output("ETag", "tag", "String", "The current latest modification timestamp is returned in this header")
             .auth("", "", true)
@@ -2221,8 +2380,19 @@ public class ZMSSchema {
             .exception("UNAUTHORIZED", "ResourceError", "")
 ;
 
+        sb.resource("DomainTemplateDetailsList", "GET", "/templatedetails")
+            .comment("Get a list of Solution templates with meta data details defined in the server")
+            .name("GetServerTemplateDetailsList")
+            .auth("", "", true)
+            .expected("OK")
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
         sb.resource("UserList", "GET", "/user")
             .comment("Enumerate users that are registered as principals in the system This will return only the principals with \"<user-domain>.\" prefix")
+            .queryParam("domain", "domainName", "DomainName", null, "name of the allowed user-domains and/or aliases")
             .auth("", "", true)
             .expected("OK")
             .exception("TOO_MANY_REQUESTS", "ResourceError", "")
@@ -2334,6 +2504,19 @@ public class ZMSSchema {
             .exception("BAD_REQUEST", "ResourceError", "")
 
             .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("UserAuthorityAttributeMap", "GET", "/authority/user/attribute")
+            .comment("Map of type to attribute values for the user authority")
+            .auth("", "", true)
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
 
             .exception("NOT_FOUND", "ResourceError", "")
 

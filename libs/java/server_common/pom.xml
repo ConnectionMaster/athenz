@@ -17,7 +17,7 @@
   <parent>
     <groupId>com.yahoo.athenz</groupId>
     <artifactId>athenz</artifactId>
-    <version>1.9.30-SNAPSHOT</version>
+    <version>1.10.25-SNAPSHOT</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
 
@@ -27,7 +27,7 @@
   <packaging>jar</packaging>
 
   <properties>
-    <code.coverage.min>0.92</code.coverage.min>
+    <code.coverage.min>0.9239</code.coverage.min>
   </properties>
 
   <dependencies>
@@ -135,7 +135,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-pool2</artifactId>
-      <version>2.9.0</version>
+      <version>2.10.0</version>
     </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
@@ -163,9 +163,14 @@
       <version>${aws.version}</version>
     </dependency>
     <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>ssm</artifactId>
+      <version>${aws2.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.sun.mail</groupId>
       <artifactId>jakarta.mail</artifactId>
-      <version>1.6.5</version>
+      <version>2.0.1</version>
     </dependency>
     <dependency>
       <groupId>com.yahoo.athenz</groupId>
@@ -177,13 +182,29 @@
           <artifactId>athenz-zms-java-client</artifactId>
           <version>${project.parent.version}</version>
       </dependency>
-  </dependencies>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>uk.co.datumedge</groupId>
+      <artifactId>hamcrest-json</artifactId>
+      <version>0.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-client</artifactId>
+      <version>${jetty.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws.secretsmanager</groupId>
+      <artifactId>aws-secretsmanager-jdbc</artifactId>
+      <version>1.0.6</version>
+    </dependency>
 
-  <distributionManagement>
-    <repository>
-      <id>bintray-athenz-server-common-repo</id>
-      <url>https://api.bintray.com/maven/yahoo/maven/athenz-server-common/;publish=1</url>
-    </repository>
-  </distributionManagement>
+  </dependencies>
 
 </project>

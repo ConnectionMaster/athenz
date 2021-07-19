@@ -4,6 +4,7 @@ UID=$(DOCKER_UID)
 GID_ARG := $(if $(GID),--build-arg GID=$(GID),--build-arg GID)
 UID_ARG := $(if $(UID),--build-arg UID=$(UID),--build-arg UID)
 
+LOCAL_ENV_NS := $(shell ./local-nameserver.sh)
 DOCKER_DNS := $(if $(DOCKER_DNS),$(DOCKER_DNS),8.8.8.8)
 DOCKER_NETWORK := $(if $(DOCKER_NETWORK),$(DOCKER_NETWORK),athenz)
 BASE_DIR=$(shell git rev-parse --show-toplevel)
@@ -30,6 +31,8 @@ else
 endif
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t rdl-athenz-server -f ./util/rdl-athenz-server/Dockerfile ../rdl/rdl-gen-athenz-server
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t rdl-athenz-java-model -f ./util/rdl-athenz-java-model/Dockerfile ../rdl/rdl-gen-athenz-java-model
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t rdl-athenz-java-client -f ./util/rdl-athenz-java-client/Dockerfile ../rdl/rdl-gen-athenz-java-client
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t rdl-athenz-go-model -f ./util/rdl-athenz-go-model/Dockerfile ../rdl/rdl-gen-athenz-go-model
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t athenz-mvn-base -f ./util/athenz-mvn-base/Dockerfile ../
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t athenz-builder -f ./util/athenz-builder/Dockerfile ../
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) $(GID_ARG) $(UID_ARG) -t athenz-zms-server -f ./zms/Dockerfile ../
@@ -37,9 +40,10 @@ endif
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t athenz-zms-db -f ./db/zms/Dockerfile ../servers/zms/schema
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t athenz-zts-db -f ./db/zts/Dockerfile ../servers/zts/schema
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t athenz-conf -f ./util/athenz-conf/Dockerfile ../
+	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t athenz-cli-util -f ./util/Dockerfile ../
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) -t athenz-setup-env -f ./setup-scripts/Dockerfile ../
 	DOCKER_BUILDKIT=1 docker build $(BUILD_ARG) $(GID_ARG) $(UID_ARG) -t athenz-ui -f ./ui/Dockerfile ../ui
-	# DOCKER_BUILDKIT=1 docker build -t athenz-cli-util -f ./util/Dockerfile ../
+
 ifneq ($(TAG_COMMIT),)
 	git checkout -
 endif
@@ -64,6 +68,7 @@ deploy-local:
 	sh "./deploy-scripts/zms-deploy-local.sh"
 	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/deploy-scripts/zms-debug.sh
 	# ZTS
+	sh "./amazon-trust.sh"
 	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/setup-scripts/zts-auto-config.sh
 	sh "./deploy-scripts/zts-deploy-local.sh"
 	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/deploy-scripts/zts-debug.sh
@@ -71,6 +76,19 @@ deploy-local:
 	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/setup-scripts/ui-auto-config.sh
 	sh "./deploy-scripts/ui-deploy-local.sh"
 
+prepare-ui-dev-env:
+	# generate self-signed certificates
+	docker run --rm -t -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/setup-scripts/self-signed-certificates.sh
+	# ZMS
+	docker run --rm -t -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/setup-scripts/zms-auto-config.sh
+	sh "./deploy-scripts/zms-deploy-local.sh"
+	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/deploy-scripts/zms-debug.sh
+	# ZTS
+	sh "./amazon-trust.sh"
+	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/setup-scripts/zts-auto-config.sh
+	# UI defaults
+	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz/athenz-setup-env sh /athenz/docker/setup-scripts/ui-auto-config.sh
+	sh "./prepare-local-ui-dev-env.sh"
 
 verify:
 	docker run --rm -t --network="$(DOCKER_NETWORK)" -v "$(BASE_DIR):/athenz" --user "$(shell id -u):$(shell id -g)" athenz-setup-env sh /athenz/docker/deploy-scripts/zms-verify.sh

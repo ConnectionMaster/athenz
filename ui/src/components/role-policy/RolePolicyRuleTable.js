@@ -20,8 +20,15 @@ import { colors } from '../denali/styles';
 import AddAssertionForRole from './AddAssertionForRole';
 import Alert from '../denali/Alert';
 import DeleteModal from '../modal/DeleteModal';
-import { MODAL_TIME_OUT } from '../constants/constants';
+import {
+    DELETE_AUDIT_REFERENCE,
+    DISPLAY_SPACE,
+    MODAL_TIME_OUT,
+} from '../constants/constants';
 import RequestUtils from '../utils/RequestUtils';
+import NameUtils from '../utils/NameUtils';
+import { css, keyframes } from '@emotion/react';
+
 const StyleTable = styled.table`
     width: 100%;
     border-spacing: 0;
@@ -85,6 +92,28 @@ const StyledAnchor = styled.a`
     cursor: pointer;
 `;
 
+const TrStyled = styled.tr`
+    ${(props) =>
+        props.isSuccess &&
+        css`
+            animation: ${colorTransition} 3s ease;
+        `}
+    ${(props) =>
+        !props.isSuccess &&
+        css`
+            background-color: white;
+        `}
+`;
+
+const colorTransition = keyframes`
+        0% {
+            background-color: rgba(21, 192, 70, 0.20);
+        }
+        100% {
+            background-color: white;
+        }
+`;
+
 export default class RolePolicyRuleTable extends React.Component {
     constructor(props) {
         super(props);
@@ -105,7 +134,7 @@ export default class RolePolicyRuleTable extends React.Component {
         this.setState({ addAssertion: !this.state.addAssertion });
     }
 
-    reLoadAssertions(successMessage) {
+    reLoadAssertions(successMessage, showSuccess = true) {
         this.api
             .getPolicy(this.props.domain, this.props.name)
             .then((assertions) => {
@@ -114,7 +143,7 @@ export default class RolePolicyRuleTable extends React.Component {
                     addAssertion: false,
                     successMessage,
                     showDelete: false,
-                    showSuccess: true,
+                    showSuccess,
                     errorMessage: null,
                 });
                 // this is to close the success alert
@@ -152,11 +181,13 @@ export default class RolePolicyRuleTable extends React.Component {
                 this.props.domain,
                 this.props.name,
                 this.state.deleteAssertionId,
+                DELETE_AUDIT_REFERENCE,
                 this.props._csrf
             )
             .then(() => {
                 this.reLoadAssertions(
-                    `Successfully deleted assertion from policy ${this.props.name}`
+                    `Successfully deleted assertion from policy ${this.props.name}`,
+                    true
                 );
             })
             .catch((err) => {
@@ -181,43 +212,69 @@ export default class RolePolicyRuleTable extends React.Component {
         const center = 'center';
         const right = 'right';
         let id = this.props.id;
-        this.state.assertions.forEach((assertion, i) => {
-            let onClickDeleteAssertion = this.onClickDeleteAssertion.bind(
-                this,
-                assertion.role,
-                assertion.id
-            );
-            let color = '';
-            if (i % 2 === 0) {
-                color = colors.row;
-            }
-            rows.push(
-                <tr key={this.props.name + id + i + '-assertion'}>
-                    <TDStyled color={color} align={left}>
-                        {assertion.effect}
-                    </TDStyled>
-                    <TDStyled color={color} align={left}>
-                        {assertion.action}
-                    </TDStyled>
-                    <TDStyled color={color} align={left}>
-                        {assertion.role}
-                    </TDStyled>
-                    <TDStyled color={color} align={left}>
-                        {assertion.resource}
-                    </TDStyled>
-                    <TDStyled color={color} align={center}>
-                        <Icon
-                            icon={'trash'}
-                            onClick={onClickDeleteAssertion}
-                            color={colors.icons}
-                            isLink
-                            size={'1.25em'}
-                            verticalAlign={'text-bottom'}
-                        />
-                    </TDStyled>
-                </tr>
-            );
-        });
+        this.state.assertions
+            .filter(
+                (assertion) =>
+                    NameUtils.getShortName(':role.', assertion.role) ===
+                    this.props.role
+            )
+            .forEach((assertion, i) => {
+                let onClickDeleteAssertion = this.onClickDeleteAssertion.bind(
+                    this,
+                    assertion.role,
+                    assertion.id
+                );
+                let color = '';
+                if (i % 2 === 0) {
+                    color = colors.row;
+                }
+                let tempRole = NameUtils.getShortName(
+                    this.props.domain + ':role.',
+                    assertion.role
+                );
+                let tempResource = NameUtils.getShortName(
+                    this.props.domain + ':',
+                    assertion.resource
+                );
+                let newAssertion =
+                    this.props.name +
+                        '-' +
+                        tempRole +
+                        '-' +
+                        tempResource +
+                        '-' +
+                        assertion.action ===
+                    this.state.successMessage;
+                rows.push(
+                    <TrStyled
+                        key={this.props.name + id + i + '-assertion'}
+                        isSuccess={newAssertion}
+                    >
+                        <TDStyled color={color} align={left}>
+                            {assertion.effect}
+                        </TDStyled>
+                        <TDStyled color={color} align={left}>
+                            {assertion.action.replace(/\s/g, DISPLAY_SPACE)}
+                        </TDStyled>
+                        <TDStyled color={color} align={left}>
+                            {assertion.role}
+                        </TDStyled>
+                        <TDStyled color={color} align={left}>
+                            {assertion.resource}
+                        </TDStyled>
+                        <TDStyled color={color} align={center}>
+                            <Icon
+                                icon={'trash'}
+                                onClick={onClickDeleteAssertion}
+                                color={colors.icons}
+                                isLink
+                                size={'1.25em'}
+                                verticalAlign={'text-bottom'}
+                            />
+                        </TDStyled>
+                    </TrStyled>
+                );
+            });
         let addAssertion = '';
         if (this.state.addAssertion) {
             addAssertion = (

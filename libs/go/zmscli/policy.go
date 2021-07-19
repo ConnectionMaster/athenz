@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AthenZ/athenz/clients/go/zms"
 	"github.com/ardielle/ardielle-go/rdl"
-	"github.com/yahoo/athenz/clients/go/zms"
 )
 
 func (cli Zms) policyNames(dn string) ([]string, error) {
@@ -27,15 +27,20 @@ func (cli Zms) policyNames(dn string) ([]string, error) {
 }
 
 func (cli Zms) ListPolicies(dn string) (*string, error) {
-	var buf bytes.Buffer
 	policies, err := cli.policyNames(dn)
 	if err != nil {
 		return nil, err
 	}
-	buf.WriteString("policies:\n")
-	cli.dumpObjectList(&buf, policies, dn, "policy")
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("policies:\n")
+		cli.dumpObjectList(&buf, policies, dn, "policy")
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(policies, oldYamlConverter)
 }
 
 func (cli Zms) ShowPolicy(dn string, name string) (*string, error) {
@@ -43,11 +48,16 @@ func (cli Zms) ShowPolicy(dn string, name string) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	buf.WriteString("policy:\n")
-	cli.dumpPolicy(&buf, *policy, indentLevel1Dash, indentLevel1DashLvl)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("policy:\n")
+		cli.dumpPolicy(&buf, *policy, indentLevel1Dash, indentLevel1DashLvl)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(policy, oldYamlConverter)
 }
 
 func parseAssertion(dn string, lst []string) (*zms.Assertion, error) {
@@ -251,5 +261,10 @@ func (cli Zms) DeletePolicy(dn string, pn string) (*string, error) {
 		return nil, err
 	}
 	s := "[Deleted policy: " + pn + "]"
-	return &s, nil
+
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }

@@ -11,8 +11,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/yahoo/athenz/libs/go/zmssvctoken"
-	"github.com/yahoo/athenz/utils/zpe-updater/util"
+	"github.com/AthenZ/athenz/libs/go/zmssvctoken"
+	"github.com/AthenZ/athenz/utils/zpe-updater/util"
 )
 
 // Default and maximal startup delay values.
@@ -71,6 +71,7 @@ type ZpuConf struct {
 	CertFile      string `json:"certFile"`
 	CaCertFile    string `json:"caCertFile"`
 	Proxy         bool   `json:"proxy"`
+	ExpiryCheck   int    `json:"expiryCheck"`
 }
 
 func NewZpuConfiguration(root, athensConfFile, zpuConfFile string) (*ZpuConfiguration, error) {
@@ -122,7 +123,13 @@ func NewZpuConfiguration(root, athensConfFile, zpuConfFile string) (*ZpuConfigur
 		startupDelay = MAX_STARTUP_DELAY
 	}
 	startupDelay *= 60 // convert from min to secs
-	expiryCheck := DEFAULT_EXPIRY_CHECK * 60
+
+	expiryCheck := zpuConf.ExpiryCheck
+	if expiryCheck == 0 {
+		expiryCheck = DEFAULT_EXPIRY_CHECK
+	}
+
+	expiryCheck *= 60 // convert from min to secs
 
 	policyDir := zpuConf.PolicyDir
 	defaultPolicyDir := fmt.Sprintf("%s/var/zpe", root)

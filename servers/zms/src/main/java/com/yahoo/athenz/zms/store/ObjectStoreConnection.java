@@ -43,13 +43,14 @@ public interface ObjectStoreConnection extends Closeable {
     List<String> listDomains(String prefix, long modifiedSince);
     String lookupDomainById(String account, String subscription, int productId);
     List<String> lookupDomainByRole(String roleMember, String roleName);
+    List<String> lookupDomainByBusinessService(String businessService);
 
     AthenzDomain getAthenzDomain(String domainName);
     DomainMetaList listModifiedDomains(long modifiedSince);
 
     // Domain tags
-    Map<String, StringList> getDomainTags(String domainName);
-    boolean insertDomainTags(String domainName, Map<String, StringList> tags);
+    Map<String, TagValueList> getDomainTags(String domainName);
+    boolean insertDomainTags(String domainName, Map<String, TagValueList> tags);
     boolean deleteDomainTags(String domainName, Set<String> tagsToRemove);
     List<String> lookupDomainByTags(String tagKey, String tagValue);
 
@@ -193,13 +194,18 @@ public interface ObjectStoreConnection extends Closeable {
     boolean updateDomainTemplate(String domainName, String templateName, TemplateMetaData templateMetaData);
 
     boolean updatePrincipal(String principal, int newState);
-
     List<String> getPrincipals(int queriedState);
 
-    boolean insertRoleTags(String roleName, String domainName, Map<String, StringList> roleTags);
-
+    boolean insertRoleTags(String roleName, String domainName, Map<String, TagValueList> roleTags);
     boolean deleteRoleTags(String roleName, String domainName, Set<String> tagKeys);
+    Map<String, TagValueList> getRoleTags(String domainName, String roleName);
 
-    Map<String, StringList> getRoleTags(String domainName, String roleName);
-
+    int countAssertionConditions(long assertionId);
+    int getNextConditionId(long assertionId, String caller);
+    List<AssertionCondition> getAssertionConditions(long assertionId);
+    AssertionCondition getAssertionCondition(long assertionId, int conditionId);
+    boolean insertAssertionConditions(long assertionId, AssertionConditions assertionConditions);
+    boolean deleteAssertionConditions(long assertionId);
+    boolean insertAssertionCondition(long assertionId, AssertionCondition assertionCondition);
+    boolean deleteAssertionCondition(long assertionId, int conditionId);
 }

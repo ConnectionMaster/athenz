@@ -67,7 +67,10 @@ public class DomainData {
     public String azureSubscription;
     @RdlOptional
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<String, StringList> tags;
+    public Map<String, TagValueList> tags;
+    @RdlOptional
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String businessService;
     public String name;
     public List<Role> roles;
     public SignedPolicies policies;
@@ -195,12 +198,19 @@ public class DomainData {
     public String getAzureSubscription() {
         return azureSubscription;
     }
-    public DomainData setTags(Map<String, StringList> tags) {
+    public DomainData setTags(Map<String, TagValueList> tags) {
         this.tags = tags;
         return this;
     }
-    public Map<String, StringList> getTags() {
+    public Map<String, TagValueList> getTags() {
         return tags;
+    }
+    public DomainData setBusinessService(String businessService) {
+        this.businessService = businessService;
+        return this;
+    }
+    public String getBusinessService() {
+        return businessService;
     }
     public DomainData setName(String name) {
         this.name = name;
@@ -311,6 +321,9 @@ public class DomainData {
                 return false;
             }
             if (tags == null ? a.tags != null : !tags.equals(a.tags)) {
+                return false;
+            }
+            if (businessService == null ? a.businessService != null : !businessService.equals(a.businessService)) {
                 return false;
             }
             if (name == null ? a.name != null : !name.equals(a.name)) {

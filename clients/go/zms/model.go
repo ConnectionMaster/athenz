@@ -120,25 +120,35 @@ type AuthorityKeyword string
 type AuthorityKeywords string
 
 //
-// StringList -
+// TagValue - TagValue to contain generic string patterns
 //
-type StringList struct {
+type TagValue string
+
+//
+// TagCompoundValue - A compound value of TagValue
+//
+type TagCompoundValue string
+
+//
+// TagValueList -
+//
+type TagValueList struct {
 
 	//
-	// generic list of strings
+	// list of tag values
 	//
-	List []CompoundName `json:"list"`
+	List []TagCompoundValue `json:"list"`
 }
 
 //
-// NewStringList - creates an initialized StringList instance, returns a pointer to it
+// NewTagValueList - creates an initialized TagValueList instance, returns a pointer to it
 //
-func NewStringList(init ...*StringList) *StringList {
-	var o *StringList
+func NewTagValueList(init ...*TagValueList) *TagValueList {
+	var o *TagValueList
 	if len(init) == 1 {
 		o = init[0]
 	} else {
-		o = new(StringList)
+		o = new(TagValueList)
 	}
 	return o.Init()
 }
@@ -146,23 +156,23 @@ func NewStringList(init ...*StringList) *StringList {
 //
 // Init - sets up the instance according to its default field values, if any
 //
-func (self *StringList) Init() *StringList {
+func (self *TagValueList) Init() *TagValueList {
 	if self.List == nil {
-		self.List = make([]CompoundName, 0)
+		self.List = make([]TagCompoundValue, 0)
 	}
 	return self
 }
 
-type rawStringList StringList
+type rawTagValueList TagValueList
 
 //
-// UnmarshalJSON is defined for proper JSON decoding of a StringList
+// UnmarshalJSON is defined for proper JSON decoding of a TagValueList
 //
-func (self *StringList) UnmarshalJSON(b []byte) error {
-	var m rawStringList
+func (self *TagValueList) UnmarshalJSON(b []byte) error {
+	var m rawTagValueList
 	err := json.Unmarshal(b, &m)
 	if err == nil {
-		o := StringList(m)
+		o := TagValueList(m)
 		*self = *((&o).Init())
 		err = self.Validate()
 	}
@@ -172,12 +182,32 @@ func (self *StringList) UnmarshalJSON(b []byte) error {
 //
 // Validate - checks for missing required fields, etc
 //
-func (self *StringList) Validate() error {
+func (self *TagValueList) Validate() error {
 	if self.List == nil {
-		return fmt.Errorf("StringList: Missing required field: list")
+		return fmt.Errorf("TagValueList: Missing required field: list")
 	}
 	return nil
 }
+
+//
+// AssertionConditionKeyPattern -
+//
+type AssertionConditionKeyPattern string
+
+//
+// AssertionConditionKey -
+//
+type AssertionConditionKey string
+
+//
+// AssertionConditionValuePattern -
+//
+type AssertionConditionValuePattern string
+
+//
+// AssertionConditionValue -
+//
+type AssertionConditionValue string
 
 //
 // DomainMeta - Set of metadata attributes that all domains may have and can be
@@ -188,95 +218,100 @@ type DomainMeta struct {
 	//
 	// a description of the domain
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
-	// a reference to an Organization. (i.e. org:media)
+	// a reference to an audit organization defined in athenz
 	//
-	Org ResourceName `json:"org,omitempty" rdl:"optional"`
+	Org ResourceName `json:"org,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Future use only, currently not used
 	//
-	Enabled *bool `json:"enabled,omitempty" rdl:"optional"`
+	Enabled *bool `json:"enabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not domain modifications should be logged for
 	// SOX+Auditing. If true, the auditRef parameter must be supplied(not empty) for
 	// any API defining it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated aws account id (system attribute - uniqueness check)
 	//
-	Account string `json:"account" rdl:"optional"`
+	Account string `json:"account" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated product id (system attribute - uniqueness check)
 	//
-	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional"`
+	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated application id
 	//
-	ApplicationId string `json:"applicationId" rdl:"optional"`
+	ApplicationId string `json:"applicationId" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// domain certificate dns domain (system attribute)
 	//
-	CertDnsDomain string `json:"certDnsDomain" rdl:"optional"`
+	CertDnsDomain string `json:"certDnsDomain" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the domain will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this domain will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// service identity certs issued for this domain will have specified max
 	// timeout in mins
 	//
-	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional"`
+	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// role certs issued for this domain will have specified max timeout in mins
 	//
-	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional"`
+	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the domain roles will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated azure subscription id (system attribute - uniqueness check)
 	//
-	AzureSubscription string `json:"azureSubscription" rdl:"optional"`
+	AzureSubscription string `json:"azureSubscription" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// associated business service with domain
+	//
+	BusinessService string `json:"businessService" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -375,6 +410,12 @@ func (self *DomainMeta) Validate() error {
 			return fmt.Errorf("DomainMeta.azureSubscription does not contain a valid String (%v)", val.Error)
 		}
 	}
+	if self.BusinessService != "" {
+		val := rdl.Validate(ZMSSchema(), "String", self.BusinessService)
+		if !val.Valid {
+			return fmt.Errorf("DomainMeta.businessService does not contain a valid String (%v)", val.Error)
+		}
+	}
 	return nil
 }
 
@@ -391,95 +432,100 @@ type Domain struct {
 	//
 	// a description of the domain
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
-	// a reference to an Organization. (i.e. org:media)
+	// a reference to an audit organization defined in athenz
 	//
-	Org ResourceName `json:"org,omitempty" rdl:"optional"`
+	Org ResourceName `json:"org,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Future use only, currently not used
 	//
-	Enabled *bool `json:"enabled,omitempty" rdl:"optional"`
+	Enabled *bool `json:"enabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not domain modifications should be logged for
 	// SOX+Auditing. If true, the auditRef parameter must be supplied(not empty) for
 	// any API defining it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated aws account id (system attribute - uniqueness check)
 	//
-	Account string `json:"account" rdl:"optional"`
+	Account string `json:"account" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated product id (system attribute - uniqueness check)
 	//
-	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional"`
+	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated application id
 	//
-	ApplicationId string `json:"applicationId" rdl:"optional"`
+	ApplicationId string `json:"applicationId" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// domain certificate dns domain (system attribute)
 	//
-	CertDnsDomain string `json:"certDnsDomain" rdl:"optional"`
+	CertDnsDomain string `json:"certDnsDomain" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the domain will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this domain will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// service identity certs issued for this domain will have specified max
 	// timeout in mins
 	//
-	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional"`
+	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// role certs issued for this domain will have specified max timeout in mins
 	//
-	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional"`
+	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the domain roles will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated azure subscription id (system attribute - uniqueness check)
 	//
-	AzureSubscription string `json:"azureSubscription" rdl:"optional"`
+	AzureSubscription string `json:"azureSubscription" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// associated business service with domain
+	//
+	BusinessService string `json:"businessService" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the common name to be referred to, the symbolic id. It is immutable
@@ -489,12 +535,12 @@ type Domain struct {
 	//
 	// the last modification timestamp of any object or attribute in this domain
 	//
-	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional"`
+	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// unique identifier of the domain. generated on create, never reused
 	//
-	Id *rdl.UUID `json:"id,omitempty" rdl:"optional"`
+	Id *rdl.UUID `json:"id,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -593,6 +639,12 @@ func (self *Domain) Validate() error {
 			return fmt.Errorf("Domain.azureSubscription does not contain a valid String (%v)", val.Error)
 		}
 	}
+	if self.BusinessService != "" {
+		val := rdl.Validate(ZMSSchema(), "String", self.BusinessService)
+		if !val.Valid {
+			return fmt.Errorf("Domain.businessService does not contain a valid String (%v)", val.Error)
+		}
+	}
 	if self.Name == "" {
 		return fmt.Errorf("Domain.name is missing but is a required field")
 	} else {
@@ -680,7 +732,7 @@ type RoleList struct {
 	// be used in the next role list request as the value for the skip query
 	// parameter.
 	//
-	Next string `json:"next" rdl:"optional"`
+	Next string `json:"next" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -766,7 +818,7 @@ type RoleAuditLog struct {
 	//
 	// audit reference string for the change as supplied by admin
 	//
-	AuditRef string `json:"auditRef" rdl:"optional"`
+	AuditRef string `json:"auditRef" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -851,61 +903,61 @@ type RoleMember struct {
 	//
 	// the expiration timestamp
 	//
-	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional"`
+	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the review reminder timestamp
 	//
-	ReviewReminder *rdl.Timestamp `json:"reviewReminder,omitempty" rdl:"optional"`
+	ReviewReminder *rdl.Timestamp `json:"reviewReminder,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is active
 	//
-	Active *bool `json:"active,omitempty" rdl:"optional"`
+	Active *bool `json:"active,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is approved either by delegates ( in
 	// case of auditEnabled roles ) or by domain admins ( in case of selfserve roles
 	// )
 	//
-	Approved *bool `json:"approved,omitempty" rdl:"optional"`
+	Approved *bool `json:"approved,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// audit reference string for the change as supplied by admin
 	//
-	AuditRef string `json:"auditRef" rdl:"optional"`
+	AuditRef string `json:"auditRef" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// for pending membership requests, the request time
 	//
-	RequestTime *rdl.Timestamp `json:"requestTime,omitempty" rdl:"optional"`
+	RequestTime *rdl.Timestamp `json:"requestTime,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// for pending membership requests, time when last notification was sent
 	//
-	LastNotifiedTime *rdl.Timestamp `json:"lastNotifiedTime,omitempty" rdl:"optional"`
+	LastNotifiedTime *rdl.Timestamp `json:"lastNotifiedTime,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// pending members only - name of the principal requesting the change
 	//
-	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional"`
+	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// for pending membership requests, time when last notification was sent (for
 	// file store)
 	//
-	ReviewLastNotifiedTime *rdl.Timestamp `json:"reviewLastNotifiedTime,omitempty" rdl:"optional"`
+	ReviewLastNotifiedTime *rdl.Timestamp `json:"reviewLastNotifiedTime,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// user disabled by system based on configured role setting
 	//
-	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional"`
+	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// server use only - principal type: unknown(0), user(1), service(2), or
 	// group(3)
 	//
-	PrincipalType *int32 `json:"principalType,omitempty" rdl:"optional"`
+	PrincipalType *int32 `json:"principalType,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -990,73 +1042,78 @@ type RoleMeta struct {
 	// themselves in the role, but it has to be approved by domain admins to be
 	// effective.
 	//
-	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional"`
+	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the role will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this role will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// certs issued for this role will have specified max timeout in mins
 	//
-	CertExpiryMins *int32 `json:"certExpiryMins,omitempty" rdl:"optional"`
+	CertExpiryMins *int32 `json:"certExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the role will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the role will have specified max review days
 	//
-	MemberReviewDays *int32 `json:"memberReviewDays,omitempty" rdl:"optional"`
+	MemberReviewDays *int32 `json:"memberReviewDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the role will have specified max review days
 	//
-	ServiceReviewDays *int32 `json:"serviceReviewDays,omitempty" rdl:"optional"`
+	ServiceReviewDays *int32 `json:"serviceReviewDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not role updates require another review and
 	// approval
 	//
-	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional"`
+	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// list of roles whose members should be notified for member review/approval
 	//
-	NotifyRoles string `json:"notifyRoles" rdl:"optional"`
+	NotifyRoles string `json:"notifyRoles" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// expiration enforced by a user authority configured attribute
 	//
-	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional"`
+	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// all groups in the domain roles will have specified max review days
+	//
+	GroupReviewDays *int32 `json:"groupReviewDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -1129,73 +1186,78 @@ type Role struct {
 	// themselves in the role, but it has to be approved by domain admins to be
 	// effective.
 	//
-	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional"`
+	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the role will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this role will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// certs issued for this role will have specified max timeout in mins
 	//
-	CertExpiryMins *int32 `json:"certExpiryMins,omitempty" rdl:"optional"`
+	CertExpiryMins *int32 `json:"certExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the role will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the role will have specified max review days
 	//
-	MemberReviewDays *int32 `json:"memberReviewDays,omitempty" rdl:"optional"`
+	MemberReviewDays *int32 `json:"memberReviewDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the role will have specified max review days
 	//
-	ServiceReviewDays *int32 `json:"serviceReviewDays,omitempty" rdl:"optional"`
+	ServiceReviewDays *int32 `json:"serviceReviewDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not role updates require another review and
 	// approval
 	//
-	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional"`
+	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// list of roles whose members should be notified for member review/approval
 	//
-	NotifyRoles string `json:"notifyRoles" rdl:"optional"`
+	NotifyRoles string `json:"notifyRoles" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// expiration enforced by a user authority configured attribute
 	//
-	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional"`
+	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// all groups in the domain roles will have specified max review days
+	//
+	GroupReviewDays *int32 `json:"groupReviewDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the role
@@ -1205,39 +1267,39 @@ type Role struct {
 	//
 	// last modification timestamp of the role
 	//
-	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional"`
+	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// an explicit list of members. Might be empty or null, if trust is set
 	//
-	Members []MemberName `json:"members,omitempty" rdl:"optional"`
+	Members []MemberName `json:"members,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// members with expiration
 	//
-	RoleMembers []*RoleMember `json:"roleMembers,omitempty" rdl:"optional"`
+	RoleMembers []*RoleMember `json:"roleMembers,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// a trusted domain to delegate membership decisions to
 	//
-	Trust DomainName `json:"trust,omitempty" rdl:"optional"`
+	Trust DomainName `json:"trust,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// an audit log for role membership changes
 	//
-	AuditLog []*RoleAuditLog `json:"auditLog,omitempty" rdl:"optional"`
+	AuditLog []*RoleAuditLog `json:"auditLog,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not role updates should require GRC approval. If
 	// true, the auditRef parameter must be supplied(not empty) for any API defining
 	// it
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// last review timestamp of the role
 	//
-	LastReviewedDate *rdl.Timestamp `json:"lastReviewedDate,omitempty" rdl:"optional"`
+	LastReviewedDate *rdl.Timestamp `json:"lastReviewedDate,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -1387,49 +1449,49 @@ type Membership struct {
 	//
 	// flag to indicate whether or the user is a member or not
 	//
-	IsMember *bool `json:"isMember,omitempty" rdl:"optional"`
+	IsMember *bool `json:"isMember,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the role
 	//
-	RoleName ResourceName `json:"roleName,omitempty" rdl:"optional"`
+	RoleName ResourceName `json:"roleName,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the expiration timestamp
 	//
-	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional"`
+	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the review reminder timestamp
 	//
-	ReviewReminder *rdl.Timestamp `json:"reviewReminder,omitempty" rdl:"optional"`
+	ReviewReminder *rdl.Timestamp `json:"reviewReminder,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is active
 	//
-	Active *bool `json:"active,omitempty" rdl:"optional"`
+	Active *bool `json:"active,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is approved either by delegates ( in
 	// case of auditEnabled roles ) or by domain admins ( in case of selfserve roles
 	// )
 	//
-	Approved *bool `json:"approved,omitempty" rdl:"optional"`
+	Approved *bool `json:"approved,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// audit reference string for the change as supplied by admin
 	//
-	AuditRef string `json:"auditRef" rdl:"optional"`
+	AuditRef string `json:"auditRef" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// pending members only - name of the principal requesting the change
 	//
-	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional"`
+	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// user disabled by system based on configured role setting
 	//
-	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional"`
+	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -1586,47 +1648,47 @@ type MemberRole struct {
 	//
 	// name of the domain
 	//
-	DomainName DomainName `json:"domainName,omitempty" rdl:"optional"`
+	DomainName DomainName `json:"domainName,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the member
 	//
-	MemberName MemberName `json:"memberName,omitempty" rdl:"optional"`
+	MemberName MemberName `json:"memberName,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the expiration timestamp
 	//
-	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional"`
+	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the review reminder timestamp
 	//
-	ReviewReminder *rdl.Timestamp `json:"reviewReminder,omitempty" rdl:"optional"`
+	ReviewReminder *rdl.Timestamp `json:"reviewReminder,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is active
 	//
-	Active *bool `json:"active,omitempty" rdl:"optional"`
+	Active *bool `json:"active,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// audit reference string for the change as supplied by admin
 	//
-	AuditRef string `json:"auditRef" rdl:"optional"`
+	AuditRef string `json:"auditRef" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// pending members only - name of the principal requesting the change
 	//
-	RequestPrincipal EntityName `json:"requestPrincipal,omitempty" rdl:"optional"`
+	RequestPrincipal EntityName `json:"requestPrincipal,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// for pending membership requests, the request time
 	//
-	RequestTime *rdl.Timestamp `json:"requestTime,omitempty" rdl:"optional"`
+	RequestTime *rdl.Timestamp `json:"requestTime,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// user disabled by system based on configured role setting
 	//
-	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional"`
+	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -1865,7 +1927,7 @@ type RoleSystemMeta struct {
 	// true, the auditRef parameter must be supplied(not empty) for any API defining
 	// it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -1989,6 +2051,277 @@ func (e *AssertionEffect) UnmarshalJSON(b []byte) error {
 }
 
 //
+// AssertionConditionOperator - Allowed operators for assertion conditions
+//
+type AssertionConditionOperator int
+
+//
+// AssertionConditionOperator constants
+//
+const (
+	_ AssertionConditionOperator = iota
+	EQUALS
+)
+
+var namesAssertionConditionOperator = []string{
+	EQUALS: "EQUALS",
+}
+
+//
+// NewAssertionConditionOperator - return a string representation of the enum
+//
+func NewAssertionConditionOperator(init ...interface{}) AssertionConditionOperator {
+	if len(init) == 1 {
+		switch v := init[0].(type) {
+		case AssertionConditionOperator:
+			return v
+		case int:
+			return AssertionConditionOperator(v)
+		case int32:
+			return AssertionConditionOperator(v)
+		case string:
+			for i, s := range namesAssertionConditionOperator {
+				if s == v {
+					return AssertionConditionOperator(i)
+				}
+			}
+		default:
+			panic("Bad init value for AssertionConditionOperator enum")
+		}
+	}
+	return AssertionConditionOperator(0) //default to the first enum value
+}
+
+//
+// String - return a string representation of the enum
+//
+func (e AssertionConditionOperator) String() string {
+	return namesAssertionConditionOperator[e]
+}
+
+//
+// SymbolSet - return an array of all valid string representations (symbols) of the enum
+//
+func (e AssertionConditionOperator) SymbolSet() []string {
+	return namesAssertionConditionOperator
+}
+
+//
+// MarshalJSON is defined for proper JSON encoding of a AssertionConditionOperator
+//
+func (e AssertionConditionOperator) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.String())
+}
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a AssertionConditionOperator
+//
+func (e *AssertionConditionOperator) UnmarshalJSON(b []byte) error {
+	var j string
+	err := json.Unmarshal(b, &j)
+	if err == nil {
+		s := string(j)
+		for v, s2 := range namesAssertionConditionOperator {
+			if s == s2 {
+				*e = AssertionConditionOperator(v)
+				return nil
+			}
+		}
+		err = fmt.Errorf("Bad enum symbol for type AssertionConditionOperator: %s", s)
+	}
+	return err
+}
+
+//
+// AssertionConditionData - A representation of details associated with an
+// assertion condition key
+//
+type AssertionConditionData struct {
+
+	//
+	// Operator for the assertion condition
+	//
+	Operator AssertionConditionOperator `json:"operator"`
+
+	//
+	// Value of the assertion condition
+	//
+	Value AssertionConditionValue `json:"value"`
+}
+
+//
+// NewAssertionConditionData - creates an initialized AssertionConditionData instance, returns a pointer to it
+//
+func NewAssertionConditionData(init ...*AssertionConditionData) *AssertionConditionData {
+	var o *AssertionConditionData
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(AssertionConditionData)
+	}
+	return o
+}
+
+type rawAssertionConditionData AssertionConditionData
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a AssertionConditionData
+//
+func (self *AssertionConditionData) UnmarshalJSON(b []byte) error {
+	var m rawAssertionConditionData
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := AssertionConditionData(m)
+		*self = o
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *AssertionConditionData) Validate() error {
+	if self.Value == "" {
+		return fmt.Errorf("AssertionConditionData.value is missing but is a required field")
+	} else {
+		val := rdl.Validate(ZMSSchema(), "AssertionConditionValue", self.Value)
+		if !val.Valid {
+			return fmt.Errorf("AssertionConditionData.value does not contain a valid AssertionConditionValue (%v)", val.Error)
+		}
+	}
+	return nil
+}
+
+//
+// AssertionCondition - A representation of condition associated with an
+// assertion
+//
+type AssertionCondition struct {
+
+	//
+	// condition id - auto generated by server. Not required during put
+	// operations.
+	//
+	Id *int32 `json:"id,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// each key in the map represents a unique condition. All the keys present in
+	// the map form a logical condition with AND operation.
+	//
+	ConditionsMap map[AssertionConditionKey]*AssertionConditionData `json:"conditionsMap"`
+}
+
+//
+// NewAssertionCondition - creates an initialized AssertionCondition instance, returns a pointer to it
+//
+func NewAssertionCondition(init ...*AssertionCondition) *AssertionCondition {
+	var o *AssertionCondition
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(AssertionCondition)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *AssertionCondition) Init() *AssertionCondition {
+	if self.ConditionsMap == nil {
+		self.ConditionsMap = make(map[AssertionConditionKey]*AssertionConditionData)
+	}
+	return self
+}
+
+type rawAssertionCondition AssertionCondition
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a AssertionCondition
+//
+func (self *AssertionCondition) UnmarshalJSON(b []byte) error {
+	var m rawAssertionCondition
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := AssertionCondition(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *AssertionCondition) Validate() error {
+	if self.ConditionsMap == nil {
+		return fmt.Errorf("AssertionCondition: Missing required field: conditionsMap")
+	}
+	return nil
+}
+
+//
+// AssertionConditions - The representation of list of assertion conditions
+//
+type AssertionConditions struct {
+
+	//
+	// list of assertion conditions.
+	//
+	ConditionsList []*AssertionCondition `json:"conditionsList"`
+}
+
+//
+// NewAssertionConditions - creates an initialized AssertionConditions instance, returns a pointer to it
+//
+func NewAssertionConditions(init ...*AssertionConditions) *AssertionConditions {
+	var o *AssertionConditions
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(AssertionConditions)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *AssertionConditions) Init() *AssertionConditions {
+	if self.ConditionsList == nil {
+		self.ConditionsList = make([]*AssertionCondition, 0)
+	}
+	return self
+}
+
+type rawAssertionConditions AssertionConditions
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a AssertionConditions
+//
+func (self *AssertionConditions) UnmarshalJSON(b []byte) error {
+	var m rawAssertionConditions
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := AssertionConditions(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *AssertionConditions) Validate() error {
+	if self.ConditionsList == nil {
+		return fmt.Errorf("AssertionConditions: Missing required field: conditionsList")
+	}
+	return nil
+}
+
+//
 // Assertion - A representation for the encapsulation of an action to be
 // performed on a resource by a principal.
 //
@@ -2013,18 +2346,23 @@ type Assertion struct {
 	//
 	// the effect of the assertion in the policy language
 	//
-	Effect *AssertionEffect `json:"effect,omitempty" rdl:"optional"`
+	Effect *AssertionEffect `json:"effect,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// assertion id - auto generated by server. Not required during put
 	// operations.
 	//
-	Id *int64 `json:"id,omitempty" rdl:"optional"`
+	Id *int64 `json:"id,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// If true, we should store action and resource in their original case
 	//
-	CaseSensitive *bool `json:"caseSensitive,omitempty" rdl:"optional"`
+	CaseSensitive *bool `json:"caseSensitive,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// optional list of assertion conditions associated with given assertion
+	//
+	Conditions *AssertionConditions `json:"conditions,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -2100,7 +2438,7 @@ type Policy struct {
 	//
 	// last modification timestamp of this policy
 	//
-	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional"`
+	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// list of defined assertions for this policy
@@ -2110,7 +2448,7 @@ type Policy struct {
 	//
 	// If true, we should store action and resource in their original case
 	//
-	CaseSensitive *bool `json:"caseSensitive,omitempty" rdl:"optional"`
+	CaseSensitive *bool `json:"caseSensitive,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -2312,42 +2650,42 @@ type ServiceIdentity struct {
 	//
 	// description of the service
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// array of public keys for key rotation
 	//
-	PublicKeys []*PublicKeyEntry `json:"publicKeys,omitempty" rdl:"optional"`
+	PublicKeys []*PublicKeyEntry `json:"publicKeys,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// if present, then this service can provision tenants via this endpoint.
 	//
-	ProviderEndpoint string `json:"providerEndpoint" rdl:"optional"`
+	ProviderEndpoint string `json:"providerEndpoint" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the timestamp when this entry was last modified
 	//
-	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional"`
+	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the path of the executable that runs the service
 	//
-	Executable string `json:"executable" rdl:"optional"`
+	Executable string `json:"executable" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// list of host names that this service can run on
 	//
-	Hosts []string `json:"hosts,omitempty" rdl:"optional"`
+	Hosts []string `json:"hosts,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// local (unix) user name this service can run as
 	//
-	User string `json:"user" rdl:"optional"`
+	User string `json:"user" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// local (unix) group name this service can run as
 	//
-	Group string `json:"group" rdl:"optional"`
+	Group string `json:"group" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -2500,7 +2838,7 @@ type ServiceIdentityList struct {
 	// be used in the next service list request as the value for the skip query
 	// parameter.
 	//
-	Next string `json:"next" rdl:"optional"`
+	Next string `json:"next" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -2567,7 +2905,7 @@ type ServiceIdentitySystemMeta struct {
 	//
 	// provider callback endpoint
 	//
-	ProviderEndpoint string `json:"providerEndpoint" rdl:"optional"`
+	ProviderEndpoint string `json:"providerEndpoint" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -2620,38 +2958,38 @@ type TemplateMetaData struct {
 	//
 	// name of the template
 	//
-	TemplateName string `json:"templateName" rdl:"optional"`
+	TemplateName string `json:"templateName" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// description of the template
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Version from DB(zms_store->domain_template->version)
 	//
-	CurrentVersion *int32 `json:"currentVersion,omitempty" rdl:"optional"`
+	CurrentVersion *int32 `json:"currentVersion,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Bumped up version from solutions-template.json when there is a change
 	//
-	LatestVersion *int32 `json:"latestVersion,omitempty" rdl:"optional"`
+	LatestVersion *int32 `json:"latestVersion,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// placeholders in the template roles/policies to replace (ex:_service_)
 	//
-	KeywordsToReplace string `json:"keywordsToReplace" rdl:"optional"`
+	KeywordsToReplace string `json:"keywordsToReplace" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the updated timestamp of the template(solution_templates.json)
 	//
-	Timestamp *rdl.Timestamp `json:"timestamp,omitempty" rdl:"optional"`
+	Timestamp *rdl.Timestamp `json:"timestamp,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// flag to automatically update the roles/policies that belongs to the
 	// template
 	//
-	AutoUpdate *bool `json:"autoUpdate,omitempty" rdl:"optional"`
+	AutoUpdate *bool `json:"autoUpdate,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -2726,12 +3064,12 @@ type Template struct {
 	//
 	// list of services defined in this template
 	//
-	Services []*ServiceIdentity `json:"services,omitempty" rdl:"optional"`
+	Services []*ServiceIdentity `json:"services,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// list of services defined in this template
 	//
-	Metadata *TemplateMetaData `json:"metadata,omitempty" rdl:"optional"`
+	Metadata *TemplateMetaData `json:"metadata,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -2931,7 +3269,7 @@ type DomainTemplate struct {
 	//
 	// optional template parameters
 	//
-	Params []*TemplateParam `json:"params,omitempty" rdl:"optional"`
+	Params []*TemplateParam `json:"params,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -3179,7 +3517,7 @@ type DomainList struct {
 	// be used in the next domain list request as the value for the skip query
 	// parameter.
 	//
-	Next string `json:"next" rdl:"optional"`
+	Next string `json:"next" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -3246,95 +3584,100 @@ type TopLevelDomain struct {
 	//
 	// a description of the domain
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
-	// a reference to an Organization. (i.e. org:media)
+	// a reference to an audit organization defined in athenz
 	//
-	Org ResourceName `json:"org,omitempty" rdl:"optional"`
+	Org ResourceName `json:"org,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Future use only, currently not used
 	//
-	Enabled *bool `json:"enabled,omitempty" rdl:"optional"`
+	Enabled *bool `json:"enabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not domain modifications should be logged for
 	// SOX+Auditing. If true, the auditRef parameter must be supplied(not empty) for
 	// any API defining it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated aws account id (system attribute - uniqueness check)
 	//
-	Account string `json:"account" rdl:"optional"`
+	Account string `json:"account" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated product id (system attribute - uniqueness check)
 	//
-	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional"`
+	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated application id
 	//
-	ApplicationId string `json:"applicationId" rdl:"optional"`
+	ApplicationId string `json:"applicationId" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// domain certificate dns domain (system attribute)
 	//
-	CertDnsDomain string `json:"certDnsDomain" rdl:"optional"`
+	CertDnsDomain string `json:"certDnsDomain" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the domain will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this domain will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// service identity certs issued for this domain will have specified max
 	// timeout in mins
 	//
-	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional"`
+	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// role certs issued for this domain will have specified max timeout in mins
 	//
-	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional"`
+	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the domain roles will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated azure subscription id (system attribute - uniqueness check)
 	//
-	AzureSubscription string `json:"azureSubscription" rdl:"optional"`
+	AzureSubscription string `json:"azureSubscription" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// associated business service with domain
+	//
+	BusinessService string `json:"businessService" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the domain
@@ -3349,7 +3692,7 @@ type TopLevelDomain struct {
 	//
 	// list of solution template names
 	//
-	Templates *DomainTemplateList `json:"templates,omitempty" rdl:"optional"`
+	Templates *DomainTemplateList `json:"templates,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -3451,6 +3794,12 @@ func (self *TopLevelDomain) Validate() error {
 			return fmt.Errorf("TopLevelDomain.azureSubscription does not contain a valid String (%v)", val.Error)
 		}
 	}
+	if self.BusinessService != "" {
+		val := rdl.Validate(ZMSSchema(), "String", self.BusinessService)
+		if !val.Valid {
+			return fmt.Errorf("TopLevelDomain.businessService does not contain a valid String (%v)", val.Error)
+		}
+	}
 	if self.Name == "" {
 		return fmt.Errorf("TopLevelDomain.name is missing but is a required field")
 	} else {
@@ -3473,95 +3822,100 @@ type SubDomain struct {
 	//
 	// a description of the domain
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
-	// a reference to an Organization. (i.e. org:media)
+	// a reference to an audit organization defined in athenz
 	//
-	Org ResourceName `json:"org,omitempty" rdl:"optional"`
+	Org ResourceName `json:"org,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Future use only, currently not used
 	//
-	Enabled *bool `json:"enabled,omitempty" rdl:"optional"`
+	Enabled *bool `json:"enabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not domain modifications should be logged for
 	// SOX+Auditing. If true, the auditRef parameter must be supplied(not empty) for
 	// any API defining it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated aws account id (system attribute - uniqueness check)
 	//
-	Account string `json:"account" rdl:"optional"`
+	Account string `json:"account" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated product id (system attribute - uniqueness check)
 	//
-	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional"`
+	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated application id
 	//
-	ApplicationId string `json:"applicationId" rdl:"optional"`
+	ApplicationId string `json:"applicationId" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// domain certificate dns domain (system attribute)
 	//
-	CertDnsDomain string `json:"certDnsDomain" rdl:"optional"`
+	CertDnsDomain string `json:"certDnsDomain" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the domain will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this domain will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// service identity certs issued for this domain will have specified max
 	// timeout in mins
 	//
-	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional"`
+	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// role certs issued for this domain will have specified max timeout in mins
 	//
-	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional"`
+	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the domain roles will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated azure subscription id (system attribute - uniqueness check)
 	//
-	AzureSubscription string `json:"azureSubscription" rdl:"optional"`
+	AzureSubscription string `json:"azureSubscription" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// associated business service with domain
+	//
+	BusinessService string `json:"businessService" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the domain
@@ -3576,7 +3930,7 @@ type SubDomain struct {
 	//
 	// list of solution template names
 	//
-	Templates *DomainTemplateList `json:"templates,omitempty" rdl:"optional"`
+	Templates *DomainTemplateList `json:"templates,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the parent domain
@@ -3683,6 +4037,12 @@ func (self *SubDomain) Validate() error {
 			return fmt.Errorf("SubDomain.azureSubscription does not contain a valid String (%v)", val.Error)
 		}
 	}
+	if self.BusinessService != "" {
+		val := rdl.Validate(ZMSSchema(), "String", self.BusinessService)
+		if !val.Valid {
+			return fmt.Errorf("SubDomain.businessService does not contain a valid String (%v)", val.Error)
+		}
+	}
 	if self.Name == "" {
 		return fmt.Errorf("SubDomain.name is missing but is a required field")
 	} else {
@@ -3714,95 +4074,100 @@ type UserDomain struct {
 	//
 	// a description of the domain
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
-	// a reference to an Organization. (i.e. org:media)
+	// a reference to an audit organization defined in athenz
 	//
-	Org ResourceName `json:"org,omitempty" rdl:"optional"`
+	Org ResourceName `json:"org,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Future use only, currently not used
 	//
-	Enabled *bool `json:"enabled,omitempty" rdl:"optional"`
+	Enabled *bool `json:"enabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not domain modifications should be logged for
 	// SOX+Auditing. If true, the auditRef parameter must be supplied(not empty) for
 	// any API defining it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated aws account id (system attribute - uniqueness check)
 	//
-	Account string `json:"account" rdl:"optional"`
+	Account string `json:"account" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated product id (system attribute - uniqueness check)
 	//
-	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional"`
+	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated application id
 	//
-	ApplicationId string `json:"applicationId" rdl:"optional"`
+	ApplicationId string `json:"applicationId" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// domain certificate dns domain (system attribute)
 	//
-	CertDnsDomain string `json:"certDnsDomain" rdl:"optional"`
+	CertDnsDomain string `json:"certDnsDomain" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the domain will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this domain will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// service identity certs issued for this domain will have specified max
 	// timeout in mins
 	//
-	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional"`
+	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// role certs issued for this domain will have specified max timeout in mins
 	//
-	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional"`
+	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the domain roles will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated azure subscription id (system attribute - uniqueness check)
 	//
-	AzureSubscription string `json:"azureSubscription" rdl:"optional"`
+	AzureSubscription string `json:"azureSubscription" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// associated business service with domain
+	//
+	BusinessService string `json:"businessService" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// user id which will be the domain name
@@ -3812,7 +4177,7 @@ type UserDomain struct {
 	//
 	// list of solution template names
 	//
-	Templates *DomainTemplateList `json:"templates,omitempty" rdl:"optional"`
+	Templates *DomainTemplateList `json:"templates,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -3911,6 +4276,12 @@ func (self *UserDomain) Validate() error {
 			return fmt.Errorf("UserDomain.azureSubscription does not contain a valid String (%v)", val.Error)
 		}
 	}
+	if self.BusinessService != "" {
+		val := rdl.Validate(ZMSSchema(), "String", self.BusinessService)
+		if !val.Valid {
+			return fmt.Errorf("UserDomain.businessService does not contain a valid String (%v)", val.Error)
+		}
+	}
 	if self.Name == "" {
 		return fmt.Errorf("UserDomain.name is missing but is a required field")
 	} else {
@@ -3918,6 +4289,66 @@ func (self *UserDomain) Validate() error {
 		if !val.Valid {
 			return fmt.Errorf("UserDomain.name does not contain a valid SimpleName (%v)", val.Error)
 		}
+	}
+	return nil
+}
+
+//
+// DomainMetaStoreValidValuesList - List of valid domain meta attribute values
+//
+type DomainMetaStoreValidValuesList struct {
+
+	//
+	// list of valid values for attribute
+	//
+	ValidValues []string `json:"validValues"`
+}
+
+//
+// NewDomainMetaStoreValidValuesList - creates an initialized DomainMetaStoreValidValuesList instance, returns a pointer to it
+//
+func NewDomainMetaStoreValidValuesList(init ...*DomainMetaStoreValidValuesList) *DomainMetaStoreValidValuesList {
+	var o *DomainMetaStoreValidValuesList
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(DomainMetaStoreValidValuesList)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *DomainMetaStoreValidValuesList) Init() *DomainMetaStoreValidValuesList {
+	if self.ValidValues == nil {
+		self.ValidValues = make([]string, 0)
+	}
+	return self
+}
+
+type rawDomainMetaStoreValidValuesList DomainMetaStoreValidValuesList
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a DomainMetaStoreValidValuesList
+//
+func (self *DomainMetaStoreValidValuesList) UnmarshalJSON(b []byte) error {
+	var m rawDomainMetaStoreValidValuesList
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := DomainMetaStoreValidValuesList(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *DomainMetaStoreValidValuesList) Validate() error {
+	if self.ValidValues == nil {
+		return fmt.Errorf("DomainMetaStoreValidValuesList: Missing required field: validValues")
 	}
 	return nil
 }
@@ -3994,13 +4425,13 @@ type DomainDataCheck struct {
 	// Names of roles not specified in any assertion. Might be empty or null if no
 	// dangling roles.
 	//
-	DanglingRoles []EntityName `json:"danglingRoles,omitempty" rdl:"optional"`
+	DanglingRoles []EntityName `json:"danglingRoles,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Policy+role tuples where role doesnt exist. Might be empty or null if no
 	// dangling policies.
 	//
-	DanglingPolicies []*DanglingPolicy `json:"danglingPolicies,omitempty" rdl:"optional"`
+	DanglingPolicies []*DanglingPolicy `json:"danglingPolicies,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// total number of policies
@@ -4022,14 +4453,14 @@ type DomainDataCheck struct {
 	// tenant domain. Might be empty or null, if not a tenant or if all providers
 	// support this tenant.
 	//
-	ProvidersWithoutTrust []ServiceName `json:"providersWithoutTrust,omitempty" rdl:"optional"`
+	ProvidersWithoutTrust []ServiceName `json:"providersWithoutTrust,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Names of Tenant domains that dont contain assume role assertions if this is
 	// a provider domain. Might be empty or null, if not a provider or if all
 	// tenants support use this provider.
 	//
-	TenantsWithoutAssumeRole []DomainName `json:"tenantsWithoutAssumeRole,omitempty" rdl:"optional"`
+	TenantsWithoutAssumeRole []DomainName `json:"tenantsWithoutAssumeRole,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -4232,7 +4663,7 @@ type GroupAuditLog struct {
 	//
 	// audit reference string for the change as supplied by admin
 	//
-	AuditRef string `json:"auditRef" rdl:"optional"`
+	AuditRef string `json:"auditRef" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -4312,70 +4743,70 @@ type GroupMember struct {
 	//
 	// name of the member
 	//
-	MemberName GroupMemberName `json:"memberName,omitempty" rdl:"optional"`
+	MemberName GroupMemberName `json:"memberName,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the group
 	//
-	GroupName ResourceName `json:"groupName,omitempty" rdl:"optional"`
+	GroupName ResourceName `json:"groupName,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the domain
 	//
-	DomainName DomainName `json:"domainName,omitempty" rdl:"optional"`
+	DomainName DomainName `json:"domainName,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the expiration timestamp
 	//
-	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional"`
+	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is active
 	//
-	Active *bool `json:"active,omitempty" rdl:"optional"`
+	Active *bool `json:"active,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is approved either by delegates ( in
 	// case of auditEnabled groups ) or by domain admins ( in case of selfserve
 	// groups )
 	//
-	Approved *bool `json:"approved,omitempty" rdl:"optional"`
+	Approved *bool `json:"approved,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// audit reference string for the change as supplied by admin
 	//
-	AuditRef string `json:"auditRef" rdl:"optional"`
+	AuditRef string `json:"auditRef" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// for pending membership requests, the request time
 	//
-	RequestTime *rdl.Timestamp `json:"requestTime,omitempty" rdl:"optional"`
+	RequestTime *rdl.Timestamp `json:"requestTime,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// for pending membership requests, time when last notification was sent
 	//
-	LastNotifiedTime *rdl.Timestamp `json:"lastNotifiedTime,omitempty" rdl:"optional"`
+	LastNotifiedTime *rdl.Timestamp `json:"lastNotifiedTime,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// pending members only - name of the principal requesting the change
 	//
-	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional"`
+	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// for pending membership requests, time when last notification was sent (for
 	// file store)
 	//
-	ReviewLastNotifiedTime *rdl.Timestamp `json:"reviewLastNotifiedTime,omitempty" rdl:"optional"`
+	ReviewLastNotifiedTime *rdl.Timestamp `json:"reviewLastNotifiedTime,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// user disabled by system based on configured group setting
 	//
-	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional"`
+	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// server use only - principal type: unknown(0), user(1) or service(2)
 	//
-	PrincipalType *int32 `json:"principalType,omitempty" rdl:"optional"`
+	PrincipalType *int32 `json:"principalType,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -4472,44 +4903,44 @@ type GroupMembership struct {
 	//
 	// flag to indicate whether or the user is a member or not
 	//
-	IsMember *bool `json:"isMember,omitempty" rdl:"optional"`
+	IsMember *bool `json:"isMember,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the group
 	//
-	GroupName ResourceName `json:"groupName,omitempty" rdl:"optional"`
+	GroupName ResourceName `json:"groupName,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the expiration timestamp
 	//
-	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional"`
+	Expiration *rdl.Timestamp `json:"expiration,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is active
 	//
-	Active *bool `json:"active,omitempty" rdl:"optional"`
+	Active *bool `json:"active,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag to indicate whether membership is approved either by delegates ( in
 	// case of auditEnabled groups ) or by domain admins ( in case of selfserve
 	// groups )
 	//
-	Approved *bool `json:"approved,omitempty" rdl:"optional"`
+	Approved *bool `json:"approved,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// audit reference string for the change as supplied by admin
 	//
-	AuditRef string `json:"auditRef" rdl:"optional"`
+	AuditRef string `json:"auditRef" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// pending members only - name of the principal requesting the change
 	//
-	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional"`
+	RequestPrincipal ResourceName `json:"requestPrincipal,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// user disabled by system based on configured group setting
 	//
-	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional"`
+	SystemDisabled *int32 `json:"systemDisabled,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -4604,28 +5035,38 @@ type GroupMeta struct {
 	// themselves in the group, but it has to be approved by domain admins to be
 	// effective.
 	//
-	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional"`
+	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not group updates require another review and
 	// approval
 	//
-	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional"`
+	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// list of roles whose members should be notified for member review/approval
 	//
-	NotifyRoles string `json:"notifyRoles" rdl:"optional"`
+	NotifyRoles string `json:"notifyRoles" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// expiration enforced by a user authority configured attribute
 	//
-	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional"`
+	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// all user members in the group will have specified max expiry days
+	//
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// all services in the group will have specified max expiry days
+	//
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -4692,28 +5133,38 @@ type Group struct {
 	// themselves in the group, but it has to be approved by domain admins to be
 	// effective.
 	//
-	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional"`
+	SelfServe *bool `json:"selfServe,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not group updates require another review and
 	// approval
 	//
-	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional"`
+	ReviewEnabled *bool `json:"reviewEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// list of roles whose members should be notified for member review/approval
 	//
-	NotifyRoles string `json:"notifyRoles" rdl:"optional"`
+	NotifyRoles string `json:"notifyRoles" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// expiration enforced by a user authority configured attribute
 	//
-	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional"`
+	UserAuthorityExpiration string `json:"userAuthorityExpiration" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// all user members in the group will have specified max expiry days
+	//
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// all services in the group will have specified max expiry days
+	//
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the group
@@ -4723,29 +5174,29 @@ type Group struct {
 	//
 	// last modification timestamp of the group
 	//
-	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional"`
+	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// members with expiration
 	//
-	GroupMembers []*GroupMember `json:"groupMembers,omitempty" rdl:"optional"`
+	GroupMembers []*GroupMember `json:"groupMembers,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// an audit log for group membership changes
 	//
-	AuditLog []*GroupAuditLog `json:"auditLog,omitempty" rdl:"optional"`
+	AuditLog []*GroupAuditLog `json:"auditLog,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not group updates should require GRC approval. If
 	// true, the auditRef parameter must be supplied(not empty) for any API defining
 	// it
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// last review timestamp of the group
 	//
-	LastReviewedDate *rdl.Timestamp `json:"lastReviewedDate,omitempty" rdl:"optional"`
+	LastReviewedDate *rdl.Timestamp `json:"lastReviewedDate,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -5083,7 +5534,7 @@ type GroupSystemMeta struct {
 	// true, the auditRef parameter must be supplied(not empty) for any API defining
 	// it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -5138,7 +5589,7 @@ type PolicyList struct {
 	// be used in the next policy list request as the value for the skip query
 	// parameter.
 	//
-	Next string `json:"next" rdl:"optional"`
+	Next string `json:"next" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -5214,12 +5665,12 @@ type Tenancy struct {
 	//
 	// registered resource groups for this tenant
 	//
-	ResourceGroups []EntityName `json:"resourceGroups,omitempty" rdl:"optional"`
+	ResourceGroups []EntityName `json:"resourceGroups,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// optional flag indicating whether to create a default tenancy admin role
 	//
-	CreateAdminRole *bool `json:"createAdminRole,omitempty" rdl:"optional"`
+	CreateAdminRole *bool `json:"createAdminRole,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -5500,7 +5951,7 @@ type ProviderResourceGroupRoles struct {
 	//
 	// optional flag indicating whether to create a default tenancy admin role
 	//
-	CreateAdminRole *bool `json:"createAdminRole,omitempty" rdl:"optional"`
+	CreateAdminRole *bool `json:"createAdminRole,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -5927,95 +6378,100 @@ type DomainData struct {
 	//
 	// a description of the domain
 	//
-	Description string `json:"description" rdl:"optional"`
+	Description string `json:"description" rdl:"optional" yaml:",omitempty"`
 
 	//
-	// a reference to an Organization. (i.e. org:media)
+	// a reference to an audit organization defined in athenz
 	//
-	Org ResourceName `json:"org,omitempty" rdl:"optional"`
+	Org ResourceName `json:"org,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Future use only, currently not used
 	//
-	Enabled *bool `json:"enabled,omitempty" rdl:"optional"`
+	Enabled *bool `json:"enabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// Flag indicates whether or not domain modifications should be logged for
 	// SOX+Auditing. If true, the auditRef parameter must be supplied(not empty) for
 	// any API defining it.
 	//
-	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional"`
+	AuditEnabled *bool `json:"auditEnabled,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated aws account id (system attribute - uniqueness check)
 	//
-	Account string `json:"account" rdl:"optional"`
+	Account string `json:"account" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated product id (system attribute - uniqueness check)
 	//
-	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional"`
+	YpmId *int32 `json:"ypmId,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated application id
 	//
-	ApplicationId string `json:"applicationId" rdl:"optional"`
+	ApplicationId string `json:"applicationId" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// domain certificate dns domain (system attribute)
 	//
-	CertDnsDomain string `json:"certDnsDomain" rdl:"optional"`
+	CertDnsDomain string `json:"certDnsDomain" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all user members in the domain will have specified max expiry days
 	//
-	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional"`
+	MemberExpiryDays *int32 `json:"memberExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// tokens issued for this domain will have specified max timeout in mins
 	//
-	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional"`
+	TokenExpiryMins *int32 `json:"tokenExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// service identity certs issued for this domain will have specified max
 	// timeout in mins
 	//
-	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional"`
+	ServiceCertExpiryMins *int32 `json:"serviceCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// role certs issued for this domain will have specified max timeout in mins
 	//
-	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional"`
+	RoleCertExpiryMins *int32 `json:"roleCertExpiryMins,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// rsa or ec signing algorithm to be used for tokens
 	//
-	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional"`
+	SignAlgorithm SimpleName `json:"signAlgorithm,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all services in the domain roles will have specified max expiry days
 	//
-	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional"`
+	ServiceExpiryDays *int32 `json:"serviceExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// all groups in the domain roles will have specified max expiry days
 	//
-	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional"`
+	GroupExpiryDays *int32 `json:"groupExpiryDays,omitempty" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// membership filtered based on user authority configured attributes
 	//
-	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional"`
+	UserAuthorityFilter string `json:"userAuthorityFilter" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// associated azure subscription id (system attribute - uniqueness check)
 	//
-	AzureSubscription string `json:"azureSubscription" rdl:"optional"`
+	AzureSubscription string `json:"azureSubscription" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// key-value pair tags, tag might contain multiple values
 	//
-	Tags map[CompoundName]*StringList `json:"tags,omitempty" rdl:"optional"`
+	Tags map[CompoundName]*TagValueList `json:"tags,omitempty" rdl:"optional" yaml:",omitempty"`
+
+	//
+	// associated business service with domain
+	//
+	BusinessService string `json:"businessService" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// name of the domain
@@ -6164,6 +6620,12 @@ func (self *DomainData) Validate() error {
 			return fmt.Errorf("DomainData.azureSubscription does not contain a valid String (%v)", val.Error)
 		}
 	}
+	if self.BusinessService != "" {
+		val := rdl.Validate(ZMSSchema(), "String", self.BusinessService)
+		if !val.Valid {
+			return fmt.Errorf("DomainData.businessService does not contain a valid String (%v)", val.Error)
+		}
+	}
 	if self.Name == "" {
 		return fmt.Errorf("DomainData.name is missing but is a required field")
 	} else {
@@ -6208,12 +6670,12 @@ type SignedDomain struct {
 	//
 	// signature generated based on the domain object
 	//
-	Signature string `json:"signature" rdl:"optional"`
+	Signature string `json:"signature" rdl:"optional" yaml:",omitempty"`
 
 	//
 	// the identifier of the key used to generate the signature
 	//
-	KeyId string `json:"keyId" rdl:"optional"`
+	KeyId string `json:"keyId" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -6430,7 +6892,7 @@ type UserToken struct {
 	//
 	// Authorization header name for the token
 	//
-	Header string `json:"header" rdl:"optional"`
+	Header string `json:"header" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -6747,7 +7209,7 @@ type Quota struct {
 	//
 	// the last modification timestamp of the quota object
 	//
-	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional"`
+	Modified *rdl.Timestamp `json:"modified,omitempty" rdl:"optional" yaml:",omitempty"`
 }
 
 //
@@ -6906,6 +7368,123 @@ func (self *DomainRoleMembership) UnmarshalJSON(b []byte) error {
 func (self *DomainRoleMembership) Validate() error {
 	if self.DomainRoleMembersList == nil {
 		return fmt.Errorf("DomainRoleMembership: Missing required field: domainRoleMembersList")
+	}
+	return nil
+}
+
+//
+// UserAuthorityAttributes - Copyright Athenz Authors Licensed under the terms
+// of the Apache version 2.0 license. See LICENSE file for terms.
+//
+type UserAuthorityAttributes struct {
+	Values []string `json:"values"`
+}
+
+//
+// NewUserAuthorityAttributes - creates an initialized UserAuthorityAttributes instance, returns a pointer to it
+//
+func NewUserAuthorityAttributes(init ...*UserAuthorityAttributes) *UserAuthorityAttributes {
+	var o *UserAuthorityAttributes
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(UserAuthorityAttributes)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *UserAuthorityAttributes) Init() *UserAuthorityAttributes {
+	if self.Values == nil {
+		self.Values = make([]string, 0)
+	}
+	return self
+}
+
+type rawUserAuthorityAttributes UserAuthorityAttributes
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a UserAuthorityAttributes
+//
+func (self *UserAuthorityAttributes) UnmarshalJSON(b []byte) error {
+	var m rawUserAuthorityAttributes
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := UserAuthorityAttributes(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *UserAuthorityAttributes) Validate() error {
+	if self.Values == nil {
+		return fmt.Errorf("UserAuthorityAttributes: Missing required field: values")
+	}
+	return nil
+}
+
+//
+// UserAuthorityAttributeMap - Map of user authority attributes
+//
+type UserAuthorityAttributeMap struct {
+
+	//
+	// map of type to attribute values
+	//
+	Attributes map[SimpleName]*UserAuthorityAttributes `json:"attributes"`
+}
+
+//
+// NewUserAuthorityAttributeMap - creates an initialized UserAuthorityAttributeMap instance, returns a pointer to it
+//
+func NewUserAuthorityAttributeMap(init ...*UserAuthorityAttributeMap) *UserAuthorityAttributeMap {
+	var o *UserAuthorityAttributeMap
+	if len(init) == 1 {
+		o = init[0]
+	} else {
+		o = new(UserAuthorityAttributeMap)
+	}
+	return o.Init()
+}
+
+//
+// Init - sets up the instance according to its default field values, if any
+//
+func (self *UserAuthorityAttributeMap) Init() *UserAuthorityAttributeMap {
+	if self.Attributes == nil {
+		self.Attributes = make(map[SimpleName]*UserAuthorityAttributes)
+	}
+	return self
+}
+
+type rawUserAuthorityAttributeMap UserAuthorityAttributeMap
+
+//
+// UnmarshalJSON is defined for proper JSON decoding of a UserAuthorityAttributeMap
+//
+func (self *UserAuthorityAttributeMap) UnmarshalJSON(b []byte) error {
+	var m rawUserAuthorityAttributeMap
+	err := json.Unmarshal(b, &m)
+	if err == nil {
+		o := UserAuthorityAttributeMap(m)
+		*self = *((&o).Init())
+		err = self.Validate()
+	}
+	return err
+}
+
+//
+// Validate - checks for missing required fields, etc
+//
+func (self *UserAuthorityAttributeMap) Validate() error {
+	if self.Attributes == nil {
+		return fmt.Errorf("UserAuthorityAttributeMap: Missing required field: attributes")
 	}
 	return nil
 }

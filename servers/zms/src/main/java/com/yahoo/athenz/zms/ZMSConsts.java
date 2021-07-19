@@ -63,6 +63,7 @@ public final class ZMSConsts {
     public static final String ZMS_PROP_STORE_OP_TIMEOUT  = "athenz.zms.store_operation_timeout";
     public static final String ZMS_PROP_NOAUTH_URI_LIST   = "athenz.zms.no_auth_uri_list";
     public static final String ZMS_PROP_CORS_ORIGIN_LIST  = "athenz.zms.cors_origin_list";
+    public static final String ZMS_PROP_CORS_HEADER_LIST  = "athenz.zms.cors_header_list";
 
     public static final String ZMS_PROP_AWS_RDS_USER               = "athenz.zms.aws_rds_user";
     public static final String ZMS_PROP_AWS_RDS_IAM_ROLE           = "athenz.zms.aws_rds_iam_role";
@@ -123,6 +124,9 @@ public final class ZMSConsts {
 
     public static final String ZMS_PROP_OBJECT_STORE_FACTORY_CLASS      = "athenz.zms.object_store_factory_class";
     public static final String ZMS_OBJECT_STORE_FACTORY_CLASS           = "com.yahoo.athenz.zms.store.impl.FileObjectStoreFactory";
+
+    public static final String ZMS_PROP_DOMAIN_META_STORE_FACTORY_CLASS = "athenz.zms.domain_meta_store_factory_class";
+    public static final String ZMS_DOMAIN_META_STORE_FACTORY_CLASS      = "com.yahoo.athenz.common.server.metastore.impl.NoOpDomainMetaStoreFactory";
 
     // properties for our default quota limits
 
@@ -238,10 +242,12 @@ public final class ZMSConsts {
     public static final String DB_COLUMN_AS_GROUP_NAME      = "group_name";
     public static final String DB_COLUMN_SYSTEM_DISABLED    = "system_disabled";
     public static final String DB_COLUMN_AZURE_SUBSCRIPTION = "azure_subscription";
+    public static final String DB_COLUMN_BUSINESS_SERVICE   = "business_service";
 
     public static final String DB_COLUMN_SERVICE_REVIEW_DAYS      = "service_review_days";
     public static final String DB_COLUMN_SERVICE_EXPIRY_DAYS      = "service_expiry_days";
     public static final String DB_COLUMN_GROUP_EXPIRY_DAYS        = "group_expiry_days";
+    public static final String DB_COLUMN_GROUP_REVIEW_DAYS        = "group_review_days";
     public static final String DB_COLUMN_ROLE_CERT_EXPIRY_MINS    = "role_cert_expiry_mins";
     public static final String DB_COLUMN_SERVICE_CERT_EXPIRY_MINS = "service_cert_expiry_mins";
     public static final String DB_COLUMN_PRINCIPAL_GROUP          = "principal_group";
@@ -250,6 +256,10 @@ public final class ZMSConsts {
     public static final String DB_COLUMN_USER_AUTHORITY_FILTER           = "user_authority_filter";
     public static final String DB_COLUMN_USER_AUTHORITY_EXPIRATION       = "user_authority_expiration";
     public static final String DB_COLUMN_AS_DOMAIN_USER_AUTHORITY_FILTER = "domain_user_authority_filter";
+
+    public static final String DB_COLUMN_KEY                       = "key";
+    public static final String DB_COLUMN_OPERATOR                  = "operator";
+    public static final String DB_COLUMN_CONDITION_ID              = "condition_id";
 
     public static final String ADMIN_POLICY_NAME = "admin";
     public static final String ADMIN_ROLE_NAME   = "admin";
@@ -278,6 +288,8 @@ public final class ZMSConsts {
     public static final String SYSTEM_META_LAST_MOD_TIME      = "modified";
     public static final String SYSTEM_META_PROVIDER_ENDPOINT  = "providerendpoint";
     public static final String SYSTEM_META_AZURE_SUBSCRIPTION = "azuresubscription";
+    public static final String SYSTEM_META_BUSINESS_SERVICE   = "businessservice";
+
 
     // HTTP operation types used in metrics
     public static final String HTTP_GET     = "GET";
@@ -291,7 +303,7 @@ public final class ZMSConsts {
 
     public static final int STRING_BLDR_SIZE_DEFAULT = 512;
 
-    public static final String ZMS_JSON_PARSER_ERROR_RESPONSE = "{\"code\":400,\"message\":\"Invalid Object: checkout https://github.com/yahoo/athenz/tree/master/core/zms/src/main/rdl for object definitions\"}";
+    public static final String ZMS_JSON_PARSER_ERROR_RESPONSE = "{\"code\":400,\"message\":\"Invalid Object: checkout https://github.com/AthenZ/athenz/tree/master/core/zms/src/main/rdl for object definitions\"}";
 
     public static final String SYS_AUTH_AUDIT_BY_ORG    = "sys.auth.audit.org";
     public static final String SYS_AUTH_AUDIT_BY_DOMAIN = "sys.auth.audit.domain";
@@ -309,4 +321,6 @@ public final class ZMSConsts {
     public static final String ZMS_PROP_PRINCIPAL_STATE_UPDATER_FREQUENCY = "athenz.zms.principal_state_updater_frequency";
     public static final String ZMS_PROP_PRINCIPAL_STATE_UPDATER_FREQUENCY_DEFAULT = "30"; // in minutes
     public static final String ZMS_PROP_PRINCIPAL_STATE_UPDATER_DISABLE_TIMER = "athenz.zms.disable_principal_state_updater_timer_task";
+
+    public static final String ZMS_PROP_QUOTA_ASSERTION_CONDITIONS = "athenz.zms.quota_assertion_conditions";
 }

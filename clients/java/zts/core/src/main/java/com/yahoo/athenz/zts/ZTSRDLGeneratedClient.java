@@ -417,6 +417,28 @@ public class ZTSRDLGeneratedClient {
 
     }
 
+    public InstanceRegisterToken getInstanceRegisterToken(String provider, String domain, String service, String instanceId) {
+        WebTarget target = base.path("/instance/{provider}/{domain}/{service}/{instanceId}/token")
+            .resolveTemplate("provider", provider)
+            .resolveTemplate("domain", domain)
+            .resolveTemplate("service", service)
+            .resolveTemplate("instanceId", instanceId);
+        Invocation.Builder invocationBuilder = target.request("application/json");
+        if (credsHeader != null) {
+            invocationBuilder = credsHeader.startsWith("Cookie.") ? invocationBuilder.cookie(credsHeader.substring(7),
+                credsToken) : invocationBuilder.header(credsHeader, credsToken);
+        }
+        Response response = invocationBuilder.get();
+        int code = response.getStatus();
+        switch (code) {
+        case 200:
+            return response.readEntity(InstanceRegisterToken.class);
+        default:
+            throw new ResourceException(code, response.readEntity(ResourceError.class));
+        }
+
+    }
+
     public InstanceIdentity deleteInstanceIdentity(String provider, String domain, String service, String instanceId) {
         WebTarget target = base.path("/instance/{provider}/{domain}/{service}/{instanceId}")
             .resolveTemplate("provider", provider)
@@ -452,25 +474,6 @@ public class ZTSRDLGeneratedClient {
         switch (code) {
         case 200:
             return response.readEntity(CertificateAuthorityBundle.class);
-        default:
-            throw new ResourceException(code, response.readEntity(ResourceError.class));
-        }
-
-    }
-
-    public DomainMetrics postDomainMetrics(String domainName, DomainMetrics req) {
-        WebTarget target = base.path("/metrics/{domainName}")
-            .resolveTemplate("domainName", domainName);
-        Invocation.Builder invocationBuilder = target.request("application/json");
-        if (credsHeader != null) {
-            invocationBuilder = credsHeader.startsWith("Cookie.") ? invocationBuilder.cookie(credsHeader.substring(7),
-                credsToken) : invocationBuilder.header(credsHeader, credsToken);
-        }
-        Response response = invocationBuilder.post(javax.ws.rs.client.Entity.entity(req, "application/json"));
-        int code = response.getStatus();
-        switch (code) {
-        case 200:
-            return response.readEntity(DomainMetrics.class);
         default:
             throw new ResourceException(code, response.readEntity(ResourceError.class));
         }
@@ -564,6 +567,65 @@ public class ZTSRDLGeneratedClient {
         switch (code) {
         case 200:
             return response.readEntity(RoleCertificate.class);
+        default:
+            throw new ResourceException(code, response.readEntity(ResourceError.class));
+        }
+
+    }
+
+    public Workloads getWorkloadsByService(String domainName, String serviceName) {
+        WebTarget target = base.path("/domain/{domainName}/service/{serviceName}/workloads")
+            .resolveTemplate("domainName", domainName)
+            .resolveTemplate("serviceName", serviceName);
+        Invocation.Builder invocationBuilder = target.request("application/json");
+        if (credsHeader != null) {
+            invocationBuilder = credsHeader.startsWith("Cookie.") ? invocationBuilder.cookie(credsHeader.substring(7),
+                credsToken) : invocationBuilder.header(credsHeader, credsToken);
+        }
+        Response response = invocationBuilder.get();
+        int code = response.getStatus();
+        switch (code) {
+        case 200:
+            return response.readEntity(Workloads.class);
+        default:
+            throw new ResourceException(code, response.readEntity(ResourceError.class));
+        }
+
+    }
+
+    public Workloads getWorkloadsByIP(String ip) {
+        WebTarget target = base.path("/workloads/{ip}")
+            .resolveTemplate("ip", ip);
+        Invocation.Builder invocationBuilder = target.request("application/json");
+        if (credsHeader != null) {
+            invocationBuilder = credsHeader.startsWith("Cookie.") ? invocationBuilder.cookie(credsHeader.substring(7),
+                credsToken) : invocationBuilder.header(credsHeader, credsToken);
+        }
+        Response response = invocationBuilder.get();
+        int code = response.getStatus();
+        switch (code) {
+        case 200:
+            return response.readEntity(Workloads.class);
+        default:
+            throw new ResourceException(code, response.readEntity(ResourceError.class));
+        }
+
+    }
+
+    public TransportRules getTransportRules(String domainName, String serviceName) {
+        WebTarget target = base.path("/domain/{domainName}/service/{serviceName}/transportRules")
+            .resolveTemplate("domainName", domainName)
+            .resolveTemplate("serviceName", serviceName);
+        Invocation.Builder invocationBuilder = target.request("application/json");
+        if (credsHeader != null) {
+            invocationBuilder = credsHeader.startsWith("Cookie.") ? invocationBuilder.cookie(credsHeader.substring(7),
+                credsToken) : invocationBuilder.header(credsHeader, credsToken);
+        }
+        Response response = invocationBuilder.get();
+        int code = response.getStatus();
+        switch (code) {
+        case 200:
+            return response.readEntity(TransportRules.class);
         default:
             throw new ResourceException(code, response.readEntity(ResourceError.class));
         }

@@ -16,8 +16,14 @@
 import Fetchr from 'fetchr';
 import 'setimmediate';
 import NameUtils from './components/utils/NameUtils';
+import DateUtils from './components/utils/DateUtils';
+import {
+    SERVICE_TYPE_STATIC,
+    SERVICE_TYPE_STATIC_LABEL,
+} from './components/constants/constants';
 
 const Api = (req) => {
+    let localDate = new DateUtils();
     const fetchr = new Fetchr({
         xhrPath: '/api/v1',
         xhrTimeout: 10000,
@@ -111,9 +117,7 @@ const Api = (req) => {
                     name,
                     detail: {
                         name,
-                        templates: {
-                            templateNames: ['openhouse'],
-                        },
+                        templates: {},
                     },
                 };
                 fetchr
@@ -197,6 +201,59 @@ const Api = (req) => {
             });
         },
 
+        getServiceHost(domain, service) {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('get-service-host')
+                    .params({ domain, service })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            if (data) {
+                                resolve(data);
+                            } else {
+                                resolve([]);
+                            }
+                        }
+                    });
+            });
+        },
+
+        reloadGroups(domainName, groupName) {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('groups')
+                    .params({ domainName, groupName })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            if (data && data.list) {
+                                resolve(data.list);
+                            } else {
+                                resolve([]);
+                            }
+                        }
+                    });
+            });
+        },
+
+        listGroups(domainName) {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('groups-list')
+                    .params({ domainName })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
         getRole(
             domainName,
             roleName,
@@ -255,6 +312,21 @@ const Api = (req) => {
                             auditLog,
                             expand,
                             pending,
+                        })
+                        .end((err, data) => {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                resolve(data);
+                            }
+                        });
+                });
+            } else if (category === 'domain') {
+                return new Promise((resolve, reject) => {
+                    fetchr
+                        .read('domain')
+                        .params({
+                            domain: collectionName,
                         })
                         .end((err, data) => {
                             if (err) {
@@ -415,6 +487,37 @@ const Api = (req) => {
             });
         },
 
+        addServiceHost(domain, service, detail, auditRef, _csrf) {
+            return new Promise((resolve, reject) => {
+                fetchr.updateOptions({
+                    context: {
+                        _csrf: _csrf,
+                    },
+                });
+                var params = {
+                    domain,
+                    service,
+                    detail,
+                    auditRef,
+                };
+
+                fetchr
+                    .update('add-service-host')
+                    .params(params)
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            if (data) {
+                                resolve(data);
+                            } else {
+                                resolve([]);
+                            }
+                        }
+                    });
+            });
+        },
+
         reviewGroup(domainName, groupName, group, auditRef, _csrf) {
             return new Promise((resolve, reject) => {
                 fetchr.updateOptions({
@@ -525,7 +628,7 @@ const Api = (req) => {
 
         deleteMember(
             domainName,
-            principalName,
+            collectionName,
             memberName,
             auditRef,
             pending,
@@ -542,7 +645,7 @@ const Api = (req) => {
                     .delete('member')
                     .params({
                         domainName,
-                        principalName,
+                        collectionName,
                         memberName,
                         auditRef,
                         pending,
@@ -835,6 +938,35 @@ const Api = (req) => {
             });
         },
 
+        getAssertionId(
+            domainName,
+            policyName,
+            roleName,
+            resource,
+            action,
+            effect
+        ) {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('assertionId')
+                    .params({
+                        domainName,
+                        policyName,
+                        roleName,
+                        resource,
+                        action,
+                        effect,
+                    })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
         getProvider(domainName, serviceName) {
             return new Promise((resolve, reject) => {
                 fetchr
@@ -912,7 +1044,7 @@ const Api = (req) => {
                                     domainName
                                 ),
                                 effect,
-                                action,
+                                action: action.trim(),
                                 caseSensitive: true,
                             },
                         ],
@@ -1006,7 +1138,7 @@ const Api = (req) => {
                             domainName
                         ),
                         effect,
-                        action,
+                        action: action.trim(),
                         caseSensitive: true,
                     },
                 };
@@ -1023,7 +1155,48 @@ const Api = (req) => {
             });
         },
 
-        deleteAssertion(domainName, policyName, assertionId, _csrf) {
+        addAssertionConditions(
+            domainName,
+            policyName,
+            assertionId,
+            assertionConditions,
+            auditRef,
+            _csrf
+        ) {
+            return new Promise((resolve, reject) => {
+                fetchr.updateOptions({
+                    context: {
+                        _csrf: _csrf,
+                    },
+                });
+                var params = {
+                    domainName,
+                    assertionId,
+                    assertionConditions,
+                    policyName,
+                    auditRef,
+                };
+                fetchr
+                    .create('assertionConditions')
+                    .params(params)
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
+        deleteAssertionCondition(
+            domainName,
+            policyName,
+            assertionId,
+            conditionId,
+            auditRef,
+            _csrf
+        ) {
             return new Promise((resolve, reject) => {
                 fetchr.updateOptions({
                     context: {
@@ -1035,6 +1208,36 @@ const Api = (req) => {
                     domainName,
                     policyName,
                     assertionId,
+                    conditionId,
+                    auditRef,
+                };
+
+                fetchr
+                    .delete('assertionCondition')
+                    .params(params)
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
+        deleteAssertion(domainName, policyName, assertionId, auditRef, _csrf) {
+            return new Promise((resolve, reject) => {
+                fetchr.updateOptions({
+                    context: {
+                        _csrf: _csrf,
+                    },
+                });
+
+                let params = {
+                    domainName,
+                    policyName,
+                    assertionId,
+                    auditRef,
                 };
 
                 fetchr
@@ -1069,7 +1272,7 @@ const Api = (req) => {
             });
         },
 
-        putMeta(domainName, principalName, detail, auditRef, _csrf, category) {
+        putMeta(domainName, collectionName, detail, auditRef, _csrf, category) {
             return new Promise((resolve, reject) => {
                 fetchr.updateOptions({
                     context: {
@@ -1080,11 +1283,26 @@ const Api = (req) => {
                     .create('meta')
                     .params({
                         domainName,
-                        principalName,
+                        collectionName,
                         detail,
                         auditRef,
                         category,
                     })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
+        getMeta(params) {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('meta')
+                    .params(params)
                     .end((err, data) => {
                         if (err) {
                             reject(err);
@@ -1151,6 +1369,21 @@ const Api = (req) => {
             });
         },
 
+        getServerTemplateDetailsList() {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('templates')
+                    .params()
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
         getAuthOptions() {
             return new Promise((resolve, reject) => {
                 fetchr
@@ -1170,6 +1403,21 @@ const Api = (req) => {
             return new Promise((resolve, reject) => {
                 fetchr
                     .read('header-details')
+                    .params()
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
+        getServiceHeaderDetails() {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('service-header-details')
                     .params()
                     .end((err, data) => {
                         if (err) {
@@ -1216,15 +1464,15 @@ const Api = (req) => {
             });
         },
 
-        getGroup(domainName, groupName) {
+        getGroup(domainName, groupName, auditLog = true, pending = true) {
             return new Promise((resolve, reject) => {
                 fetchr
                     .read('group')
                     .params({
                         domainName,
                         groupName,
-                        auditLog: true,
-                        pending: true,
+                        auditLog,
+                        pending,
                     })
                     .end((err, data) => {
                         if (err) {
@@ -1256,6 +1504,147 @@ const Api = (req) => {
                 fetchr
                     .read('domain-role-member')
                     .params({ principal })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
+        getFeatureFlag() {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('feature-flag')
+                    .params()
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
+        getInstances(domainName, serviceName, category) {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('instances')
+                    .params({ domainName, serviceName, category })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            let result = {
+                                workLoadData: [],
+                            };
+                            let workLoadMeta = {
+                                totalDynamic: 0,
+                                totalStatic: 0,
+                                totalRecords: 0,
+                                totalHealthyDynamic: 0,
+                            };
+                            let totalHealthyDynamicCount = 0;
+                            if (data && data.workloadList != null) {
+                                workLoadMeta.totalRecords =
+                                    data.workloadList.length;
+                                if (category === SERVICE_TYPE_STATIC) {
+                                    data.workloadList.forEach((workload) => {
+                                        if (
+                                            workload.provider ===
+                                            SERVICE_TYPE_STATIC_LABEL
+                                        ) {
+                                            result.workLoadData.push(workload);
+                                        }
+                                    });
+                                    workLoadMeta.totalStatic =
+                                        result.workLoadData.length;
+                                    result.workLoadMeta = workLoadMeta;
+                                    resolve(result);
+                                } else {
+                                    data.workloadList.forEach((workload) => {
+                                        if (
+                                            workload.provider !==
+                                            SERVICE_TYPE_STATIC_LABEL
+                                        ) {
+                                            result.workLoadData.push(workload);
+                                            if (
+                                                workload.hostname !== 'NA' &&
+                                                localDate.isRefreshedinLastSevenDays(
+                                                    workload.updateTime,
+                                                    'UTC'
+                                                )
+                                            ) {
+                                                totalHealthyDynamicCount++;
+                                            }
+                                        }
+                                    });
+                                    workLoadMeta.totalHealthyDynamic =
+                                        totalHealthyDynamicCount;
+                                    workLoadMeta.totalDynamic =
+                                        result.workLoadData.length;
+                                    result.workLoadMeta = workLoadMeta;
+                                    resolve(result);
+                                }
+                            }
+                        }
+                    });
+            });
+        },
+
+        getInboundOutbound(domainName) {
+            return new Promise((resolve, reject) => {
+                fetchr
+                    .read('microsegmentation')
+                    .params({ domainName: domainName })
+                    .end((err, data) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+            });
+        },
+
+        getAuthorityAttributes() {
+            return new Promise((resolve, reject) => {
+                fetchr.read('authority').end((err, data) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(data);
+                    }
+                });
+            });
+        },
+
+        editMicrosegmentation(
+            domainName,
+            roleChanged,
+            assertionChanged,
+            assertionConditionChanged,
+            data,
+            _csrf
+        ) {
+            return new Promise((resolve, reject) => {
+                fetchr.updateOptions({
+                    context: {
+                        _csrf: _csrf,
+                    },
+                });
+                fetchr
+                    .update('microsegmentation')
+                    .params({
+                        domainName,
+                        roleChanged,
+                        assertionChanged,
+                        assertionConditionChanged,
+                        data,
+                    })
                     .end((err, data) => {
                         if (err) {
                             reject(err);

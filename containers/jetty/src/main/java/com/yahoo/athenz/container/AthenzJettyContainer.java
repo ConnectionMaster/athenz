@@ -19,9 +19,15 @@ package com.yahoo.athenz.container;
 import java.io.File;
 import java.net.InetAddress;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.DispatcherType;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.athenz.common.server.log.jetty.JettyConnectionLogger;
+import com.yahoo.athenz.common.server.log.jetty.JettyConnectionLoggerFactory;
 import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.deploy.PropertiesConfigurationManager;
 import org.eclipse.jetty.deploy.bindings.DebugListenerBinding;
@@ -47,6 +53,7 @@ import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
@@ -70,6 +77,7 @@ public class AthenzJettyContainer {
     private String banner = null;
     private HandlerCollection handlers = null;
     private PrivateKeyStore privateKeyStore;
+    private final JettyConnectionLoggerFactory jettyConnectionLoggerFactory = new JettyConnectionLoggerFactory();
     
     public AthenzJettyContainer() {
         loadServicePrivateKey();
@@ -92,7 +100,7 @@ public class AthenzJettyContainer {
                 serverHostName = localhost.getCanonicalHostName();
             } catch (java.net.UnknownHostException e) {
                 ///CLOVER:OFF
-                LOG.info("Unable to determine local hostname: " + e.getMessage());
+                LOG.info("Unable to determine local hostname: {}", e.getMessage());
                 serverHostName = "localhost";
                 ///CLOVER:ON
             }
@@ -175,6 +183,27 @@ public class AthenzJettyContainer {
             rewriteHandler.addRule(disableKeepAliveRule);
         }
         
+        // Add response-headers, according to configuration
+
+        String responseHeadersJson = System.getProperty(AthenzConsts.ATHENZ_PROP_RESPONSE_HEADERS_JSON, "");
+        if (!responseHeadersJson.isEmpty()) {
+            HashMap<String, String> responseHeaders;
+            try {
+                responseHeaders = new ObjectMapper().readValue(responseHeadersJson, new TypeReference<HashMap<String, String>>() {
+                });
+            } catch (Exception exception) {
+                throw new RuntimeException("System-property \"" + AthenzConsts.ATHENZ_PROP_RESPONSE_HEADERS_JSON + "\" must be a JSON object with string values. System property's value: " + responseHeadersJson);
+            }
+
+            for (Map.Entry<String, String>  responseHeader : responseHeaders.entrySet()) {
+                HeaderPatternRule rule = new HeaderPatternRule();
+                rule.setPattern("/*");
+                rule.setName(responseHeader.getKey());
+                rule.setValue(responseHeader.getValue());
+                rewriteHandler.addRule(rule);
+            }
+        }
+
         // Return a Host field in the response so during debugging
         // we know what server was handling request
         
@@ -317,8 +346,7 @@ public class AthenzJettyContainer {
         try {
             pkeyFactory = (PrivateKeyStoreFactory) Class.forName(pkeyFactoryClass).newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            LOG.error("Invalid PrivateKeyStoreFactory class: " + pkeyFactoryClass
-                    + " error: " + e.getMessage());
+            LOG.error("Invalid PrivateKeyStoreFactory class: {} error: {}", pkeyFactoryClass, e.getMessage());
             throw new IllegalArgumentException("Invalid private key store");
         }
         this.privateKeyStore = pkeyFactory.create();
@@ -338,10 +366,8 @@ public class AthenzJettyContainer {
         final String trustStoreType = System.getProperty(AthenzConsts.ATHENZ_PROP_TRUSTSTORE_TYPE, "PKCS12");
         final String includedCipherSuites = System.getProperty(AthenzConsts.ATHENZ_PROP_INCLUDED_CIPHER_SUITES);
         final String excludedCipherSuites = System.getProperty(AthenzConsts.ATHENZ_PROP_EXCLUDED_CIPHER_SUITES);
-        final String excludedProtocols = System.getProperty(AthenzConsts.ATHENZ_PROP_EXCLUDED_PROTOCOLS,
-                ATHENZ_DEFAULT_EXCLUDED_PROTOCOLS);
-        boolean enableOCSP = Boolean.parseBoolean(System.getProperty(AthenzConsts.ATHENZ_PROP_ENABLE_OCSP, "false"));
-        boolean renegotiationAllowed = Boolean.parseBoolean(System.getProperty(AthenzConsts.ATHENZ_PROP_RENEGOTIATION_ALLOWED, "true"));
+        final String excludedProtocols = System.getProperty(AthenzConsts.ATHENZ_PROP_EXCLUDED_PROTOCOLS, ATHENZ_DEFAULT_EXCLUDED_PROTOCOLS);
+        final boolean renegotiationAllowed = Boolean.parseBoolean(System.getProperty(AthenzConsts.ATHENZ_PROP_RENEGOTIATION_ALLOWED, "false"));
 
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
         sslContextFactory.setEndpointIdentificationAlgorithm(null);
@@ -386,7 +412,6 @@ public class AthenzJettyContainer {
             sslContextFactory.setWantClientAuth(true);
         }
 
-        sslContextFactory.setEnableOCSP(enableOCSP);
         sslContextFactory.setRenegotiationAllowed(renegotiationAllowed);
 
         return sslContextFactory;
@@ -411,7 +436,7 @@ public class AthenzJettyContainer {
     }
     
     void addHTTPSConnector(HttpConfiguration httpConfig, int httpsPort, boolean proxyProtocol,
-            String listenHost, int idleTimeout, boolean needClientAuth) {
+            String listenHost, int idleTimeout, boolean needClientAuth, JettyConnectionLogger connectionLogger) {
         
         // SSL Context Factory
     
@@ -441,7 +466,23 @@ public class AthenzJettyContainer {
         if (listenHost != null) {
             sslConnector.setHost(listenHost);
         }
+        if (connectionLogger != null) {
+            sslConnector.addBean(connectionLogger);
+        }
         server.addConnector(sslConnector);
+
+        // Reload the key-store if the file is changed
+        final int reloadSslContextSeconds = Integer.parseInt(System.getProperty(AthenzConsts.ATHENZ_PROP_KEYSTORE_RELOAD_SEC, "0"));
+        if ((reloadSslContextSeconds > 0) && (sslContextFactory.getKeyStorePath() != null)) {
+            try {
+                KeyStoreScanner keystoreScanner = new KeyStoreScanner(sslContextFactory);
+                keystoreScanner.setScanInterval(reloadSslContextSeconds);
+                server.addBean(keystoreScanner);
+            } catch (IllegalArgumentException exception) {
+                LOG.error("Keystore cant be automatically reloaded when \"{}\" is changed: {}", sslContextFactory.getKeyStorePath(), exception.getMessage());
+                throw exception;
+            }
+        }
     }
     
     public void addHTTPConnectors(HttpConfiguration httpConfig, int httpPort, int httpsPort,
@@ -458,14 +499,25 @@ public class AthenzJettyContainer {
         if (httpPort > 0) {
             addHTTPConnector(httpConfig, httpPort, proxyProtocol, listenHost, idleTimeout);
         }
-        
+
+        // check to see if we need to create our connection logger
+        // for TLS connection failures
+
+        boolean logSSLFailures = Boolean.parseBoolean(
+                System.getProperty(AthenzConsts.ATHENZ_PROP_SSL_LOG_FAILURES, "false"));
+        JettyConnectionLogger connectionLogger = null;
+        if (logSSLFailures) {
+            connectionLogger = jettyConnectionLoggerFactory.create();
+        }
+
         // HTTPS Connector
-        
+
         if (httpsPort > 0) {
             boolean needClientAuth = Boolean.parseBoolean(
                     System.getProperty(AthenzConsts.ATHENZ_PROP_CLIENT_AUTH, "false"));
+
             addHTTPSConnector(httpConfig, httpsPort, proxyProtocol, listenHost,
-                    idleTimeout, needClientAuth);
+                    idleTimeout, needClientAuth, connectionLogger);
         }
         
         // Status Connector - only if it's different from HTTP/HTTPS
@@ -473,13 +525,13 @@ public class AthenzJettyContainer {
         if (statusPort > 0 && statusPort != httpPort && statusPort != httpsPort) {
             
             if (httpsPort > 0) {
-                addHTTPSConnector(httpConfig, statusPort, false, listenHost, idleTimeout, false);
+                addHTTPSConnector(httpConfig, statusPort, false, listenHost, idleTimeout, false, connectionLogger);
             } else if (httpPort > 0) {
                 addHTTPConnector(httpConfig, statusPort, false, listenHost, idleTimeout);
             }
         }
     }
-    
+
     /**
      * Set the banner that get displayed when server is started up.
      * @param banner Banner text to be displayed
@@ -525,7 +577,7 @@ public class AthenzJettyContainer {
         int maxThreads = Integer.parseInt(System.getProperty(AthenzConsts.ATHENZ_PROP_MAX_THREADS,
                 Integer.toString(AthenzConsts.ATHENZ_HTTP_MAX_THREADS)));
         container.createServer(maxThreads);
-        
+
         HttpConfiguration httpConfig = container.newHttpConfiguration();
         container.addHTTPConnectors(httpConfig, httpPort, httpsPort, statusPort);
         container.addServletHandlers(serverHostName);
@@ -541,7 +593,7 @@ public class AthenzJettyContainer {
             System.out.println("Jetty server running at " + banner);
             server.join();
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 

@@ -144,15 +144,21 @@ public class ZTSSchema {
             .field("signature", "String", false, "signature generated based on the domain policies object")
             .field("keyId", "String", false, "the identifier of the key used to generate the signature");
 
+        sb.structType("RoleCertificate")
+            .comment("Copyright Athenz Authors Licensed under the terms of the Apache version 2.0 license. See LICENSE file for terms. RoleCertificate - a role certificate")
+            .field("x509Certificate", "String", false, "");
+
+        sb.structType("RoleCertificateRequest")
+            .comment("RoleCertificateRequest - a certificate signing request. By including the optional previous Certificate NotBefore and NotAfter dates would all the server to correctly prioritize this request in case the certificate signer is under heavy load and it can't sign all submitted requests from the Athenz Server.")
+            .field("csr", "String", false, "role certificate singing request")
+            .field("proxyForPrincipal", "EntityName", true, "this request is proxy for this principal")
+            .field("expiryTime", "Int64", false, "request an expiry time for the role certificate")
+            .field("prevCertNotBefore", "Timestamp", true, "previous role certificate not before date")
+            .field("prevCertNotAfter", "Timestamp", true, "previous role certificate not after date");
+
         sb.structType("RoleToken")
             .comment("A representation of a signed RoleToken")
             .field("token", "String", false, "")
-            .field("expiryTime", "Int64", false, "");
-
-        sb.structType("RoleCertificateRequest")
-            .comment("RoleCertificateRequest - a certificate signing request")
-            .field("csr", "String", false, "")
-            .field("proxyForPrincipal", "EntityName", true, "this request is proxy for this principal")
             .field("expiryTime", "Int64", false, "");
 
         sb.structType("Access")
@@ -224,6 +230,13 @@ public class ZTSSchema {
             .field("hostname", "DomainName", true, "optional hostname in case included in the csr SAN dnsName attribute")
             .arrayField("hostCnames", "DomainName", true, "optional host CNAMEs included in the csr SAN dnsName attribute");
 
+        sb.structType("InstanceRegisterToken")
+            .field("provider", "ServiceName", false, "provider service name")
+            .field("domain", "DomainName", false, "the domain of the instance")
+            .field("service", "SimpleName", false, "the service this instance is supposed to run")
+            .field("attestationData", "String", false, "identity attestation data including document with its signature containing attributes like IP address, instance-id, account#, etc.")
+            .mapField("attributes", "String", "String", true, "additional non-signed attributes that assist in attestation. I.e. \"keyId\", \"accessKey\", etc");
+
         sb.structType("InstanceIdentity")
             .field("provider", "ServiceName", false, "the provider service name (i.e. \"aws.us-west-2\", \"sys.openstack.cluster1\")")
             .field("name", "ServiceName", false, "name of the identity, fully qualified, i.e. my.domain.service1")
@@ -287,7 +300,9 @@ public class ZTSSchema {
             .field("sshClientVersion", "String", true, "ssh client version")
             .field("certType", "String", false, "cert type - user or host")
             .field("athenzService", "EntityName", true, "ssh host cert request is for this athenz service")
-            .field("instanceId", "PathElement", true, "ssh host cert request is for this instance id");
+            .field("instanceId", "PathElement", true, "ssh host cert request is for this instance id")
+            .field("prevCertValidFrom", "Timestamp", true, "previous ssh certificate validity from date")
+            .field("prevCertValidTo", "Timestamp", true, "previous ssh certificate validity to date");
 
         sb.structType("SSHCertRequest")
             .field("certRequestData", "SSHCertRequestData", false, "ssh certificate request data")
@@ -328,9 +343,34 @@ public class ZTSSchema {
 
     
 
-        sb.structType("RoleCertificate")
-            .comment("Copyright 2019 Oath Holdings Inc Licensed under the terms of the Apache version 2.0 license. See LICENSE file for terms. RoleCertificate - a role certificate")
-            .field("x509Certificate", "String", false, "");
+        sb.structType("Workload")
+            .field("domainName", "DomainName", false, "name of the domain, optional for getWorkloadsByService API call")
+            .field("serviceName", "EntityName", false, "name of the service, , optional for getWorkloadsByService API call")
+            .field("uuid", "String", false, "unique identifier for the workload, usually defined by provider")
+            .arrayField("ipAddresses", "String", false, "list of IP addresses associated with the workload, optional for getWorkloadsByIP API call")
+            .field("hostname", "String", false, "hostname associated with the workload")
+            .field("provider", "String", false, "infrastructure provider e.g. k8s, AWS, Azure, openstack etc.")
+            .field("updateTime", "Timestamp", false, "most recent update timestamp in the backend")
+            .field("certExpiryTime", "Timestamp", false, "certificate expiry time (ex: getNotAfter)");
+
+        sb.structType("Workloads")
+            .arrayField("workloadList", "Workload", false, "list of workloads");
+
+        sb.enumType("TransportDirection")
+            .comment("Copyright The Athenz Authors Licensed under the terms of the Apache version 2.0 license. See LICENSE file for terms.")
+            .element("IN")
+            .element("OUT");
+
+        sb.structType("TransportRule")
+            .field("endPoint", "String", false, "source or destination endpoints defined in terms of CIDR notation")
+            .field("sourcePortRange", "String", false, "range of port numbers for incoming connections")
+            .field("port", "Int32", false, "destination / listener port of the service")
+            .field("protocol", "String", false, "protocol of the connection")
+            .field("direction", "TransportDirection", false, "transport direction");
+
+        sb.structType("TransportRules")
+            .arrayField("ingressRules", "TransportRule", false, "")
+            .arrayField("egressRules", "TransportRule", false, "");
 
 
         sb.resource("ResourceAccess", "GET", "/access/{action}/{resource}")
@@ -444,7 +484,7 @@ public class ZTSSchema {
 ;
 
         sb.resource("RoleCertificateRequest", "POST", "/domain/{domainName}/role/{roleName}/token")
-            .comment("Return a TLS certificate for the specific role in the namespace that the principal can assume. Role certificates are valid for 30 days by default")
+            .comment("Return a TLS certificate for the specific role in the namespace that the principal can assume. Role certificates are valid for 30 days by default. This is deprecated and \"POST /rolecert\" api should be used instead.")
             .pathParam("domainName", "DomainName", "name of the domain")
             .pathParam("roleName", "EntityName", "name of role")
             .input("req", "RoleCertificateRequest", "csr request")
@@ -520,7 +560,7 @@ public class ZTSSchema {
 ;
 
         sb.resource("AWSTemporaryCredentials", "GET", "/domain/{domainName}/role/{role}/creds")
-            .comment("perform an AWS AssumeRole of the target role and return the credentials. ZTS must have been granted the ability to assume the role in IAM, and granted the ability to ASSUME_AWS_ROLE in Athenz for this to succeed.")
+            .comment("perform an AWS AssumeRole of the target role and return the credentials. ZTS must have been granted the ability to assume the role in IAM, and granted the ability to assume_aws_role in Athenz for this to succeed.")
             .pathParam("domainName", "DomainName", "name of the domain containing the role, which implies the target account")
             .pathParam("role", "AWSArnRoleName", "the target AWS role name in the domain account, in Athenz terms, i.e. \"the.role\"")
             .queryParam("durationSeconds", "durationSeconds", "Int32", null, "how long the aws temp creds should be issued for")
@@ -537,7 +577,7 @@ public class ZTSSchema {
 ;
 
         sb.resource("InstanceRegisterInformation", "POST", "/instance")
-            .comment("we have an authenticate enabled for this endpoint but in most cases the service owner might need to make it optional by setting the zts servers no_auth_uri list to include this endpoint. We need the authenticate in case the request comes with a client certificate and the provider needs to know who that principal was in the client certificate")
+            .comment("Register a new service instance and issue an x.509 service identity certificate once the provider validates the attestation data along with the request attributes. We have an authenticate enabled for this endpoint but in most cases the service owner might need to make it optional by setting the zts servers no_auth_uri list to include this endpoint. We need the authenticate in case the request comes with a client certificate and the provider needs to know who that principal was in the client certificate")
             .input("info", "InstanceRegisterInformation", "")
             .output("Location", "location", "String", "return location for subsequent patch requests")
             .auth("", "", true)
@@ -554,7 +594,7 @@ public class ZTSSchema {
 ;
 
         sb.resource("InstanceRefreshInformation", "POST", "/instance/{provider}/{domain}/{service}/{instanceId}")
-            .comment("only TLS Certificate authentication is allowed")
+            .comment("Refresh the given service instance and issue a new x.509 service identity certificate once the provider validates the attestation data along with the request attributes. only TLS Certificate authentication is allowed")
             .pathParam("provider", "ServiceName", "the provider service name (i.e. \"aws.us-west-2\", \"paas.manhattan.corp-gq1\")")
             .pathParam("domain", "DomainName", "the domain of the instance")
             .pathParam("service", "SimpleName", "the service this instance is supposed to run")
@@ -573,7 +613,27 @@ public class ZTSSchema {
             .exception("UNAUTHORIZED", "ResourceError", "")
 ;
 
+        sb.resource("InstanceRegisterToken", "GET", "/instance/{provider}/{domain}/{service}/{instanceId}/token")
+            .comment("Request a token for the given service to be bootstrapped for the given provider. The caller must have authorization to manage the service in the given domain. The token will be valid for 30 mins for one time use only for the initial registration. The token must be sent back in the register request as the value of the attestationData field in the InstanceRegisterInformation object")
+            .pathParam("provider", "ServiceName", "the provider service name (i.e. \"aws.us-west-2\")")
+            .pathParam("domain", "DomainName", "the domain of the instance")
+            .pathParam("service", "SimpleName", "the service this instance is supposed to run")
+            .pathParam("instanceId", "PathElement", "unique instance id within provider's namespace")
+            .auth("update", "{domain}:service.{service}")
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("INTERNAL_SERVER_ERROR", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
         sb.resource("InstanceIdentity", "DELETE", "/instance/{provider}/{domain}/{service}/{instanceId}")
+            .comment("Delete the given service instance certificate record thus blocking any future refresh requests from the given instance for this service")
             .pathParam("provider", "ServiceName", "the provider service name (i.e. \"aws.us-west-2\", \"paas.manhattan.corp-gq1\")")
             .pathParam("domain", "DomainName", "the domain of the instance")
             .pathParam("service", "SimpleName", "the service this instance is supposed to run")
@@ -592,25 +652,11 @@ public class ZTSSchema {
 ;
 
         sb.resource("CertificateAuthorityBundle", "GET", "/cacerts/{name}")
+            .comment("Return the request CA X.509 Certificate bundle")
             .pathParam("name", "SimpleName", "name of the CA cert bundle")
             .auth("", "", true)
             .expected("OK")
             .exception("BAD_REQUEST", "ResourceError", "")
-
-            .exception("NOT_FOUND", "ResourceError", "")
-
-            .exception("UNAUTHORIZED", "ResourceError", "")
-;
-
-        sb.resource("DomainMetrics", "POST", "/metrics/{domainName}")
-            .comment("called to post multiple zpe related metric attributes")
-            .pathParam("domainName", "DomainName", "name of the domain the metrics pertain to")
-            .input("req", "DomainMetrics", "")
-            .auth("", "", true)
-            .expected("OK")
-            .exception("BAD_REQUEST", "ResourceError", "")
-
-            .exception("FORBIDDEN", "ResourceError", "")
 
             .exception("NOT_FOUND", "ResourceError", "")
 
@@ -666,7 +712,7 @@ public class ZTSSchema {
 ;
 
         sb.resource("RoleCertificateRequest", "POST", "/rolecert")
-            .comment("Return a TLS certificate for the list of roles that the principal can assume. Role certificates are valid for 7 days by default The principal is in the CN field of the Subject and the SAN URI field contains the athenz roles the principal can assume")
+            .comment("Return a TLS certificate for a role that the principal can assume. The role arn is in the CN field of the Subject and the principal is in the SAN URI field.")
             .name("PostRoleCertificateRequestExt")
             .input("req", "RoleCertificateRequest", "csr request")
             .auth("", "", true)
@@ -676,6 +722,55 @@ public class ZTSSchema {
             .exception("FORBIDDEN", "ResourceError", "")
 
             .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("Workloads", "GET", "/domain/{domainName}/service/{serviceName}/workloads")
+            .name("getWorkloadsByService")
+            .pathParam("domainName", "DomainName", "name of the domain")
+            .pathParam("serviceName", "EntityName", "name of the service")
+            .auth("", "", true)
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("Workloads", "GET", "/workloads/{ip}")
+            .name("getWorkloadsByIP")
+            .pathParam("ip", "String", "ip address to query")
+            .auth("", "", true)
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
+
+            .exception("UNAUTHORIZED", "ResourceError", "")
+;
+
+        sb.resource("TransportRules", "GET", "/domain/{domainName}/service/{serviceName}/transportRules")
+            .pathParam("domainName", "DomainName", "name of the domain")
+            .pathParam("serviceName", "EntityName", "name of the service")
+            .auth("", "", true)
+            .expected("OK")
+            .exception("BAD_REQUEST", "ResourceError", "")
+
+            .exception("FORBIDDEN", "ResourceError", "")
+
+            .exception("NOT_FOUND", "ResourceError", "")
+
+            .exception("TOO_MANY_REQUESTS", "ResourceError", "")
 
             .exception("UNAUTHORIZED", "ResourceError", "")
 ;

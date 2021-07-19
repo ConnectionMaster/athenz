@@ -25,6 +25,7 @@ import com.yahoo.athenz.auth.AuthorityConsts;
 
 public class AthenzUtils {
 
+
     /**
      * Return the Athenz Service principal for the given certificate which
      * could be either a service certificate or a role certificate.
@@ -49,28 +50,54 @@ public class AthenzUtils {
         if (principal.contains(AuthorityConsts.ROLE_SEP)) {
 
             // it's a role certificate so we're going to extract
-            // our service principal from the SAN email field
-            // verify that we must have only a single email
-            // field in the certificate
+            // our service principal from the SAN uri or email field
+            // first we're going to check the uri field
 
-            final List<String> emails = Crypto.extractX509CertEmails(x509Cert);
-            if (emails.size() != 1) {
-                return null;
+            principal = extractPrincipalFromUri(x509Cert);
+
+            // if it's not available in the uri then we're going
+            // to extract from the email san field
+
+            if (principal == null) {
+                principal = extractPrincipalFromEmail(x509Cert);
             }
-
-            // athenz always verifies that we include a valid
-            // email in the certificate
-
-            final String email = emails.get(0);
-            int idx = email.indexOf('@');
-            if (idx == -1) {
-                return null;
-            }
-
-            principal = email.substring(0, idx);
         }
 
         return principal;
+    }
+
+    static String extractPrincipalFromEmail(X509Certificate x509Cert) {
+
+        // verify that we must have only a single email
+        // field in the certificate
+
+        final List<String> emails = Crypto.extractX509CertEmails(x509Cert);
+        if (emails.size() != 1) {
+            return null;
+        }
+
+        // athenz always verifies that we include a valid
+        // email in the certificate
+
+        final String email = emails.get(0);
+        int idx = email.indexOf('@');
+        if (idx == -1) {
+            return null;
+        }
+
+        return email.substring(0, idx);
+    }
+
+    static String extractPrincipalFromUri(X509Certificate x509Cert) {
+
+        final List<String> uris = Crypto.extractX509CertURIs(x509Cert);
+        for (String uri : uris) {
+            if (uri.startsWith(AuthorityConsts.ZTS_CERT_PRINCIPAL_URI)) {
+                return uri.substring(AuthorityConsts.ZTS_CERT_PRINCIPAL_URI.length());
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -94,6 +121,15 @@ public class AthenzUtils {
         return principal.contains(AuthorityConsts.ROLE_SEP);
     }
 
+    private static String extractNameFromArn(final String name, String separator) {
+        int idx = name.indexOf(separator);
+        if (idx == -1 || idx == 0 || idx == name.length() - separator.length()) {
+            return null;
+        } else {
+            return name.substring(idx + separator.length());
+        }
+    }
+
     /**
      * Extract the role name from the full Athenz Role Name (arn)
      * which includes the domain name. The format of the role name
@@ -102,14 +138,19 @@ public class AthenzUtils {
      * @return role name, null if it's not expected full arn format
      */
     public static String extractRoleName(final String roleName) {
-        int idx = roleName.indexOf(AuthorityConsts.ROLE_SEP);
-        if (idx == -1 || idx == 0 || idx == roleName.length() - AuthorityConsts.ROLE_SEP.length()) {
-            return null;
-        } else {
-            return roleName.substring(idx + AuthorityConsts.ROLE_SEP.length());
-        }
+        return extractNameFromArn(roleName, AuthorityConsts.ROLE_SEP);
     }
 
+    /**
+     * Extract the group name from the full Athenz Group Name (arn)
+     * which includes the domain name. The format of the group name
+     * is {domain}:group.{group-name}
+     * @param groupName the full arn of the group
+     * @return group name, null if it's not expected full arn format
+     */
+    public static String extractGroupName(final String groupName) {
+        return extractNameFromArn(groupName, AuthorityConsts.GROUP_SEP);
+    }
     /**
      * Extract the domain name from the full Athenz Role Name (arn)
      * which includes the role name. The format of the role name

@@ -35,7 +35,7 @@ import java.security.PublicKey;
 import java.util.*;
 
 import com.yahoo.athenz.auth.Principal;
-import com.yahoo.athenz.auth.util.StringUtils;
+import com.yahoo.athenz.common.metrics.Metric;
 import com.yahoo.athenz.common.server.store.ChangeLogStore;
 import com.yahoo.athenz.zms.*;
 import com.yahoo.athenz.zts.ResourceException;
@@ -61,6 +61,7 @@ import com.yahoo.rdl.JSON;
 public class DataStoreTest {
 
     private PrivateKey pkey;
+    private Metric ztsMetric;
     private String userDomain;
     
     private static final String ZTS_DATA_STORE_PATH = "/tmp/zts_server_unit_tests/zts_root";
@@ -117,6 +118,10 @@ public class DataStoreTest {
         System.setProperty(FilePrivateKeyStore.ATHENZ_PROP_PRIVATE_KEY,
                 "src/test/resources/unit_test_zts_private.pem");
         System.setProperty(PROP_ATHENZ_CONF,  "src/test/resources/athenz.conf");
+
+        // setup our metric class
+
+        ztsMetric = new com.yahoo.athenz.common.metrics.impl.NoOpMetric();
     }
     
     @BeforeMethod
@@ -154,7 +159,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         assertNotNull(store);
         assertEquals(store.delDomainRefreshTime, 3600);
         assertEquals(store.updDomainRefreshTime, 60);
@@ -162,7 +167,7 @@ public class DataStoreTest {
         System.setProperty("athenz.zts.zms_domain_update_timeout", "60");
         System.setProperty("athenz.zts.zms_domain_delete_timeout", "50");
         System.setProperty("athenz.zts.zms_domain_check_timeout", "45");
-        store = new DataStore(clogStore, null);
+        store = new DataStore(clogStore, null, ztsMetric);
         assertNotNull(store);
         assertEquals(store.delDomainRefreshTime, 60);
         assertEquals(store.updDomainRefreshTime, 60);
@@ -180,7 +185,7 @@ public class DataStoreTest {
 
         System.setProperty(PROP_ATHENZ_CONF, "src/test/resources/athenz_no_zms_publickeys.conf");
         try {
-            new DataStore(clogStore, null);
+            new DataStore(clogStore, null, ztsMetric);
             fail();
         } catch (IllegalArgumentException ex) {
             assertTrue(ex.getMessage().contains("Unable to initialize public keys"));
@@ -188,7 +193,7 @@ public class DataStoreTest {
 
         System.setProperty(PROP_ATHENZ_CONF, "src/test/resources/athenz_no_zts_publickeys.conf");
         try {
-            new DataStore(clogStore, null);
+            new DataStore(clogStore, null, ztsMetric);
             fail();
         } catch (IllegalArgumentException ex) {
             assertTrue(ex.getMessage().contains("Unable to initialize public keys"));
@@ -196,7 +201,7 @@ public class DataStoreTest {
 
         System.setProperty(PROP_ATHENZ_CONF, "src/test/resources/athenz_zms_invalid_publickeys.conf");
         try {
-            new DataStore(clogStore, null);
+            new DataStore(clogStore, null, ztsMetric);
             fail();
         } catch (IllegalArgumentException ex) {
             assertTrue(ex.getMessage().contains("Unable to initialize public keys"));
@@ -204,7 +209,7 @@ public class DataStoreTest {
 
         System.setProperty(PROP_ATHENZ_CONF, "src/test/resources/athenz_zts_invalid_publickeys.conf");
         try {
-            new DataStore(clogStore, null);
+            new DataStore(clogStore, null, ztsMetric);
             fail();
         } catch (IllegalArgumentException ex) {
             assertTrue(ex.getMessage().contains("Unable to initialize public keys"));
@@ -212,7 +217,7 @@ public class DataStoreTest {
 
         System.setProperty(PROP_ATHENZ_CONF, "src/test/resources/athenz_invalid.conf");
         try {
-            new DataStore(clogStore, null);
+            new DataStore(clogStore, null, ztsMetric);
             fail();
         } catch (IllegalArgumentException ex) {
             assertTrue(ex.getMessage().contains("Unable to initialize public keys"));
@@ -220,7 +225,7 @@ public class DataStoreTest {
 
         System.setProperty(PROP_ATHENZ_CONF, "src/test/resources/athenz_invalid_zts_pem_publickey.conf");
         try {
-            new DataStore(clogStore, null);
+            new DataStore(clogStore, null, ztsMetric);
             fail();
         } catch (IllegalArgumentException ex) {
             assertTrue(ex.getMessage().contains("Unable to initialize public keys"));
@@ -234,7 +239,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         List<String> list = new ArrayList<>();
         list.add("Test1");
@@ -250,7 +255,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         List<String> list = new ArrayList<>();
         list.add("Test1");
@@ -268,7 +273,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         ((MockZMSFileChangeLogStore) store.changeLogStore).setDomainList(null);
         
         Set<String> zmsDomainList = store.changeLogStore.getServerDomainList();
@@ -281,7 +286,7 @@ public class DataStoreTest {
         System.setProperty(PROP_ATHENZ_CONF, "src/test/resources/athenz.conf");
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
         PublicKey zmsKey = store.zmsPublicKeyCache.getIfPresent("0");
         assertNotNull(zmsKey);
@@ -293,7 +298,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.changeLogStore.setLastModificationTimestamp("23456");
 
         String data = null;
@@ -312,7 +317,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -331,7 +336,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -350,7 +355,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -370,7 +375,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
 
         Map<String, String> remKeys = new HashMap<>();
@@ -385,7 +390,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         
         store.removePublicKeys(null);
@@ -398,7 +403,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -420,7 +425,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -447,7 +452,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
 
         Map<String, String> addKeys = new HashMap<>();
@@ -462,7 +467,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         
         store.addPublicKeys(null);
@@ -474,7 +479,7 @@ public class DataStoreTest {
     public void testGetPublicKey() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -494,7 +499,7 @@ public class DataStoreTest {
     public void testGetPublicKeyUpdated() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -515,7 +520,7 @@ public class DataStoreTest {
     public void testGetPublicKeyInvalid() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.publicKeyCache.put("coretech.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_0", "PublicKey0");
         store.publicKeyCache.put("sports.storage_1", "PublicKey1");
@@ -536,7 +541,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Map<String, Set<String>> hostMap = new HashMap<>();
         Set<String> services = new HashSet<>();
@@ -567,7 +572,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("coretech.backup");
@@ -607,7 +612,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("coretech.backup");
@@ -628,7 +633,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("coretech.backup");
@@ -657,7 +662,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("coretech.backup");
@@ -692,7 +697,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("coretech.backup");
@@ -728,7 +733,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("coretech.backup");
@@ -749,7 +754,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("coretech.backup");
@@ -777,7 +782,7 @@ public class DataStoreTest {
     public void testGetHostServices() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("sports.storage");
@@ -805,7 +810,7 @@ public class DataStoreTest {
     public void testGetHostServicesHostUpdated() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("sports.storage");
@@ -856,7 +861,7 @@ public class DataStoreTest {
     public void testGetHostServicesInvalid() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> services = new ArrayList<>();
         services.add("coretech.storage");
         services.add("sports.storage");
@@ -877,7 +882,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         assertEquals(store.generateServiceKeyName("coretech", "storage", "3"), "coretech.storage_3");
     }
     
@@ -886,7 +891,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         String domain = "coretech0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
         String service = "coretech0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
         String expectedValue = domain + "." + service + "_2";
@@ -898,7 +903,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         Set<String> checkSet = new HashSet<>();
         checkSet.add("role1");
         checkSet.add("role2");
@@ -914,7 +919,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         Set<String> accessibleRoles = new HashSet<>();
         store.addRoleToList("sports:role.admin", "coretech:role.", null, accessibleRoles, false);
         assertEquals(accessibleRoles.size(), 0);
@@ -925,7 +930,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         store.addRoleToList("coretech:role.admin", "coretech:role.", null, accessibleRoles, false);
@@ -938,7 +943,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String[] requestedRoleList = { "admin" };
@@ -952,7 +957,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String[] requestedRoleList = { "admin2" };
@@ -965,7 +970,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String[] requestedRoleList = { "admin2", "admin3", "admin" };
@@ -979,7 +984,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String[] requestedRoleList = { "admin2", "admin3", "admin4" };
@@ -992,7 +997,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1022,7 +1027,7 @@ public class DataStoreTest {
     public void testAddDomainToCacheUpdatedDomain() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1086,7 +1091,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1138,7 +1143,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1195,7 +1200,7 @@ public class DataStoreTest {
     public void testAddDomainToCacheRemovedHosts() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1256,7 +1261,7 @@ public class DataStoreTest {
     public void testAddDomainToCacheSamePublicKeys() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1323,7 +1328,7 @@ public class DataStoreTest {
     public void testAddDomainToCacheUpdatedPublicKeysVersions() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1396,7 +1401,7 @@ public class DataStoreTest {
     public void testAddDomainToCacheRemovedPublicKeysV0() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1458,7 +1463,7 @@ public class DataStoreTest {
     public void testAddDomainToCacheRemovedPublicKeysVersions() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         DataCache dataCache = new DataCache();
         
@@ -1530,7 +1535,7 @@ public class DataStoreTest {
     public void testDeleteDomain() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         SignedDomain signedDomain = new SignedDomain();
         
@@ -1568,7 +1573,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1599,7 +1604,7 @@ public class DataStoreTest {
     public void testDeleteDomainFromCachePublicKeys() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
         
@@ -1638,7 +1643,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -1654,7 +1659,7 @@ public class DataStoreTest {
     public void testValidateSignedDomainInvalidSignature() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = new SignedDomain();
@@ -1680,7 +1685,7 @@ public class DataStoreTest {
     public void testValidateSignedDomainInvalidVersion() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = new SignedDomain();
@@ -1706,7 +1711,7 @@ public class DataStoreTest {
     public void testValidateSignedDomainMissingRole() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = new SignedDomain();
@@ -1736,7 +1741,7 @@ public class DataStoreTest {
     public void testProcessDomainDeletesNoLocalDomains() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         assertTrue(store.processDomainDeletes());
     }
     
@@ -1772,7 +1777,7 @@ public class DataStoreTest {
     public void testProcessDomainDeletesZMSFailure() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         ((MockZMSFileChangeLogStore) store.changeLogStore).setDomainList(null);
         addDomainToDataStore(store, "coretech");
         
@@ -1785,7 +1790,7 @@ public class DataStoreTest {
     public void testProcessDomainDeletesZMSInvalidResponse() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         // no sys.auth thus invalid response
         List<String> list = new ArrayList<>();
@@ -1802,7 +1807,7 @@ public class DataStoreTest {
     public void testProcessDomainDeletesZMSSingleDelete() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         addDomainToDataStore(store, "coretech");
         addDomainToDataStore(store, "sports");
         
@@ -1821,7 +1826,7 @@ public class DataStoreTest {
     public void testProcessDomainDeletesZMSAllDelete() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         addDomainToDataStore(store, "coretech");
         addDomainToDataStore(store, "sports");
         
@@ -1841,7 +1846,7 @@ public class DataStoreTest {
     public void testGetAccessibleRoles() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -1859,7 +1864,7 @@ public class DataStoreTest {
     public void testGetAccessibleRolesWildCards() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomainWildCardMembers("coretech", "weather");
@@ -1907,7 +1912,7 @@ public class DataStoreTest {
     public void testGetAccessibleRolesInvalidDomain() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
         store.processDomain(signedDomain, true);
@@ -1923,7 +1928,7 @@ public class DataStoreTest {
     public void testGetAccessibleRolesSpecifiedRole() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -1942,7 +1947,7 @@ public class DataStoreTest {
     public void testGetAccessibleRolesNoRoles() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -1959,7 +1964,7 @@ public class DataStoreTest {
     public void testGetAccessibleRolesMultipleRoles() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -1979,7 +1984,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.changeLogStore.setLastModificationTimestamp(null);
         
         /* this domain will be deleted since our last refresh is 0 */
@@ -1992,7 +1997,7 @@ public class DataStoreTest {
         
         clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        store = new DataStore(clogStore, null);
+        store = new DataStore(clogStore, null, ztsMetric);
         assertNull(store.getDomainData("coretech"));
         assertFalse(file.exists());
     }
@@ -2003,7 +2008,7 @@ public class DataStoreTest {
         MockZMSFileChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.changeLogStore.setLastModificationTimestamp(null);
         
         List<SignedDomain> domains = new ArrayList<>();
@@ -2046,7 +2051,7 @@ public class DataStoreTest {
                 pkey, "0");
         clogStore.getClogStoreCommon().setTagHeader(null);
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         addDomainToDataStore(store, "coretech");
         ((MockZMSFileChangeLogStore) store.changeLogStore).setDomainList(null);
 
@@ -2065,7 +2070,7 @@ public class DataStoreTest {
         MockZMSFileChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
 
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2073,7 +2078,7 @@ public class DataStoreTest {
 
         /* create a new store instance */
         
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         List<SignedDomain> domains = new ArrayList<>();
 
@@ -2133,7 +2138,7 @@ public class DataStoreTest {
         MockZMSFileChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.changeLogStore.setLastModificationTimestamp("2014-01-01T12:00:00");
         
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2141,7 +2146,7 @@ public class DataStoreTest {
         
         store.changeLogStore.saveLocalDomain("coretech", signedDomain);
         
-        store = new DataStore(clogStore, null);
+        store = new DataStore(clogStore, null, ztsMetric);
 
         List<String> list = new ArrayList<>();
         list.add("coretech");
@@ -2182,7 +2187,7 @@ public class DataStoreTest {
     
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         List<Role> roles = new ArrayList<>();
         
@@ -2221,7 +2226,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         DomainData domainData = new DomainData();
         domainData.setName("coretech");
@@ -2238,7 +2243,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         List<com.yahoo.athenz.zms.Policy> policies = new ArrayList<>();
         
@@ -2299,7 +2304,7 @@ public class DataStoreTest {
     public void testProcessDomainPoliciesNullPolicies() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         DomainData domainData = new DomainData();
         domainData.setName("coretech");
@@ -2326,7 +2331,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         ServiceIdentity service = new ServiceIdentity();
         service.setName("coretech.storage");
@@ -2358,7 +2363,7 @@ public class DataStoreTest {
     public void testProcessDomainServiceIdentitiesNullPolicies() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         DataCache dataCache = new DataCache();
         DomainData domainData = new DomainData();
@@ -2620,7 +2625,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2640,7 +2645,7 @@ public class DataStoreTest {
     public void testProcessDomainNotSaveInStore() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2657,13 +2662,13 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
         store.processDomain(signedDomain, true);
         
-        store = new DataStore(clogStore, null);
+        store = new DataStore(clogStore, null, ztsMetric);
         boolean result = store.processLocalDomain("coretech");
         assertTrue(result);
         assertNotNull(store.getDomainData("coretech"));
@@ -2674,7 +2679,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         boolean result = store.processLocalDomain("coretech");
         assertFalse(result);
     }
@@ -2684,7 +2689,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2693,7 +2698,7 @@ public class DataStoreTest {
         signedDomain = createSignedDomain("sports", "weather");
         setupStore.processDomain(signedDomain, true);
         
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         List<String> list = new ArrayList<>();
         list.add("coretech");
@@ -2713,7 +2718,7 @@ public class DataStoreTest {
         MockZMSFileChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
 
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2744,7 +2749,7 @@ public class DataStoreTest {
             out.write("{\"domain\":\"athenz\"}");
         }
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         List<String> list = Arrays.asList("coretech", "sports", "finance", "news", "fantasy",
                 "ads", "platforms", "dev", "athenz");
@@ -2772,7 +2777,7 @@ public class DataStoreTest {
     public void testProcessLocalDomainsZMSDomainListNull() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2781,7 +2786,7 @@ public class DataStoreTest {
         signedDomain = createSignedDomain("sports", "weather");
         setupStore.processDomain(signedDomain, true);
         
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         ((MockZMSFileChangeLogStore) store.changeLogStore).setDomainList(null);
         
         List<String> list = new ArrayList<>();
@@ -2799,7 +2804,7 @@ public class DataStoreTest {
     public void testProcessLocalDomainsDeletedDomain() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -2808,7 +2813,7 @@ public class DataStoreTest {
         signedDomain = createSignedDomain("sports", "weather");
         setupStore.processDomain(signedDomain, true);
         
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> zmsList = new ArrayList<>();
         zmsList.add("coretech");
         ((MockZMSFileChangeLogStore) store.changeLogStore).setDomainList(zmsList);
@@ -2830,7 +2835,7 @@ public class DataStoreTest {
     public void testProcessLocalDomainsInvalidLocalDomainBelowThreshold() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         // create 8 records so our 1/4 threashold for bad domains is 2
@@ -2844,7 +2849,7 @@ public class DataStoreTest {
         setupStore.processDomain(createSignedDomain("politics", "weather"), true);
         setupStore.processDomain(createSignedDomain("finance", "weather"), true);
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> zmsList = new ArrayList<>();
         zmsList.addAll(Arrays.asList("coretech", "sports", "mail", "fantasy", "profile",
                 "news", "politics", "finance", "invalid"));
@@ -2858,7 +2863,7 @@ public class DataStoreTest {
     public void testProcessLocalDomainsInvalidLocalDomainRefreshRequired() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         setupStore.processDomain(createSignedDomain("coretech", "weather"), true);
@@ -2870,7 +2875,7 @@ public class DataStoreTest {
         setupStore.processDomain(createSignedDomain("politics", "weather"), true);
         setupStore.processDomain(createSignedDomain("finance", "weather"), true);
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> zmsList = new ArrayList<>();
         zmsList.addAll(Arrays.asList("coretech", "sports", "mail", "fantasy", "profile",
                 "news", "politics", "finance", "invalid"));
@@ -2885,13 +2890,13 @@ public class DataStoreTest {
     public void testProcessLocalDomainsInvalidLocalDomainAboveThreshold() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore setupStore = new DataStore(clogStore, null);
+        DataStore setupStore = new DataStore(clogStore, null, ztsMetric);
         setupStore.loadAthenzPublicKeys();
 
         setupStore.processDomain(createSignedDomain("coretech", "weather"), true);
         setupStore.processDomain(createSignedDomain("sports", "weather"), true);
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         List<String> zmsList = new ArrayList<>();
         zmsList.add("coretech");
         zmsList.add("sports");
@@ -2913,7 +2918,7 @@ public class DataStoreTest {
     public void testProcessSignedDomains() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         List<SignedDomain> list = new ArrayList<>();
         
@@ -2936,7 +2941,7 @@ public class DataStoreTest {
     public void testProcessSignedDomainsNullList() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         boolean result = store.processSignedDomains(null);
         assertTrue(result);
@@ -2946,7 +2951,7 @@ public class DataStoreTest {
     public void testProcessSignedDomainsEmptyList() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         SignedDomains signedDomains = new SignedDomains();
         signedDomains.setDomains(null);
@@ -2959,7 +2964,7 @@ public class DataStoreTest {
     public void testProcessSignedDomainsInvalidDomainWithSuccess() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         List<SignedDomain> list = new ArrayList<>();
         
@@ -2984,7 +2989,7 @@ public class DataStoreTest {
     public void testProcessSignedDomainsAllInvalidDomain() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         List<SignedDomain> list = new ArrayList<>();
         
@@ -3087,7 +3092,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3106,7 +3111,7 @@ public class DataStoreTest {
     public void testProcessTrustedDomainResourcesNull() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         DataCache dataCache = createDataCache("coretech");
         
         Set<String> accessibleRoles = new HashSet<>();
@@ -3122,7 +3127,7 @@ public class DataStoreTest {
     public void testProcessTrustedDomainMemberRolesNull() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         DataCache dataCache = createDataCache("coretech");
         
         Set<String> accessibleRoles = new HashSet<>();
@@ -3142,7 +3147,7 @@ public class DataStoreTest {
     public void testProcessTrustedDomainNoRole() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         DataCache dataCache = createDataCache("coretech");
         
         Set<String> accessibleRoles = new HashSet<>();
@@ -3163,7 +3168,7 @@ public class DataStoreTest {
     public void testProcessTrustedDomainMemberRoleNotValid() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         DataCache dataCache = createDataCache("coretech");
         
         Set<String> accessibleRoles = new HashSet<>();
@@ -3184,7 +3189,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         DataCache dataCache = createDataCache("coretech");
         
         Set<String> accessibleRoles = new HashSet<>();
@@ -3206,7 +3211,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         DataCache dataCache = createDataCacheWildCard("coretech");
         
         // first we're going tor process user1
@@ -3255,7 +3260,7 @@ public class DataStoreTest {
     public void testProcessTrustedDomainRoleInvalid() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         DataCache dataCache = createDataCache("coretech");
         
         Set<String> accessibleRoles = new HashSet<>();
@@ -3275,12 +3280,12 @@ public class DataStoreTest {
     public void testProcessStandardMembershipMemberRolesNull() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
         
-        store.processStandardMembership(null, prefix, null, null, accessibleRoles, false);
+        store.processStandardMembership(null, prefix, null, accessibleRoles, false);
         assertEquals(accessibleRoles.size(), 0);
     }
     
@@ -3288,7 +3293,7 @@ public class DataStoreTest {
     public void testProcessStandardMembershipRoleCheckNull() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3297,7 +3302,7 @@ public class DataStoreTest {
         memberRoles.add(new MemberRole("coretech:role.admin", 0));
         memberRoles.add(new MemberRole("coretech:role.readers", 0));
         
-        store.processStandardMembership(memberRoles, prefix, null, null, accessibleRoles, false);
+        store.processStandardMembership(memberRoles, prefix, null, accessibleRoles, false);
         assertEquals(accessibleRoles.size(), 2);
         assertTrue(accessibleRoles.contains("admin"));
         assertTrue(accessibleRoles.contains("readers"));
@@ -3308,7 +3313,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3318,7 +3323,7 @@ public class DataStoreTest {
         memberRoles.add(new MemberRole("coretech:role.admin", 0));
         memberRoles.add(new MemberRole("coretech:role.readers", 0));
         
-        store.processStandardMembership(memberRoles, prefix, null, requestedRoleList, accessibleRoles, false);
+        store.processStandardMembership(memberRoles, prefix, requestedRoleList, accessibleRoles, false);
         assertEquals(accessibleRoles.size(), 1);
     }
     
@@ -3327,7 +3332,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3337,7 +3342,7 @@ public class DataStoreTest {
         memberRoles.add(new MemberRole("coretech:role.admin", System.currentTimeMillis() - 1000));
         memberRoles.add(new MemberRole("coretech:role.readers", 0));
         
-        store.processStandardMembership(memberRoles, prefix, null, requestedRoleList, accessibleRoles, false);
+        store.processStandardMembership(memberRoles, prefix, requestedRoleList, accessibleRoles, false);
         assertTrue(accessibleRoles.isEmpty());
     }
     
@@ -3346,7 +3351,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3356,7 +3361,7 @@ public class DataStoreTest {
         memberRoles.add(new MemberRole("coretech:role.admin", 0));
         memberRoles.add(new MemberRole("coretech:role.readers", 0));
         
-        store.processStandardMembership(memberRoles, prefix, null, requestedRoleList, accessibleRoles, false);
+        store.processStandardMembership(memberRoles, prefix, requestedRoleList, accessibleRoles, false);
         assertEquals(accessibleRoles.size(), 1);
     }
     
@@ -3364,7 +3369,7 @@ public class DataStoreTest {
     public void testProcessStandardMembershipRoleInvalid() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech2" + ROLE_POSTFIX; /* invalid prefix causing no match */
@@ -3374,7 +3379,7 @@ public class DataStoreTest {
         memberRoles.add(new MemberRole("coretech:role.admin", 0));
         memberRoles.add(new MemberRole("coretech:role.readers", 0));
         
-        store.processStandardMembership(memberRoles, prefix, null, requestedRoleList, accessibleRoles, false);
+        store.processStandardMembership(memberRoles, prefix, requestedRoleList, accessibleRoles, false);
         assertEquals(accessibleRoles.size(), 0);
     }
     
@@ -3383,7 +3388,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3393,7 +3398,7 @@ public class DataStoreTest {
         memberRoles.add(new MemberRole("coretech:role.admin", 0));
         memberRoles.add(new MemberRole("coretech:role.readers", 0));
         
-        store.processStandardMembership(memberRoles, prefix, null, requestedRoleList, accessibleRoles, false);
+        store.processStandardMembership(memberRoles, prefix, requestedRoleList, accessibleRoles, false);
         assertEquals(accessibleRoles.size(), 0);
     }
     
@@ -3401,7 +3406,7 @@ public class DataStoreTest {
     public void testProcessTrustMembershipNoTrustDomainMatch() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -3424,7 +3429,7 @@ public class DataStoreTest {
     public void testProcessTrustMembershipNoTrustDomainMatchRoleCheck() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -3449,7 +3454,7 @@ public class DataStoreTest {
     public void testProcessTrustMembershipNoTrustDomainNoMatch() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -3473,7 +3478,7 @@ public class DataStoreTest {
         MockZMSFileChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
         clogStore.getClogStoreCommon().setTagHeader(null);
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
         
@@ -3494,7 +3499,7 @@ public class DataStoreTest {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
         signedDomain.setSignature("ABCD"); /* invalidate the signature */
@@ -3517,7 +3522,7 @@ public class DataStoreTest {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
 
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -3577,7 +3582,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         SignedDomain signedDomain = createSignedDomain("coretech", "weather");
@@ -3675,7 +3680,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         Set<MemberRole> checkSet = new HashSet<>();
         checkSet.add(new MemberRole("writers", 0));
@@ -3693,7 +3698,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         Set<MemberRole> checkSet = new HashSet<>();
         checkSet.add(new MemberRole("expired", System.currentTimeMillis() - 100000));
@@ -3708,7 +3713,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         Set<MemberRole> checkSet = new HashSet<>();
         checkSet.add(new MemberRole("coretech:role.readers", 0));
@@ -3728,7 +3733,7 @@ public class DataStoreTest {
     
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3747,7 +3752,7 @@ public class DataStoreTest {
         
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech" + ROLE_POSTFIX;
@@ -3765,7 +3770,7 @@ public class DataStoreTest {
     public void testProcessSingleTrustedDomainRoleAddRoleFalse() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         Set<String> accessibleRoles = new HashSet<>();
         String prefix = "coretech2" + ROLE_POSTFIX;
@@ -3783,7 +3788,7 @@ public class DataStoreTest {
     public void testValidDomainListResponseEmpty() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         Set<String> domainList = new HashSet<>();
         assertFalse(store.validDomainListResponse(domainList));
     }
@@ -3792,7 +3797,7 @@ public class DataStoreTest {
     public void testValidDomainListResponse() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         Set<String> domainList = new HashSet<>();
         domainList.add("sys.auth");
         domainList.add("coretech");
@@ -3804,7 +3809,7 @@ public class DataStoreTest {
     public void testValidDomainListResponseNoSysAuth() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         Set<String> domainList = new HashSet<>();
         domainList.add(userDomain);
         domainList.add("coretech");
@@ -3815,7 +3820,7 @@ public class DataStoreTest {
     public void testGetInvalidCurveName() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         ECParameterSpec spec = Mockito.mock(ECParameterSpec.class);
         when(spec.getCurve()).thenReturn(null);
         when(spec.getG()).thenReturn(null);
@@ -3828,7 +3833,7 @@ public class DataStoreTest {
     public void testRfcEllipticCurveName() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         assertNull(store.rfcEllipticCurveName(null));
         assertEquals(store.rfcEllipticCurveName("prime256v1"), "P-256");
@@ -3848,7 +3853,7 @@ public class DataStoreTest {
 
         MockZMSFileChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         addDomainToDataStore(store, "coretech");
 
         // first null which will have no effect
@@ -3883,7 +3888,7 @@ public class DataStoreTest {
 
         MockZMSFileChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         addDomainToDataStore(store, "coretech");
         addDomainToDataStore(store, "sports");
 
@@ -3928,7 +3933,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         final Base64.Encoder encoder = Base64.getEncoder();
 
         final String encodedInt1 = "li7dzDacuo67Jg7mtqEm2TRuOMU=";
@@ -3942,7 +3947,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         final Base64.Encoder encoder = Base64.getEncoder();
 
         final String encodedInt2 = "9B5ypLY9pMOmtxCeTDHgwdNFeGs=";
@@ -3956,7 +3961,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         final Base64.Encoder encoder = Base64.getEncoder();
 
         final String encodedInt3 = "FKIhdgaG5LGKiEtF1vHy4f3y700zaD6QwDS3IrNVGzNp2"
@@ -3973,7 +3978,7 @@ public class DataStoreTest {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         final Base64.Encoder encoder = Base64.getEncoder();
 
         final String encodedInt4 = "ctA8YGxrtngg/zKVvqEOefnwmViFztcnPBYPlJsvh6yKI"
@@ -3993,7 +3998,7 @@ public class DataStoreTest {
     public void testGetRolesByDomain() {
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
                 pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         DataCache dataCache = new DataCache();
 
@@ -4024,7 +4029,7 @@ public class DataStoreTest {
     public void testProcessGroup() {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root", pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
 
         // we have no group
 
@@ -4315,7 +4320,7 @@ public class DataStoreTest {
     public void testGetAccessibleRolesWithGroups() {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root", pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         final String domainName = "access-domain";
@@ -4391,7 +4396,7 @@ public class DataStoreTest {
     public void testDomainDeleteWithGroups() {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root", pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         final String domainName = "access-domain";
@@ -4419,7 +4424,7 @@ public class DataStoreTest {
     public void testProcessGroupDeletedMembersNull() {
 
         ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root", pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
         store.loadAthenzPublicKeys();
 
         // if we pass null for the members then we return right
@@ -4429,23 +4434,58 @@ public class DataStoreTest {
     }
 
     @Test
-    public void testRoleMatchInTrustSet() {
+    public void testDisabledDomain() {
+        ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
+                pkey, "0");
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
+        store.loadAthenzPublicKeys();
 
-        ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root", pkey, "0");
-        DataStore store = new DataStore(clogStore, null);
+        SignedDomain signedDomain = createSignedDomain("coretech", "weather");
+        store.processDomain(signedDomain, true);
 
-        Set<String> memberRoles = new HashSet<>();
-        memberRoles.add("athenz:role.readers");
-        memberRoles.add("sports:role.writers");
-        memberRoles.add("*:role.testers");
+        Set<String> accessibleRoles = new HashSet<>();
+        DataCache data = store.getDataCache("coretech");
+        store.getAccessibleRoles(data, "coretech", "user_domain.user1", null, accessibleRoles, false);
 
-        assertTrue(store.roleMatchInTrustSet("athenz:role.readers", memberRoles));
-        assertTrue(store.roleMatchInTrustSet("sports:role.writers", memberRoles));
+        assertEquals(accessibleRoles.size(), 1);
+        assertTrue(accessibleRoles.contains("writers"));
 
-        assertFalse(store.roleMatchInTrustSet("athenz:role.poets", memberRoles));
-        assertFalse(store.roleMatchInTrustSet("sports:role.readers", memberRoles));
+        // now mark the domain as disabled and verify no roles are returned
 
-        assertTrue(store.roleMatchInTrustSet("athenz:role.testers", memberRoles));
-        assertTrue(store.roleMatchInTrustSet("sports:role.testers", memberRoles));
+        signedDomain.getDomain().setEnabled(false);
+        store.processDomain(signedDomain, true);
+
+        accessibleRoles = new HashSet<>();
+        data = store.getDataCache("coretech");
+        store.getAccessibleRoles(data, "coretech", "user_domain.user1", null, accessibleRoles, false);
+        assertTrue(accessibleRoles.isEmpty());
+    }
+
+    @Test
+    public void testProcessDomainCheck() {
+
+        ChangeLogStore clogStore = new MockZMSFileChangeLogStore("/tmp/zts_server_unit_tests/zts_root",
+                pkey, "0");
+        DataStore store = new DataStore(clogStore, null, ztsMetric);
+
+        DomainData domainData = new DomainData();
+        assertTrue(store.processDomainCheck(null, domainData));
+
+        domainData.setEnabled(Boolean.TRUE);
+        assertTrue(store.processDomainCheck(null, domainData));
+
+        domainData.setEnabled(false);
+        assertFalse(store.processDomainCheck(null, domainData));
+
+        DomainData localData = new DomainData();
+        assertTrue(store.processDomainCheck(localData, domainData));
+
+        domainData.setEnabled(true);
+        localData.setModified(Timestamp.fromMillis(100));
+        domainData.setModified(Timestamp.fromMillis(200));
+        assertTrue(store.processDomainCheck(localData, domainData));
+
+        localData.setModified(Timestamp.fromMillis(201));
+        assertFalse(store.processDomainCheck(localData, domainData));
     }
 }

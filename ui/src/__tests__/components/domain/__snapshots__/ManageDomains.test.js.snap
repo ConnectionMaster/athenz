@@ -43,7 +43,7 @@ exports[`ManageDomains should render 1`] = `
   word-break: break-all;
 }
 
-.emotion-20 {
+.emotion-24 {
   background-color: #3570f40D;
   text-align: left;
   padding: 5px 0 5px 15px;
@@ -51,7 +51,7 @@ exports[`ManageDomains should render 1`] = `
   word-break: break-all;
 }
 
-.emotion-26 {
+.emotion-30 {
   background-color: #3570f40D;
   text-align: center;
   padding: 5px 0 5px 15px;
@@ -59,7 +59,7 @@ exports[`ManageDomains should render 1`] = `
   word-break: break-all;
 }
 
-.emotion-30 {
+.emotion-34 {
   -webkit-align-items: center;
   -webkit-box-align: center;
   -ms-flex-align: center;
@@ -76,7 +76,7 @@ exports[`ManageDomains should render 1`] = `
   position: relative;
 }
 
-.emotion-30>input[type='checkbox'] {
+.emotion-34>input[type='checkbox'] {
   box-sizing: border-box;
   cursor: pointer;
   position: absolute;
@@ -84,7 +84,7 @@ exports[`ManageDomains should render 1`] = `
   visibility: hidden;
 }
 
-.emotion-30>input[type='checkbox']+label {
+.emotion-34>input[type='checkbox']+label {
   box-sizing: border-box;
   cursor: pointer;
   font-family: Helvetica,Arial,sans-serif;
@@ -95,7 +95,7 @@ exports[`ManageDomains should render 1`] = `
   white-space: nowrap;
 }
 
-.emotion-30>input[type='checkbox']+label .label-content {
+.emotion-34>input[type='checkbox']+label .label-content {
   display: -webkit-inline-box;
   display: -webkit-inline-flex;
   display: -ms-inline-flexbox;
@@ -104,12 +104,12 @@ exports[`ManageDomains should render 1`] = `
 }
 
 @-moz-document url-prefix() {
-  .emotion-30>input[type='checkbox']+label .label-content {
+  .emotion-34>input[type='checkbox']+label .label-content {
     margin-top: 1px;
   }
 }
 
-.emotion-30>input[type='checkbox']+label:before {
+.emotion-34>input[type='checkbox']+label:before {
   background: #d5d5d5;
   border-radius: 9px;
   box-sizing: border-box;
@@ -125,7 +125,7 @@ exports[`ManageDomains should render 1`] = `
   width: 34px;
 }
 
-.emotion-30>input[type='checkbox']+label::after {
+.emotion-34>input[type='checkbox']+label::after {
   background-color: #fff;
   border: 2px solid rgba(54,151,242,0.5);
   border-radius: 50%;
@@ -142,49 +142,80 @@ exports[`ManageDomains should render 1`] = `
   width: 18px;
 }
 
-.emotion-30>input[type='checkbox']:checked+label::before {
+.emotion-34>input[type='checkbox']:checked+label::before {
   background-color: rgba(21,192,70,0.45);
 }
 
-.emotion-30>input[type='checkbox']:checked+label::after {
+.emotion-34>input[type='checkbox']:checked+label::after {
   background-color: #15c046;
   border-color: #15c046;
   left: 16px;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label {
+.emotion-34>input[type='checkbox']:disabled+label {
   color: #9a9a9a;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::before {
+.emotion-34>input[type='checkbox']:disabled+label::before {
   background-color: #e8e8e8;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::after {
+.emotion-34>input[type='checkbox']:disabled+label::after {
   border-color: #d5d5d5;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:checked:disabled+label::after {
+.emotion-34>input[type='checkbox']:checked:disabled+label::after {
   background: #d5d5d5;
 }
 
-.emotion-35 {
-  background-color: ;
+.emotion-37 {
+  background-color: #3570f40D;
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
+}
+
+.emotion-39 {
+  color: #3570f4;
+  -webkit-text-decoration: none;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: '';
+}
+
+.emotion-45 {
   text-align: left;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
 }
 
-.emotion-41 {
-  background-color: ;
+.emotion-51 {
   text-align: center;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
+}
+
+.emotion-58 {
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
 }
 
 <div
@@ -230,6 +261,11 @@ exports[`ManageDomains should render 1`] = `
           AWS Account #
         </th>
         <th
+          class="emotion-6 emotion-7"
+        >
+          Business Service
+        </th>
+        <th
           class="emotion-12 emotion-7"
         >
           Delete
@@ -237,35 +273,37 @@ exports[`ManageDomains should render 1`] = `
       </tr>
     </thead>
     <tbody>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           home.mujibur
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           Personal
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           2018-01-31 19:43 UTC
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -281,45 +319,58 @@ exports[`ManageDomains should render 1`] = `
           </div>
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           111111
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-37 emotion-38"
+          color="#3570f40D"
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
       </tr>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           home.pgote
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           Personal
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           2018-02-15 00:48 UTC
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         />
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -335,13 +386,24 @@ exports[`ManageDomains should render 1`] = `
           </div>
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           14913436251
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-58 emotion-38"
+          color=""
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-51 emotion-25"
           color=""
         />
       </tr>
@@ -393,7 +455,7 @@ exports[`ManageDomains should render no domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-20 {
+.emotion-24 {
   background-color: #3570f40D;
   text-align: left;
   padding: 5px 0 5px 15px;
@@ -401,7 +463,7 @@ exports[`ManageDomains should render no domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-26 {
+.emotion-30 {
   background-color: #3570f40D;
   text-align: center;
   padding: 5px 0 5px 15px;
@@ -409,7 +471,7 @@ exports[`ManageDomains should render no domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-30 {
+.emotion-34 {
   -webkit-align-items: center;
   -webkit-box-align: center;
   -ms-flex-align: center;
@@ -426,7 +488,7 @@ exports[`ManageDomains should render no domain 1`] = `
   position: relative;
 }
 
-.emotion-30>input[type='checkbox'] {
+.emotion-34>input[type='checkbox'] {
   box-sizing: border-box;
   cursor: pointer;
   position: absolute;
@@ -434,7 +496,7 @@ exports[`ManageDomains should render no domain 1`] = `
   visibility: hidden;
 }
 
-.emotion-30>input[type='checkbox']+label {
+.emotion-34>input[type='checkbox']+label {
   box-sizing: border-box;
   cursor: pointer;
   font-family: Helvetica,Arial,sans-serif;
@@ -445,7 +507,7 @@ exports[`ManageDomains should render no domain 1`] = `
   white-space: nowrap;
 }
 
-.emotion-30>input[type='checkbox']+label .label-content {
+.emotion-34>input[type='checkbox']+label .label-content {
   display: -webkit-inline-box;
   display: -webkit-inline-flex;
   display: -ms-inline-flexbox;
@@ -454,12 +516,12 @@ exports[`ManageDomains should render no domain 1`] = `
 }
 
 @-moz-document url-prefix() {
-  .emotion-30>input[type='checkbox']+label .label-content {
+  .emotion-34>input[type='checkbox']+label .label-content {
     margin-top: 1px;
   }
 }
 
-.emotion-30>input[type='checkbox']+label:before {
+.emotion-34>input[type='checkbox']+label:before {
   background: #d5d5d5;
   border-radius: 9px;
   box-sizing: border-box;
@@ -475,7 +537,7 @@ exports[`ManageDomains should render no domain 1`] = `
   width: 34px;
 }
 
-.emotion-30>input[type='checkbox']+label::after {
+.emotion-34>input[type='checkbox']+label::after {
   background-color: #fff;
   border: 2px solid rgba(54,151,242,0.5);
   border-radius: 50%;
@@ -492,52 +554,83 @@ exports[`ManageDomains should render no domain 1`] = `
   width: 18px;
 }
 
-.emotion-30>input[type='checkbox']:checked+label::before {
+.emotion-34>input[type='checkbox']:checked+label::before {
   background-color: rgba(21,192,70,0.45);
 }
 
-.emotion-30>input[type='checkbox']:checked+label::after {
+.emotion-34>input[type='checkbox']:checked+label::after {
   background-color: #15c046;
   border-color: #15c046;
   left: 16px;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label {
+.emotion-34>input[type='checkbox']:disabled+label {
   color: #9a9a9a;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::before {
+.emotion-34>input[type='checkbox']:disabled+label::before {
   background-color: #e8e8e8;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::after {
+.emotion-34>input[type='checkbox']:disabled+label::after {
   border-color: #d5d5d5;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:checked:disabled+label::after {
+.emotion-34>input[type='checkbox']:checked:disabled+label::after {
   background: #d5d5d5;
 }
 
-.emotion-35 {
-  background-color: ;
+.emotion-37 {
+  background-color: #3570f40D;
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
+}
+
+.emotion-39 {
+  color: #3570f4;
+  -webkit-text-decoration: none;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: '';
+}
+
+.emotion-45 {
   text-align: left;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
 }
 
-.emotion-41 {
-  background-color: ;
+.emotion-51 {
   text-align: center;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
 }
 
-.emotion-50 {
+.emotion-58 {
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
+}
+
+.emotion-64 {
   fill: #188fff;
   cursor: pointer;
   vertical-align: text-bottom;
@@ -586,6 +679,11 @@ exports[`ManageDomains should render no domain 1`] = `
           AWS Account #
         </th>
         <th
+          class="emotion-6 emotion-7"
+        >
+          Business Service
+        </th>
+        <th
           class="emotion-12 emotion-7"
         >
           Delete
@@ -593,35 +691,37 @@ exports[`ManageDomains should render no domain 1`] = `
       </tr>
     </thead>
     <tbody>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           home.mujibur
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           Personal
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           2018-01-31 19:43 UTC
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -637,45 +737,58 @@ exports[`ManageDomains should render no domain 1`] = `
           </div>
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           111111
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-37 emotion-38"
+          color="#3570f40D"
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
       </tr>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           home.mujibur.test
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           Sub domain
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           2018-02-15 00:48 UTC
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         />
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -691,17 +804,28 @@ exports[`ManageDomains should render no domain 1`] = `
           </div>
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           14913436251
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-58 emotion-38"
+          color=""
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-51 emotion-25"
           color=""
         >
           <svg
-            class="emotion-50"
+            class="emotion-64"
             data-testid="icon"
             height="1.25em"
             viewBox="0 0 1024 1024"
@@ -767,7 +891,7 @@ exports[`ManageDomains should render personal domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-20 {
+.emotion-24 {
   background-color: #3570f40D;
   text-align: left;
   padding: 5px 0 5px 15px;
@@ -775,7 +899,7 @@ exports[`ManageDomains should render personal domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-26 {
+.emotion-30 {
   background-color: #3570f40D;
   text-align: center;
   padding: 5px 0 5px 15px;
@@ -783,7 +907,7 @@ exports[`ManageDomains should render personal domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-30 {
+.emotion-34 {
   -webkit-align-items: center;
   -webkit-box-align: center;
   -ms-flex-align: center;
@@ -800,7 +924,7 @@ exports[`ManageDomains should render personal domain 1`] = `
   position: relative;
 }
 
-.emotion-30>input[type='checkbox'] {
+.emotion-34>input[type='checkbox'] {
   box-sizing: border-box;
   cursor: pointer;
   position: absolute;
@@ -808,7 +932,7 @@ exports[`ManageDomains should render personal domain 1`] = `
   visibility: hidden;
 }
 
-.emotion-30>input[type='checkbox']+label {
+.emotion-34>input[type='checkbox']+label {
   box-sizing: border-box;
   cursor: pointer;
   font-family: Helvetica,Arial,sans-serif;
@@ -819,7 +943,7 @@ exports[`ManageDomains should render personal domain 1`] = `
   white-space: nowrap;
 }
 
-.emotion-30>input[type='checkbox']+label .label-content {
+.emotion-34>input[type='checkbox']+label .label-content {
   display: -webkit-inline-box;
   display: -webkit-inline-flex;
   display: -ms-inline-flexbox;
@@ -828,12 +952,12 @@ exports[`ManageDomains should render personal domain 1`] = `
 }
 
 @-moz-document url-prefix() {
-  .emotion-30>input[type='checkbox']+label .label-content {
+  .emotion-34>input[type='checkbox']+label .label-content {
     margin-top: 1px;
   }
 }
 
-.emotion-30>input[type='checkbox']+label:before {
+.emotion-34>input[type='checkbox']+label:before {
   background: #d5d5d5;
   border-radius: 9px;
   box-sizing: border-box;
@@ -849,7 +973,7 @@ exports[`ManageDomains should render personal domain 1`] = `
   width: 34px;
 }
 
-.emotion-30>input[type='checkbox']+label::after {
+.emotion-34>input[type='checkbox']+label::after {
   background-color: #fff;
   border: 2px solid rgba(54,151,242,0.5);
   border-radius: 50%;
@@ -866,49 +990,80 @@ exports[`ManageDomains should render personal domain 1`] = `
   width: 18px;
 }
 
-.emotion-30>input[type='checkbox']:checked+label::before {
+.emotion-34>input[type='checkbox']:checked+label::before {
   background-color: rgba(21,192,70,0.45);
 }
 
-.emotion-30>input[type='checkbox']:checked+label::after {
+.emotion-34>input[type='checkbox']:checked+label::after {
   background-color: #15c046;
   border-color: #15c046;
   left: 16px;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label {
+.emotion-34>input[type='checkbox']:disabled+label {
   color: #9a9a9a;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::before {
+.emotion-34>input[type='checkbox']:disabled+label::before {
   background-color: #e8e8e8;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::after {
+.emotion-34>input[type='checkbox']:disabled+label::after {
   border-color: #d5d5d5;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:checked:disabled+label::after {
+.emotion-34>input[type='checkbox']:checked:disabled+label::after {
   background: #d5d5d5;
 }
 
-.emotion-35 {
-  background-color: ;
+.emotion-37 {
+  background-color: #3570f40D;
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
+}
+
+.emotion-39 {
+  color: #3570f4;
+  -webkit-text-decoration: none;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: '';
+}
+
+.emotion-45 {
   text-align: left;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
 }
 
-.emotion-41 {
-  background-color: ;
+.emotion-51 {
   text-align: center;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
+}
+
+.emotion-58 {
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
 }
 
 <div
@@ -954,6 +1109,11 @@ exports[`ManageDomains should render personal domain 1`] = `
           AWS Account #
         </th>
         <th
+          class="emotion-6 emotion-7"
+        >
+          Business Service
+        </th>
+        <th
           class="emotion-12 emotion-7"
         >
           Delete
@@ -961,35 +1121,37 @@ exports[`ManageDomains should render personal domain 1`] = `
       </tr>
     </thead>
     <tbody>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           home.mujibur
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           Personal
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           2018-01-31 19:43 UTC
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -1005,45 +1167,58 @@ exports[`ManageDomains should render personal domain 1`] = `
           </div>
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           111111
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-37 emotion-38"
+          color="#3570f40D"
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
       </tr>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           home.pgote
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           Personal
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           2018-02-15 00:48 UTC
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         />
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -1059,13 +1234,24 @@ exports[`ManageDomains should render personal domain 1`] = `
           </div>
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           14913436251
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-58 emotion-38"
+          color=""
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-51 emotion-25"
           color=""
         />
       </tr>
@@ -1117,7 +1303,7 @@ exports[`ManageDomains should render top level domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-20 {
+.emotion-24 {
   background-color: #3570f40D;
   text-align: left;
   padding: 5px 0 5px 15px;
@@ -1125,7 +1311,7 @@ exports[`ManageDomains should render top level domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-26 {
+.emotion-30 {
   background-color: #3570f40D;
   text-align: center;
   padding: 5px 0 5px 15px;
@@ -1133,7 +1319,7 @@ exports[`ManageDomains should render top level domain 1`] = `
   word-break: break-all;
 }
 
-.emotion-30 {
+.emotion-34 {
   -webkit-align-items: center;
   -webkit-box-align: center;
   -ms-flex-align: center;
@@ -1150,7 +1336,7 @@ exports[`ManageDomains should render top level domain 1`] = `
   position: relative;
 }
 
-.emotion-30>input[type='checkbox'] {
+.emotion-34>input[type='checkbox'] {
   box-sizing: border-box;
   cursor: pointer;
   position: absolute;
@@ -1158,7 +1344,7 @@ exports[`ManageDomains should render top level domain 1`] = `
   visibility: hidden;
 }
 
-.emotion-30>input[type='checkbox']+label {
+.emotion-34>input[type='checkbox']+label {
   box-sizing: border-box;
   cursor: pointer;
   font-family: Helvetica,Arial,sans-serif;
@@ -1169,7 +1355,7 @@ exports[`ManageDomains should render top level domain 1`] = `
   white-space: nowrap;
 }
 
-.emotion-30>input[type='checkbox']+label .label-content {
+.emotion-34>input[type='checkbox']+label .label-content {
   display: -webkit-inline-box;
   display: -webkit-inline-flex;
   display: -ms-inline-flexbox;
@@ -1178,12 +1364,12 @@ exports[`ManageDomains should render top level domain 1`] = `
 }
 
 @-moz-document url-prefix() {
-  .emotion-30>input[type='checkbox']+label .label-content {
+  .emotion-34>input[type='checkbox']+label .label-content {
     margin-top: 1px;
   }
 }
 
-.emotion-30>input[type='checkbox']+label:before {
+.emotion-34>input[type='checkbox']+label:before {
   background: #d5d5d5;
   border-radius: 9px;
   box-sizing: border-box;
@@ -1199,7 +1385,7 @@ exports[`ManageDomains should render top level domain 1`] = `
   width: 34px;
 }
 
-.emotion-30>input[type='checkbox']+label::after {
+.emotion-34>input[type='checkbox']+label::after {
   background-color: #fff;
   border: 2px solid rgba(54,151,242,0.5);
   border-radius: 50%;
@@ -1216,49 +1402,80 @@ exports[`ManageDomains should render top level domain 1`] = `
   width: 18px;
 }
 
-.emotion-30>input[type='checkbox']:checked+label::before {
+.emotion-34>input[type='checkbox']:checked+label::before {
   background-color: rgba(21,192,70,0.45);
 }
 
-.emotion-30>input[type='checkbox']:checked+label::after {
+.emotion-34>input[type='checkbox']:checked+label::after {
   background-color: #15c046;
   border-color: #15c046;
   left: 16px;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label {
+.emotion-34>input[type='checkbox']:disabled+label {
   color: #9a9a9a;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::before {
+.emotion-34>input[type='checkbox']:disabled+label::before {
   background-color: #e8e8e8;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:disabled+label::after {
+.emotion-34>input[type='checkbox']:disabled+label::after {
   border-color: #d5d5d5;
   cursor: not-allowed;
 }
 
-.emotion-30>input[type='checkbox']:checked:disabled+label::after {
+.emotion-34>input[type='checkbox']:checked:disabled+label::after {
   background: #d5d5d5;
 }
 
-.emotion-35 {
-  background-color: ;
+.emotion-37 {
+  background-color: #3570f40D;
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
+}
+
+.emotion-39 {
+  color: #3570f4;
+  -webkit-text-decoration: none;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: '';
+}
+
+.emotion-45 {
   text-align: left;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
 }
 
-.emotion-41 {
-  background-color: ;
+.emotion-51 {
   text-align: center;
   padding: 5px 0 5px 15px;
   vertical-align: middle;
   word-break: break-all;
+}
+
+.emotion-58 {
+  text-align: left;
+  title: add;
+  padding: 5px 0 5px 15px;
+  vertical-align: middle;
+  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 1px;
 }
 
 <div
@@ -1304,6 +1521,11 @@ exports[`ManageDomains should render top level domain 1`] = `
           AWS Account #
         </th>
         <th
+          class="emotion-6 emotion-7"
+        >
+          Business Service
+        </th>
+        <th
           class="emotion-12 emotion-7"
         >
           Delete
@@ -1311,35 +1533,37 @@ exports[`ManageDomains should render top level domain 1`] = `
       </tr>
     </thead>
     <tbody>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           home.mujibur
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           Personal
         </td>
         <td
-          class="emotion-20 emotion-21"
+          class="emotion-24 emotion-25"
           color="#3570f40D"
         >
           2018-01-31 19:43 UTC
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -1355,45 +1579,58 @@ exports[`ManageDomains should render top level domain 1`] = `
           </div>
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         >
           111111
         </td>
         <td
-          class="emotion-26 emotion-21"
+          class="emotion-37 emotion-38"
+          color="#3570f40D"
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-30 emotion-25"
           color="#3570f40D"
         />
       </tr>
-      <tr>
+      <tr
+        class="emotion-22 emotion-23"
+      >
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           home
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           Top Level
         </td>
         <td
-          class="emotion-35 emotion-21"
+          class="emotion-45 emotion-25"
           color=""
         >
           2018-02-15 00:48 UTC
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         />
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           <div
-            class="emotion-30 denali-switch"
+            class="emotion-34 denali-switch"
             data-testid="switch-wrapper"
           >
             <input
@@ -1409,13 +1646,24 @@ exports[`ManageDomains should render top level domain 1`] = `
           </div>
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-51 emotion-25"
           color=""
         >
           14913436251
         </td>
         <td
-          class="emotion-41 emotion-21"
+          class="emotion-58 emotion-38"
+          color=""
+          title="add"
+        >
+          <a
+            class="emotion-39 emotion-40"
+          >
+            add
+          </a>
+        </td>
+        <td
+          class="emotion-51 emotion-25"
           color=""
         />
       </tr>

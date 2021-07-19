@@ -187,8 +187,8 @@ create_rel_link "${ZTS_PRIVATE_KEY_PATH}" "${ZTS_HELM_FILE}/secrets"
 <a id="markdown-5-setup-zms-db" name="5-setup-zms-db"></a>
 ### 5. Setup ZMS DB
 
-To setup a database, please refer to [this page](https://yahoo.github.io/athenz/setup_zms_prod/#mysql-server).
-- Schema SQL file: `curl "https://raw.githubusercontent.com/yahoo/athenz/v${ATHENZ_TAG}/servers/zms/schema/zms_server.sql"`
+To setup a database, please refer to [this page](https://AthenZ.github.io/athenz/setup_zms_prod/#mysql-server).
+- Schema SQL file: `curl "https://raw.githubusercontent.com/AthenZ/athenz/v${ATHENZ_TAG}/servers/zms/schema/zms_server.sql"`
 - Database name: `zms_server`
 - Database user: `zms_admin`
 
@@ -212,7 +212,7 @@ Update corresponding ZMS properties: update after `helm pull` (see below)
 ```bash
 # download chart
 helm pull athenz-zms -d "${WORKSPACE}" --untar \
-  --repo "https://raw.githubusercontent.com/yahoo/athenz/v${ATHENZ_TAG}/kubernetes/charts"
+  --repo "https://raw.githubusercontent.com/AthenZ/athenz/v${ATHENZ_TAG}/kubernetes/charts"
 
 # update corresponding ZMS properties
 vi "${WORKSPACE}/athenz-zms/files/conf/zms.properties"
@@ -315,7 +315,9 @@ admin_curl --request GET --url "${ZMS_URL}/zms/v1/domain/sys.auth/service/zms" |
 
 <a id="markdown-8-generate-athenz_confjson" name="8-generate-athenz_confjson"></a>
 ### 8. Generate athenz_conf.json
-Download athenz-utils-${ATHENZ_TAG}-bin.tar.gz [this page](https://bintray.com/yahoo/maven/athenz-utils/_latestVersion#files).
+Download athenz-utils-${ATHENZ_TAG}-bin.tar.gz from [Maven Central](https://search.maven.org/artifact/com.yahoo.athenz/athenz-utils)
+(click on the `Browse` button, choose the latest version directory).
+
 ```bash
 tar xvfz athenz-utils-${ATHENZ_TAG}-bin.tar.gz
 cp athenz-utils-${ATHENZ_TAG}/bin/<PLATFORM>/athenz-conf ./
@@ -335,7 +337,7 @@ less "${ZTS_HELM_FILE}/conf/athenz_conf.json"
 <a id="markdown-9-setup-zts-db" name="9-setup-zts-db"></a>
 ### 9. Setup ZTS DB
 To setup a database, please refer to [this page](https://yahoo.github.io/athenz/setup_zms_prod/#mysql-server). The differences between ZMS and ZTS are:
-- Schema SQL file: `curl "https://raw.githubusercontent.com/yahoo/athenz/v${ATHENZ_TAG}/servers/zts/schema/zts_server.sql"`
+- Schema SQL file: `curl "https://raw.githubusercontent.com/AthenZ/athenz/v${ATHENZ_TAG}/servers/zts/schema/zts_server.sql"`
 - Database name: `zts_store`
 - Database user: `zts_admin`
 
@@ -359,7 +361,7 @@ Update corresponding ZTS properties: update after `helm pull` (see below)
 ```bash
 # download chart
 helm pull athenz-zts -d "${WORKSPACE}" --untar \
-  --repo "https://raw.githubusercontent.com/yahoo/athenz/v${ATHENZ_TAG}/kubernetes/charts"
+  --repo "https://raw.githubusercontent.com/AthenZ/athenz/v${ATHENZ_TAG}/kubernetes/charts"
 
 # update corresponding ZTS properties
 vi "${WORKSPACE}/athenz-zts/files/conf/zts.properties"

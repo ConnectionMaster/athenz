@@ -111,7 +111,7 @@ public class ZTSAuthorizer implements Authorizer {
         for (com.yahoo.athenz.zms.Policy policy : policies) {
             
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("evaluateAccess: processing policy: " + policy.getName());
+                LOGGER.debug("evaluateAccess: processing policy: {}", policy.getName());
             }
             
             // we are going to process all the assertions defined in this
@@ -171,15 +171,13 @@ public class ZTSAuthorizer implements Authorizer {
             String resource, List<Role> roles, String trustDomain) {
 
         // Lowercase action and resource as it is possible to store them case-sensitive
-        assertion.setResource(assertion.getResource().toLowerCase());
-        assertion.setAction(assertion.getAction().toLowerCase());
 
-        String opPattern = StringUtils.patternFromGlob(assertion.getAction());
+        String opPattern = StringUtils.patternFromGlob(assertion.getAction().toLowerCase());
         if (!op.matches(opPattern)) {
             return false;
         }
         
-        String rezPattern = StringUtils.patternFromGlob(assertion.getResource());
+        String rezPattern = StringUtils.patternFromGlob(assertion.getResource().toLowerCase());
         if (!resource.matches(rezPattern)) {
             return false;
         }
@@ -188,7 +186,7 @@ public class ZTSAuthorizer implements Authorizer {
         boolean matchResult = matchPrincipal(roles, rolePattern, identity, trustDomain);
         
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("assertionMatch: -> " + matchResult + " (effect: " + assertion.getEffect() + ")");
+            LOGGER.debug("assertionMatch: -> {} (effect: {})", matchResult, assertion.getEffect());
         }
 
         return matchResult;
@@ -197,8 +195,7 @@ public class ZTSAuthorizer implements Authorizer {
     boolean matchPrincipal(List<Role> roles, String rolePattern, String fullUser, String trustDomain) {
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("matchPrincipal: rolePattern: " + rolePattern + " user: " + fullUser +
-                    " trust: " + trustDomain);
+            LOGGER.debug("matchPrincipal: rolePattern: {} user: {} trust: {}", rolePattern, fullUser, trustDomain);
         }
 
         for (Role role : roles) {
@@ -237,7 +234,7 @@ public class ZTSAuthorizer implements Authorizer {
         // delegate to another domain.
         
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("matchPrincipalInRole: [delegated trust. Checking with: " + trust + "]");
+            LOGGER.debug("matchPrincipalInRole: [delegated trust. Checking with: {}]", trust);
         }
         
         return delegatedTrust(trust, roleName, fullUser);

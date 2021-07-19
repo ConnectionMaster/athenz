@@ -60,7 +60,6 @@ exports[`ReviewPage should render 1`] = `
   display: flex;
   height: 60px;
   position: relative;
-  width: ;
 }
 
 .emotion-3.simple {
@@ -553,10 +552,9 @@ exports[`ReviewPage should render 1`] = `
   align-items: stretch;
   background: #f5f8fe;
   border-radius: 2px;
-  box-shadow: ;
   box-sizing: border-box;
   display: inline-grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   margin-top: 0;
   min-width: 80px;
   position: relative;
@@ -587,7 +585,6 @@ exports[`ReviewPage should render 1`] = `
   -ms-flex-align: center;
   align-items: center;
   background: #f5f8fe;
-  border-bottom: ;
   color: #3697f2;
   cursor: pointer;
   display: -webkit-box;
@@ -599,8 +596,6 @@ exports[`ReviewPage should render 1`] = `
   -webkit-justify-content: center;
   justify-content: center;
   padding: 8px 20px;
-  -webkit-transition: ;
-  transition: ;
   white-space: nowrap;
   z-index: 1;
 }
@@ -611,7 +606,6 @@ exports[`ReviewPage should render 1`] = `
 
 .emotion-49.active {
   background: #fff;
-  border-bottom: ;
   border-top-left-radius: 2px;
   border-top-right-radius: 2px;
   color: #303030;
@@ -644,15 +638,15 @@ exports[`ReviewPage should render 1`] = `
   color: #303030;
 }
 
-.emotion-54 {
+.emotion-55 {
   margin: 20px;
 }
 
-.emotion-56 {
+.emotion-57 {
   margin: 0;
 }
 
-.emotion-60 {
+.emotion-59 {
   -webkit-align-items: center;
   -webkit-box-align: center;
   -ms-flex-align: center;
@@ -678,13 +672,13 @@ exports[`ReviewPage should render 1`] = `
   width: 20px;
 }
 
-.emotion-62 {
+.emotion-61 {
   fill: #303030;
   cursor: inherit;
   vertical-align: text-bottom;
 }
 
-.emotion-63 {
+.emotion-62 {
   margin-right: 0;
   border-left: 1px solid #d5d5d5;
   -webkit-flex: 0 0 350px;
@@ -699,7 +693,7 @@ exports[`ReviewPage should render 1`] = `
   width: 350px;
 }
 
-.emotion-65 {
+.emotion-64 {
   -webkit-align-items: baseline;
   -webkit-box-align: baseline;
   -ms-flex-align: baseline;
@@ -718,29 +712,28 @@ exports[`ReviewPage should render 1`] = `
   padding: 20px 30px 20px 15px;
 }
 
-.emotion-67 {
+.emotion-66 {
   font-size: 16px;
   font-weight: 600;
 }
 
-.emotion-69 {
+.emotion-68 {
   color: #3570f4;
   -webkit-text-decoration: none;
   text-decoration: none;
   cursor: pointer;
-  font-weight: ;
 }
 
-.emotion-71 {
+.emotion-70 {
   padding: 0 5px;
   color: #d5d5d5;
 }
 
-.emotion-75 {
+.emotion-74 {
   padding: 0 30px 0 15px;
 }
 
-.emotion-77 {
+.emotion-76 {
   padding: 10px 0;
   display: -webkit-box;
   display: -webkit-flex;
@@ -748,12 +741,12 @@ exports[`ReviewPage should render 1`] = `
   display: flex;
 }
 
-.emotion-79 {
+.emotion-78 {
   font-size: 1.25em;
   margin-right: 5px;
 }
 
-.emotion-81 {
+.emotion-80 {
   fill: #303030;
   cursor: inherit;
   vertical-align: baseline;
@@ -969,6 +962,12 @@ exports[`ReviewPage should render 1`] = `
                 class="emotion-49 denali-tab"
                 data-active="false"
               >
+                Tags
+              </div>
+              <div
+                class="emotion-49 denali-tab"
+                data-active="false"
+              >
                 Settings
               </div>
               <div
@@ -980,22 +979,14 @@ exports[`ReviewPage should render 1`] = `
             </div>
           </div>
           <div
-            class="emotion-54 emotion-55"
+            class="emotion-55 emotion-56"
             data-testid="review-list"
           >
             <div
-              class="emotion-56 emotion-57"
-              data-testid="review-invalid-table"
+              class="emotion-57 emotion-58"
             >
-              User principal and/or Service principal expiry days are required before a role can be reviewed. Please go to
-              <a
-                class="emotion-30 emotion-59"
-              >
-                 
-                Settings
-                 
-              </a>
-              tab to set those up.
+              There is no members to review for role: 
+              .
             </div>
           </div>
         </div>
@@ -1004,11 +995,11 @@ exports[`ReviewPage should render 1`] = `
         data-testid="user-domains"
       >
         <div
-          class="emotion-60 emotion-61"
+          class="emotion-59 emotion-60"
           data-testid="toggle-domain"
         >
           <svg
-            class="emotion-62"
+            class="emotion-61"
             data-testid="icon"
             height="1em"
             viewBox="0 0 1024 1024"
@@ -1023,45 +1014,45 @@ exports[`ReviewPage should render 1`] = `
           </svg>
         </div>
         <div
-          class="emotion-63 emotion-64"
+          class="emotion-62 emotion-63"
         >
           <div
-            class="emotion-65 emotion-66"
+            class="emotion-64 emotion-65"
           >
             <div
-              class="emotion-67 emotion-68"
+              class="emotion-66 emotion-67"
             >
               My Domains
             </div>
             <div>
               <a
-                class="emotion-69 emotion-70"
+                class="emotion-68 emotion-69"
               >
                 Create
               </a>
               <span
-                class="emotion-71 emotion-72"
+                class="emotion-70 emotion-71"
               >
                  | 
               </span>
               <a
-                class="emotion-69 emotion-70"
+                class="emotion-68 emotion-69"
               >
                 Manage
               </a>
             </div>
           </div>
           <div
-            class="emotion-75 emotion-76"
+            class="emotion-74 emotion-75"
           >
             <div
-              class="emotion-77 emotion-78"
+              class="emotion-76 emotion-77"
             >
               <div
-                class="emotion-79 emotion-80"
+                class="emotion-78 emotion-79"
               >
                 <svg
-                  class="emotion-81"
+                  class="emotion-80"
                   data-testid="icon"
                   height="1em"
                   viewBox="0 0 1024 1024"
@@ -1082,19 +1073,19 @@ exports[`ReviewPage should render 1`] = `
                 </svg>
               </div>
               <a
-                class="emotion-69 emotion-70"
+                class="emotion-68 emotion-69"
               >
                 athens
               </a>
             </div>
             <div
-              class="emotion-77 emotion-78"
+              class="emotion-76 emotion-77"
             >
               <div
-                class="emotion-79 emotion-80"
+                class="emotion-78 emotion-79"
               >
                 <svg
-                  class="emotion-81"
+                  class="emotion-80"
                   data-testid="icon"
                   height="1em"
                   viewBox="0 0 1024 1024"
@@ -1115,7 +1106,7 @@ exports[`ReviewPage should render 1`] = `
                 </svg>
               </div>
               <a
-                class="emotion-69 emotion-70"
+                class="emotion-68 emotion-69"
               >
                 athens.ci
               </a>

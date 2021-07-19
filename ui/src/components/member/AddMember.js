@@ -24,6 +24,8 @@ import Checkbox from '../denali/CheckBox';
 import DateUtils from '../utils/DateUtils';
 import NameUtils from '../utils/NameUtils';
 import RequestUtils from '../utils/RequestUtils';
+import MemberUtils from '../utils/MemberUtils';
+import { GROUP_MEMBER_NAME_REGEX } from '../constants/constants';
 
 const SectionsDiv = styled.div`
     width: 760px;
@@ -109,6 +111,21 @@ export default class AddMember extends React.Component {
         }
 
         if (
+            this.props.category === 'group' &&
+            !MemberUtils.matchRegexName(
+                this.state.memberName,
+                GROUP_MEMBER_NAME_REGEX
+            )
+        ) {
+            this.setState({
+                errorMessage:
+                    "Member name doesn't match regex: " +
+                    GROUP_MEMBER_NAME_REGEX,
+            });
+            return;
+        }
+
+        if (
             this.props.justificationRequired &&
             (this.state.justification === undefined ||
                 this.state.justification.trim() === '')
@@ -154,7 +171,8 @@ export default class AddMember extends React.Component {
                     justification: '',
                 });
                 this.props.onSubmit(
-                    `Successfully added ${this.state.memberName} to ${this.props.category}: ${this.props.collection}`
+                    `${this.state.memberName}-${this.props.category}-${this.props.domain}-${this.props.collection}`,
+                    false
                 );
             })
             .catch((err) => {

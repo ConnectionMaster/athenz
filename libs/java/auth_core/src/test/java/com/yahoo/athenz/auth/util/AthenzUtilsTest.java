@@ -58,6 +58,16 @@ public class AthenzUtilsTest {
     }
 
     @Test
+    public void testExtractServicePrincipalRoleCertUri() throws Exception {
+        try (InputStream inStream = new FileInputStream("src/test/resources/role_cert_principal_uri_x509.cert")) {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
+
+            assertEquals("athenz.production", AthenzUtils.extractServicePrincipal(cert));
+        }
+    }
+
+    @Test
     public void testExtractServicePrincipalNoCn() throws Exception {
         try (InputStream inStream = new FileInputStream("src/test/resources/no_cn_x509.cert")) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -135,6 +145,19 @@ public class AthenzUtilsTest {
         assertNull(AthenzUtils.extractRoleName("athenz:role."));
         assertNull(AthenzUtils.extractRoleName(":role.readers"));
         assertNull(AthenzUtils.extractRoleName("athenz.readers"));
+    }
+
+    @Test
+    public void testExtractGroupName() {
+        assertEquals(AthenzUtils.extractGroupName("athenz:group.readers"), "readers");
+        assertEquals(AthenzUtils.extractGroupName("athenz.api:group.readers"), "readers");
+        assertEquals(AthenzUtils.extractGroupName("athenz.api.test:group.readers"), "readers");
+
+        assertNull(AthenzUtils.extractGroupName("athenz:groups.readers"));
+        assertNull(AthenzUtils.extractGroupName("athenz.group.readers"));
+        assertNull(AthenzUtils.extractGroupName("athenz:group."));
+        assertNull(AthenzUtils.extractGroupName(":group.readers"));
+        assertNull(AthenzUtils.extractGroupName("athenz.readers"));
     }
 
     @Test

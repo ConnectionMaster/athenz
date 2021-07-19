@@ -67,7 +67,10 @@ public class UserDomain {
     public String azureSubscription;
     @RdlOptional
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<String, StringList> tags;
+    public Map<String, TagValueList> tags;
+    @RdlOptional
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String businessService;
     public String name;
     @RdlOptional
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -192,12 +195,19 @@ public class UserDomain {
     public String getAzureSubscription() {
         return azureSubscription;
     }
-    public UserDomain setTags(Map<String, StringList> tags) {
+    public UserDomain setTags(Map<String, TagValueList> tags) {
         this.tags = tags;
         return this;
     }
-    public Map<String, StringList> getTags() {
+    public Map<String, TagValueList> getTags() {
         return tags;
+    }
+    public UserDomain setBusinessService(String businessService) {
+        this.businessService = businessService;
+        return this;
+    }
+    public String getBusinessService() {
+        return businessService;
     }
     public UserDomain setName(String name) {
         this.name = name;
@@ -273,6 +283,9 @@ public class UserDomain {
                 return false;
             }
             if (tags == null ? a.tags != null : !tags.equals(a.tags)) {
+                return false;
+            }
+            if (businessService == null ? a.businessService != null : !businessService.equals(a.businessService)) {
                 return false;
             }
             if (name == null ? a.name != null : !name.equals(a.name)) {

@@ -55,7 +55,10 @@ public class RoleMeta {
     public Integer groupExpiryDays;
     @RdlOptional
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<String, StringList> tags;
+    public Integer groupReviewDays;
+    @RdlOptional
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, TagValueList> tags;
 
     public RoleMeta setSelfServe(Boolean selfServe) {
         this.selfServe = selfServe;
@@ -148,11 +151,18 @@ public class RoleMeta {
     public Integer getGroupExpiryDays() {
         return groupExpiryDays;
     }
-    public RoleMeta setTags(Map<String, StringList> tags) {
+    public RoleMeta setGroupReviewDays(Integer groupReviewDays) {
+        this.groupReviewDays = groupReviewDays;
+        return this;
+    }
+    public Integer getGroupReviewDays() {
+        return groupReviewDays;
+    }
+    public RoleMeta setTags(Map<String, TagValueList> tags) {
         this.tags = tags;
         return this;
     }
-    public Map<String, StringList> getTags() {
+    public Map<String, TagValueList> getTags() {
         return tags;
     }
 
@@ -200,6 +210,9 @@ public class RoleMeta {
                 return false;
             }
             if (groupExpiryDays == null ? a.groupExpiryDays != null : !groupExpiryDays.equals(a.groupExpiryDays)) {
+                return false;
+            }
+            if (groupReviewDays == null ? a.groupReviewDays != null : !groupReviewDays.equals(a.groupReviewDays)) {
                 return false;
             }
             if (tags == null ? a.tags != null : !tags.equals(a.tags)) {

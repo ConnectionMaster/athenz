@@ -22,6 +22,8 @@ import DeleteModal from '../modal/DeleteModal';
 import Color from '../denali/Color';
 import DateUtils from '../utils/DateUtils';
 import RequestUtils from '../utils/RequestUtils';
+import BusinessServiceModal from '../modal/BusinessServiceModal';
+import { css, keyframes } from '@emotion/react';
 
 const ManageDomainSectionDiv = styled.div`
     margin: 20px;
@@ -60,6 +62,43 @@ const TDStyled = styled.td`
     word-break: break-all;
 `;
 
+const TDStyledBusinessService = styled.td`
+    background-color: ${(props) => props.color};
+    text-align: ${(props) => props.align};
+    title: ${(props) => props.title};
+    padding: 5px 0 5px 15px;
+    vertical-align: middle;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 1px;
+`;
+
+const StyledAnchor = styled.a`
+    color: ${colors.linkActive};
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: '';
+`;
+
+const TrStyled = styled.tr`
+    ${(props) =>
+        props.isSuccess === true &&
+        css`
+            animation: ${colorTransition} 3s ease;
+        `}
+`;
+
+const colorTransition = keyframes`
+        0% {
+            background-color: rgba(21, 192, 70, 0.20);
+        }
+        100% {
+            background-color: transparent;
+        }
+`;
+
 export default class ManageDomains extends React.Component {
     constructor(props) {
         super(props);
@@ -68,10 +107,38 @@ export default class ManageDomains extends React.Component {
             showDelete: false,
             auditEnabled: false,
             auditRef: '',
+            errorMessage: null,
+            showBusinessService: false,
+            businessServiceName: '',
+            businessServiceDomainName: '',
+            category: 'domain',
+            errorMessageForModal: '',
         };
         this.saveJustification = this.saveJustification.bind(this);
+        this.saveBusinessService = this.saveBusinessService.bind(this);
         this.domainNameProvided = this.domainNameProvided.bind(this);
         this.dateUtils = new DateUtils();
+    }
+
+    onClickBusinessService(domainName, businessServiceName, auditEnabled) {
+        this.setState({
+            showBusinessService: true,
+            businessServiceName: businessServiceName,
+            businessServiceDomainName: domainName,
+            auditEnabled: auditEnabled,
+        });
+    }
+
+    onClickBusinessServiceCancel() {
+        this.setState({
+            showBusinessService: false,
+            errorMessageForModal: '',
+            errorMessage: null,
+            businessServiceName: '',
+            businessServiceDomainName: '',
+            auditRef: '',
+            auditEnabled: false,
+        });
     }
 
     onClickDelete(name, auditEnabled) {
@@ -95,6 +162,11 @@ export default class ManageDomains extends React.Component {
     saveJustification(val) {
         this.setState({
             auditRef: val,
+        });
+    }
+    saveBusinessService(val) {
+        this.setState({
+            businessServiceName: val,
         });
     }
 
@@ -163,17 +235,92 @@ export default class ManageDomains extends React.Component {
             });
     }
 
+    updateMeta(meta, domainName, csrf) {
+        let auditMsg = this.state.auditRef;
+        if (auditMsg === '') {
+            auditMsg = 'Updated ' + domainName + ' Meta using Athenz UI';
+        }
+        this.api
+            .putMeta(
+                domainName,
+                domainName,
+                meta,
+                auditMsg,
+                csrf,
+                this.state.category
+            )
+            .then(() => {
+                this.setState({
+                    showDelete: false,
+                    deleteName: null,
+                    auditEnabled: false,
+                    auditRef: '',
+                    errorMessage: null,
+                    errorMessageForModal: '',
+                    showBusinessService: false,
+                    businessServiceName: '',
+                    businessServiceDomainName: '',
+                });
+                this.props.loadDomains(domainName);
+            })
+            .catch((err) => {
+                this.setState({
+                    errorMessageForModal: RequestUtils.xhrErrorCheckHelper(err),
+                });
+            });
+    }
+
+    onSubmitBusinessService() {
+        if (this.state.auditEnabled && !this.state.auditRef) {
+            this.setState({
+                errorMessageForModal: 'Justification is mandatory',
+            });
+            return;
+        }
+
+        if (this.state.businessServiceName) {
+            var index = this.props.validBusinessServicesAll.findIndex(
+                (x) =>
+                    x.value ==
+                    this.state.businessServiceName.substring(
+                        0,
+                        this.state.businessServiceName.indexOf(':')
+                    )
+            );
+            if (index === -1) {
+                this.setState({
+                    errorMessageForModal: 'Invalid business service value',
+                });
+                return;
+            }
+        }
+
+        let domainName = this.state.businessServiceDomainName;
+        let businessServiceName = this.state.businessServiceName;
+        let domainMeta = {};
+        domainMeta.businessService = businessServiceName;
+        this.updateMeta(domainMeta, domainName, this.props._csrf);
+    }
+
     render() {
         const left = 'left';
         const center = 'center';
         const rows = this.props.domains
             ? this.props.domains.map((item, i) => {
                   const domainType = this.ascertainDomainType(item.domain.name);
+                  let isSuccess =
+                      item.domain.name === this.props.successMessage;
                   let deletable = false;
                   let auditEnabled = !!item.domain.auditEnabled;
                   let deleteItem = this.onClickDelete.bind(
                       this,
                       item.domain.name,
+                      auditEnabled
+                  );
+                  let businessServiceItem = this.onClickBusinessService.bind(
+                      this,
+                      item.domain.name,
+                      item.domain.businessService,
                       auditEnabled
                   );
 
@@ -184,8 +331,18 @@ export default class ManageDomains extends React.Component {
                   if (domainType === 'Sub domain') {
                       deletable = true;
                   }
+                  let title = item.domain.businessService
+                      ? item.domain.businessService.substring(
+                            item.domain.businessService.indexOf(':') + 1
+                        )
+                      : 'add';
+                  if (!title) {
+                      title = item.domain.businessService
+                          ? item.domain.businessService
+                          : 'add';
+                  }
                   return (
-                      <tr key={item.domain.name}>
+                      <TrStyled key={item.domain.name} isSuccess={isSuccess}>
                           <TDStyled color={color} align={left}>
                               {item.domain.name}
                           </TDStyled>
@@ -213,6 +370,15 @@ export default class ManageDomains extends React.Component {
                           <TDStyled color={color} align={center}>
                               {item.domain.account ? item.domain.account : ''}
                           </TDStyled>
+                          <TDStyledBusinessService
+                              color={color}
+                              align={left}
+                              title={title}
+                          >
+                              <StyledAnchor onClick={businessServiceItem}>
+                                  {title}
+                              </StyledAnchor>
+                          </TDStyledBusinessService>
                           <TDStyled color={color} align={center}>
                               {deletable ? (
                                   <Icon
@@ -225,7 +391,7 @@ export default class ManageDomains extends React.Component {
                                   />
                               ) : null}
                           </TDStyled>
-                      </tr>
+                      </TrStyled>
                   );
               })
             : '';
@@ -247,6 +413,32 @@ export default class ManageDomains extends React.Component {
                     key={'delete-modal'}
                     errorMessage={this.state.errorMessageForModal}
                     domainNameProvided={this.domainNameProvided}
+                />
+            );
+        }
+        if (this.state.showBusinessService) {
+            let clickBusinessServiceCancel =
+                this.onClickBusinessServiceCancel.bind(this);
+            let clickBusinessServiceSubmit =
+                this.onSubmitBusinessService.bind(this);
+            rows.push(
+                <BusinessServiceModal
+                    isOpen={this.state.showBusinessService}
+                    cancel={clickBusinessServiceCancel}
+                    businessServiceName={this.state.businessServiceName}
+                    domainName={this.state.businessServiceDomainName}
+                    submit={clickBusinessServiceSubmit}
+                    showJustification={this.state.auditEnabled}
+                    onJustification={this.saveJustification}
+                    onBusinessService={this.saveBusinessService}
+                    key={'business-service-modal'}
+                    errorMessage={this.state.errorMessageForModal}
+                    api={this.api}
+                    userId={this.state.userId}
+                    validBusinessServices={this.props.validBusinessServices}
+                    validBusinessServicesAll={
+                        this.props.validBusinessServicesAll
+                    }
                 />
             );
         }
@@ -273,6 +465,9 @@ export default class ManageDomains extends React.Component {
                             </TableHeadStyled>
                             <TableHeadStyled align={center}>
                                 AWS Account #
+                            </TableHeadStyled>
+                            <TableHeadStyled align={left}>
+                                Business Service
                             </TableHeadStyled>
                             <TableHeadStyled align={center}>
                                 Delete

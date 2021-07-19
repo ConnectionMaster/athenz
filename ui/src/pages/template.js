@@ -69,6 +69,15 @@ export default class TemplatePage extends React.Component {
         let reload = false;
         let notFound = false;
         let error = undefined;
+        var bServicesParams = {
+            category: 'domain',
+            attributeName: 'businessService',
+            userName: props.req.session.shortId,
+        };
+        var bServicesParamsAll = {
+            category: 'domain',
+            attributeName: 'businessService',
+        };
         const domains = await Promise.all([
             api.listUserDomains(),
             api.getHeaderDetails(),
@@ -79,12 +88,48 @@ export default class TemplatePage extends React.Component {
             api.getServicePageConfig(),
             api.isAWSTemplateApplied(props.query.domain),
             api.getDomainTemplateDetailsList(props.query.domain),
+            api.getFeatureFlag(),
+            api.getMeta(bServicesParams),
+            api.getMeta(bServicesParamsAll),
+            api.getServerTemplateDetailsList(),
         ]).catch((err) => {
             let response = RequestUtils.errorCheckHelper(err);
             reload = response.reload;
             error = response.error;
-            return [{}, {}, {}, {}, {}, {}, {}, {}, {}];
+            return [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
         });
+        let businessServiceOptions = [];
+        if (domains[10] && domains[10].validValues) {
+            domains[10].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptions.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
+        let businessServiceOptionsAll = [];
+        if (domains[11] && domains[11].validValues) {
+            domains[11].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptionsAll.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
         let domainDetails = domains[2];
         domainDetails.isAWSTemplateApplied = !!domains[7];
         return {
@@ -101,7 +146,11 @@ export default class TemplatePage extends React.Component {
             pending: domains[5],
             pageConfig: domains[6],
             domainTemplateDetails: domains[8],
+            serverTemplateDetails: domains[12],
             nonce: props.req.headers.rid,
+            featureFlag: domains[9],
+            validBusinessServices: businessServiceOptions,
+            validBusinessServicesAll: businessServiceOptionsAll,
         };
     }
 
@@ -120,6 +169,7 @@ export default class TemplatePage extends React.Component {
             reload,
             domainDetails,
             domainTemplateDetails,
+            serverTemplateDetails,
             services,
             _csrf,
         } = this.props;
@@ -155,11 +205,19 @@ export default class TemplatePage extends React.Component {
                                                 this.props.headerDetails
                                                     .productMasterLink
                                             }
+                                            validBusinessServices={
+                                                this.props.validBusinessServices
+                                            }
+                                            validBusinessServicesAll={
+                                                this.props
+                                                    .validBusinessServicesAll
+                                            }
                                         />
                                         <Tabs
                                             api={this.api}
                                             domain={domain}
                                             selectedName={'templates'}
+                                            featureFlag={this.props.featureFlag}
                                         />
                                     </PageHeaderDiv>
                                     <TemplateList
@@ -167,6 +225,9 @@ export default class TemplatePage extends React.Component {
                                         domain={domain}
                                         domainTemplateDetails={
                                             this.props.domainTemplateDetails
+                                        }
+                                        serverTemplateDetails={
+                                            this.props.serverTemplateDetails
                                         }
                                         _csrf={this.props._csrf}
                                         pageConfig={this.props.pageConfig}

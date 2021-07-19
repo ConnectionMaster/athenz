@@ -15,41 +15,40 @@
  */
 package com.yahoo.athenz.zts.cert;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.net.InetAddresses;
+import com.yahoo.athenz.auth.Authorizer;
+import com.yahoo.athenz.auth.Principal;
+import com.yahoo.athenz.auth.PrivateKeyStore;
+import com.yahoo.athenz.auth.util.AthenzUtils;
+import com.yahoo.athenz.auth.util.Crypto;
+import com.yahoo.athenz.auth.util.CryptoException;
+import com.yahoo.athenz.common.server.cert.*;
+import com.yahoo.athenz.common.server.db.RolesProvider;
+import com.yahoo.athenz.common.server.dns.HostnameResolver;
+import com.yahoo.athenz.common.server.notification.NotificationManager;
+import com.yahoo.athenz.common.server.ssh.*;
+import com.yahoo.athenz.common.server.workload.WorkloadRecord;
+import com.yahoo.athenz.common.server.workload.WorkloadRecordStore;
+import com.yahoo.athenz.common.server.workload.WorkloadRecordStoreConnection;
+import com.yahoo.athenz.common.server.workload.WorkloadRecordStoreFactory;
+import com.yahoo.athenz.common.utils.X509CertUtils;
+import com.yahoo.athenz.zts.*;
+import com.yahoo.athenz.zts.utils.*;
+import com.yahoo.rdl.Timestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.net.InetAddresses;
-import com.yahoo.athenz.auth.util.Crypto;
-import com.yahoo.athenz.auth.util.CryptoException;
-import com.yahoo.athenz.common.server.db.RolesProvider;
-import com.yahoo.athenz.common.server.dns.HostnameResolver;
-import com.yahoo.athenz.common.server.notification.NotificationManager;
-import com.yahoo.athenz.common.server.ssh.SSHSigner;
-import com.yahoo.athenz.common.server.ssh.SSHSignerFactory;
-import com.yahoo.athenz.common.server.ssh.SSHCertRecord;
-import com.yahoo.athenz.common.server.ssh.SSHRecordStore;
-import com.yahoo.athenz.common.server.ssh.SSHRecordStoreConnection;
-import com.yahoo.athenz.common.server.ssh.SSHRecordStoreFactory;
-import com.yahoo.athenz.zts.*;
-import com.yahoo.athenz.zts.utils.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.yahoo.athenz.auth.Authorizer;
-import com.yahoo.athenz.auth.Principal;
-import com.yahoo.athenz.auth.PrivateKeyStore;
-import com.yahoo.athenz.common.server.cert.CertSigner;
-import com.yahoo.athenz.common.server.cert.CertSignerFactory;
-import com.yahoo.athenz.common.server.cert.CertRecordStore;
-import com.yahoo.athenz.common.server.cert.CertRecordStoreFactory;
-import com.yahoo.athenz.common.server.cert.CertRecordStoreConnection;
-import com.yahoo.athenz.common.server.cert.X509CertRecord;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class InstanceCertManager {
 
@@ -63,6 +62,7 @@ public class InstanceCertManager {
     private HostnameResolver hostnameResolver;
     private CertRecordStore certStore = null;
     private SSHRecordStore sshStore = null;
+    private WorkloadRecordStore workloadStore = null;
     private ScheduledExecutorService certScheduledExecutor;
     private ScheduledExecutorService sshScheduledExecutor;
     private List<IPBlock> certRefreshIPBlocks;
@@ -110,6 +110,12 @@ public class InstanceCertManager {
         // it can track of some details if enabled
 
         loadSSHObjectStore(keyStore);
+
+        // if ZTS configured to store workload information for services,
+        // it can track of some details if enabled
+
+        loadWorkloadObjectStore(keyStore);
+
 
         // load any configuration wrt certificate signers and any
         // configured certificate bundles
@@ -333,8 +339,7 @@ public class InstanceCertManager {
         try {
             certSignerFactory = (CertSignerFactory) Class.forName(certSignerFactoryClass).newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            LOGGER.error("Invalid CertSignerFactory class: " + certSignerFactoryClass
-                    + " error: " + e.getMessage());
+            LOGGER.error("Invalid CertSignerFactory class: {} error: {}", certSignerFactoryClass, e.getMessage());
             throw new IllegalArgumentException("Invalid certsigner class");
         }
 
@@ -355,8 +360,7 @@ public class InstanceCertManager {
         try {
             sshSignerFactory = (SSHSignerFactory) Class.forName(sshSignerFactoryClass).newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            LOGGER.error("Invalid SSHSignerFactory class: " + sshSignerFactoryClass
-                    + " error: " + e.getMessage());
+            LOGGER.error("Invalid SSHSignerFactory class: {} error: {}", sshSignerFactoryClass, e.getMessage());
             throw new IllegalArgumentException("Invalid sshsigner class");
         }
 
@@ -478,12 +482,36 @@ public class InstanceCertManager {
         sshStore = sshRecordStoreFactory.create(keyStore);
     }
 
+    private void loadWorkloadObjectStore(PrivateKeyStore keyStore) {
+
+        String workloadRecordStoreFactoryClass = System.getProperty(ZTSConsts.ZTS_PROP_WORKLOAD_RECORD_STORE_FACTORY_CLASS);
+        if (workloadRecordStoreFactoryClass == null || workloadRecordStoreFactoryClass.isEmpty()) {
+            return;
+        }
+
+        WorkloadRecordStoreFactory workloadRecordStoreFactory;
+        try {
+            workloadRecordStoreFactory = (WorkloadRecordStoreFactory) Class.forName(workloadRecordStoreFactoryClass).newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            LOGGER.error("Invalid WorkloadRecordStoreFactory class: {} error: {}",
+                    workloadRecordStoreFactoryClass, e.getMessage());
+            throw new IllegalArgumentException("Invalid workload record store factory class");
+        }
+
+        // create our workload record store instance
+        workloadStore = workloadRecordStoreFactory.create(keyStore);
+    }
+
     public void setCertStore(CertRecordStore certStore) {
         this.certStore = certStore;
     }
 
     public void setSSHStore(SSHRecordStore sshStore) {
         this.sshStore = sshStore;
+    }
+
+    public void setWorkloadStore(WorkloadRecordStore workloadStore) {
+        this.workloadStore = workloadStore;
     }
 
     public CertificateAuthorityBundle getCertificateAuthorityBundle(final String name) {
@@ -850,6 +878,7 @@ public class InstanceCertManager {
     /**
      * validates hostname against the resolver, and verifies that the ssh principals map to hostname
      * @param hostname of the instance
+     * @param sshCertRecord ssh certificate record stored in db
      * @param sshHostCsr ssh host csr from the sia
      * @return boolean true or false
      */
@@ -990,7 +1019,7 @@ public class InstanceCertManager {
             notificationsEnabled = certStore.enableNotifications(notificationManager, rolesProvider, serverName);
         }
 
-        LOGGER.info("certStore Notifications " + (notificationsEnabled ? "enabled" : "disabled"));
+        LOGGER.info("certStore Notifications {}", (notificationsEnabled ? "enabled" : "disabled"));
         return notificationsEnabled;
     }
 
@@ -1000,8 +1029,98 @@ public class InstanceCertManager {
             notificationsEnabled = sshStore.enableNotifications(notificationManager, rolesProvider, serverName);
         }
 
-        LOGGER.info("sshStore Notifications " + (notificationsEnabled ? "enabled" : "disabled"));
+        LOGGER.info("sshStore Notifications {}", (notificationsEnabled ? "enabled" : "disabled"));
         return notificationsEnabled;
+    }
+
+    public boolean insertWorkloadRecord(WorkloadRecord workloadRecord) {
+
+        if (workloadStore == null) {
+            return false;
+        }
+
+        boolean result;
+        try (WorkloadRecordStoreConnection storeConnection = workloadStore.getConnection()) {
+            result = storeConnection.insertWorkloadRecord(workloadRecord);
+        }
+
+        return result;
+    }
+
+    public boolean updateWorkloadRecord(WorkloadRecord workloadRecord) {
+
+        if (workloadStore == null) {
+            return false;
+        }
+
+        boolean result;
+        try (WorkloadRecordStoreConnection storeConnection = workloadStore.getConnection()) {
+            result = storeConnection.updateWorkloadRecord(workloadRecord);
+            if (!result) {
+                // failed update could be because of a new IP address for the same instance id, so we are going to try insert operation.
+                result = storeConnection.insertWorkloadRecord(workloadRecord);
+            }
+        }
+        return result;
+    }
+
+    public List<Workload> getWorkloadsByService(String domain, String service) {
+        if (workloadStore == null) {
+            return Collections.emptyList();
+        }
+        try (WorkloadRecordStoreConnection storeConnection = workloadStore.getConnection()) {
+            List<WorkloadRecord> workloadRecords = storeConnection.getWorkloadRecordsByService(domain, service);
+            Map<String, List<String>> flattenedIpAddresses = new HashMap<>();
+            String mapKey;
+            for (WorkloadRecord workloadRecord : workloadRecords) {
+                mapKey = workloadRecord.getInstanceId() + ":" + workloadRecord.getProvider() + ":" + workloadRecord.getUpdateTime().getTime() +
+                        ":" + workloadRecord.getCertExpiryTime().getTime() + ":" + workloadRecord.getHostname();
+                if (flattenedIpAddresses.containsKey(mapKey)) {
+                    flattenedIpAddresses.get(mapKey).add(workloadRecord.getIp());
+                } else {
+                    List<String> ipList = new ArrayList<>();
+                    ipList.add(workloadRecord.getIp());
+                    flattenedIpAddresses.put(mapKey, ipList);
+                }
+            }
+            return flattenedIpAddresses.entrySet().stream().map(entry -> {
+                Workload wl = new Workload();
+                String[] tempArr = entry.getKey().split(":");
+                wl.setUuid(tempArr[0])
+                        .setProvider(tempArr[1])
+                        .setUpdateTime(Timestamp.fromMillis(Long.parseLong(tempArr[2])))
+                        .setCertExpiryTime(Timestamp.fromMillis(Long.parseLong(tempArr[3])))
+                        .setHostname(tempArr[4])
+                        .setIpAddresses(entry.getValue());
+                return wl;
+            }).collect(Collectors.toList());
+
+        }
+    }
+
+    public List<Workload> getWorkloadsByIp(String ip) {
+        if (workloadStore == null) {
+            return Collections.emptyList();
+        }
+        try (WorkloadRecordStoreConnection storeConnection = workloadStore.getConnection()) {
+            return storeConnection.getWorkloadRecordsByIp(ip).stream()
+                    .map(wr -> {
+                        Workload wl = new Workload();
+                        String[] strArr = AthenzUtils.splitPrincipalName(wr.getService());
+                        if (strArr != null) {
+                            wl.setDomainName(strArr[0]).setServiceName(strArr[1]);
+                        }
+                        wl.setProvider(wr.getProvider()).setUuid(wr.getInstanceId()).setUpdateTime(Timestamp.fromDate(wr.getUpdateTime()))
+                                .setHostname(wr.getHostname()).setCertExpiryTime(Timestamp.fromDate(wr.getCertExpiryTime()));                        return wl;
+                    })
+                    .filter(distinctByKey(w -> w.getUuid() + "#" + AthenzUtils.getPrincipalName(w.getDomainName(), w.getServiceName())))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> map = new ConcurrentHashMap<>();
+        return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     class ExpiredX509CertRecordCleaner implements Runnable {

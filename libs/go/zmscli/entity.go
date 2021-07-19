@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AthenZ/athenz/clients/go/zms"
 	"github.com/ardielle/ardielle-go/rdl"
-	"github.com/yahoo/athenz/clients/go/zms"
 )
 
 func (cli Zms) ShowEntity(dn string, en string) (*string, error) {
@@ -17,11 +17,16 @@ func (cli Zms) ShowEntity(dn string, en string) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	buf.WriteString("entity:\n")
-	cli.dumpEntity(&buf, *entity, indentLevel1Dash, indentLevel1DashLvl)
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("entity:\n")
+		cli.dumpEntity(&buf, *entity, indentLevel1Dash, indentLevel1DashLvl)
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(entity, oldYamlConverter)
 }
 
 func (cli Zms) AddEntity(dn string, en string, values []string) (*string, error) {
@@ -57,7 +62,12 @@ func (cli Zms) DeleteEntity(dn string, en string) (*string, error) {
 		return nil, err
 	}
 	s := "[Deleted entity: " + dn + "." + en + "]"
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) entityNames(dn string) ([]string, error) {
@@ -73,13 +83,18 @@ func (cli Zms) entityNames(dn string) ([]string, error) {
 }
 
 func (cli Zms) ListEntities(dn string) (*string, error) {
-	var buf bytes.Buffer
 	entities, err := cli.entityNames(dn)
 	if err != nil {
 		return nil, err
 	}
-	buf.WriteString("entities:\n")
-	cli.dumpObjectList(&buf, entities, dn, "entity")
-	s := buf.String()
-	return &s, nil
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("entities:\n")
+		cli.dumpObjectList(&buf, entities, dn, "entity")
+		s := buf.String()
+		return &s, nil
+	}
+
+	return cli.dumpByFormat(entities, oldYamlConverter)
 }

@@ -19,6 +19,7 @@ import static org.testng.Assert.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.yahoo.athenz.auth.Authority;
 import com.yahoo.athenz.auth.Principal;
@@ -50,6 +51,8 @@ public class ZMSUtilsTest {
 
         assertEquals("storage.tenant.sports.api.",
                 ZMSUtils.getTenantResourceGroupRolePrefix("storage", "sports.api", null));
+        assertEquals("storage.tenant.sports.api.res_group.",
+                ZMSUtils.getTenantResourceGroupRolePrefix("storage", "sports.api", ""));
         assertEquals("storage.tenant.sports.api.res_group.Group1.",
                 ZMSUtils.getTenantResourceGroupRolePrefix("storage", "sports.api", "Group1"));
     }
@@ -58,6 +61,8 @@ public class ZMSUtilsTest {
     public void testGetTrustedResourceGroupRolePrefix() {
         assertEquals("coretech:role.storage.tenant.sports.api.",
                 ZMSUtils.getTrustedResourceGroupRolePrefix("coretech", "storage", "sports.api", null));
+        assertEquals("coretech:role.storage.tenant.sports.api.",
+                ZMSUtils.getTrustedResourceGroupRolePrefix("coretech", "storage", "sports.api", ""));
         assertEquals("coretech:role.storage.tenant.sports.api.res_group.group1.",
                 ZMSUtils.getTrustedResourceGroupRolePrefix("coretech", "storage", "sports.api", "group1"));
     }
@@ -68,6 +73,8 @@ public class ZMSUtilsTest {
                 ZMSUtils.getProviderResourceGroupRolePrefix("sports", "hosted", "hockey"));
         assertEquals("sports.hosted.",
                 ZMSUtils.getProviderResourceGroupRolePrefix("sports", "hosted", null));
+        assertEquals("sports.hosted.",
+                ZMSUtils.getProviderResourceGroupRolePrefix("sports", "hosted", ""));
     }
 
     @Test
@@ -329,5 +336,54 @@ public class ZMSUtilsTest {
         ZMSImpl.metric = null;
         assertFalse(ZMSUtils.emitMonmetricError(400, "unittest"));
         ZMSImpl.metric = savedMetric;
+    }
+
+    @Test
+    public void testMetaValueChanged() {
+        assertTrue(ZMSUtils.metaValueChanged("account-1", "account-2"));
+        assertFalse(ZMSUtils.metaValueChanged("account-1", "account-1"));
+
+        assertTrue(ZMSUtils.metaValueChanged(null, "account-1"));
+        assertFalse(ZMSUtils.metaValueChanged(null, null));
+        assertFalse(ZMSUtils.metaValueChanged("account-1", null));
+
+        assertTrue(ZMSUtils.metaValueChanged(10, 15));
+        assertFalse(ZMSUtils.metaValueChanged(10, 10));
+
+        assertTrue(ZMSUtils.metaValueChanged(null, 10));
+        assertFalse(ZMSUtils.metaValueChanged(10, null));
+    }
+
+    @Test
+    public void testConfiguredExpiryMillis() {
+
+        assertEquals(ZMSUtils.configuredDueDateMillis(null, null), 0);
+        assertEquals(ZMSUtils.configuredDueDateMillis(null, -3), 0);
+        assertEquals(ZMSUtils.configuredDueDateMillis(null, 0), 0);
+        assertEquals(ZMSUtils.configuredDueDateMillis(-3, null), 0);
+        assertEquals(ZMSUtils.configuredDueDateMillis(0, null), 0);
+        assertEquals(ZMSUtils.configuredDueDateMillis(-3, -3), 0);
+        assertEquals(ZMSUtils.configuredDueDateMillis(0, 0), 0);
+
+        long extMillis = TimeUnit.MILLISECONDS.convert(10, TimeUnit.DAYS);
+        long millis = ZMSUtils.configuredDueDateMillis(null, 10);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+        millis = ZMSUtils.configuredDueDateMillis(null, 10);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+        millis = ZMSUtils.configuredDueDateMillis(-1, 10);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+        millis = ZMSUtils.configuredDueDateMillis(0, 10);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+        millis = ZMSUtils.configuredDueDateMillis(5, 10);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+        millis = ZMSUtils.configuredDueDateMillis(20, 10);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+
+        millis = ZMSUtils.configuredDueDateMillis(10, null);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+        millis = ZMSUtils.configuredDueDateMillis(10, -1);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
+        millis = ZMSUtils.configuredDueDateMillis(10, 0);
+        assertTrue(ZMSTestUtils.validateDueDate(millis, extMillis));
     }
 }

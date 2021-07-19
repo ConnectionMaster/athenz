@@ -68,7 +68,10 @@ public class TopLevelDomain {
     public String azureSubscription;
     @RdlOptional
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public Map<String, StringList> tags;
+    public Map<String, TagValueList> tags;
+    @RdlOptional
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String businessService;
     public String name;
     public List<String> adminUsers;
     @RdlOptional
@@ -194,12 +197,19 @@ public class TopLevelDomain {
     public String getAzureSubscription() {
         return azureSubscription;
     }
-    public TopLevelDomain setTags(Map<String, StringList> tags) {
+    public TopLevelDomain setTags(Map<String, TagValueList> tags) {
         this.tags = tags;
         return this;
     }
-    public Map<String, StringList> getTags() {
+    public Map<String, TagValueList> getTags() {
         return tags;
+    }
+    public TopLevelDomain setBusinessService(String businessService) {
+        this.businessService = businessService;
+        return this;
+    }
+    public String getBusinessService() {
+        return businessService;
     }
     public TopLevelDomain setName(String name) {
         this.name = name;
@@ -282,6 +292,9 @@ public class TopLevelDomain {
                 return false;
             }
             if (tags == null ? a.tags != null : !tags.equals(a.tags)) {
+                return false;
+            }
+            if (businessService == null ? a.businessService != null : !businessService.equals(a.businessService)) {
                 return false;
             }
             if (name == null ? a.name != null : !name.equals(a.name)) {

@@ -15,14 +15,11 @@
  */
 package com.yahoo.athenz.zms;
 
-import java.lang.reflect.Field;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.util.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.athenz.auth.Authority;
 import com.yahoo.athenz.auth.Principal;
 import com.yahoo.athenz.auth.impl.PrincipalAuthority;
@@ -1159,7 +1156,7 @@ public class ZMSClientTest {
         client.setZMSRDLGeneratedClient(c);
         DomainList domainListMock = Mockito.mock(DomainList.class);
         Mockito.when(
-            c.getDomainList(null, null, null, null, null, null, null, null, null, null, null, null))
+            c.getDomainList(null, null, null, null, null, null, null, null, null, null, null, null, null))
             .thenReturn(domainListMock);
         DomainList domList = client.getDomainList();
         assertNotNull(domList);
@@ -1172,7 +1169,7 @@ public class ZMSClientTest {
         client.setZMSRDLGeneratedClient(c);
         try {
             Mockito.when(
-                c.getDomainList(null, null, null, null, null, null, "MemberRole1", "RoleName1", null, null, null, null))
+                c.getDomainList(null, null, null, null, null, null, "MemberRole1", "RoleName1", null, null, null, null, null))
                     .thenThrow(new NullPointerException());
             client.getDomainList("MemberRole1", "RoleName1");
             fail();
@@ -1180,7 +1177,7 @@ public class ZMSClientTest {
             assertTrue(true);
         }
         try {
-            Mockito.when(c.getDomainList(null, null, null, null, null, null, "MemberRole2", "RoleName2", null, null, null, null))
+            Mockito.when(c.getDomainList(null, null, null, null, null, null, "MemberRole2", "RoleName2", null, null, null, null, null))
                     .thenThrow(new ResourceException(400));
             client.getDomainList("MemberRole2", "RoleName2");
             fail();
@@ -2027,7 +2024,7 @@ public class ZMSClientTest {
         client.setZMSRDLGeneratedClient(c);
         Map<String, List<String>> respHdrs = new HashMap<>();
         SignedDomains signedDomain1 = Mockito.mock(SignedDomains.class);
-        Mockito.when(c.getSignedDomains("dom1", "meta1", null, true, "tag1", respHdrs))
+        Mockito.when(c.getSignedDomains("dom1", "meta1", null, true, false,"tag1", respHdrs))
                 .thenReturn(signedDomain1)
                 .thenReturn(signedDomain1)
                 .thenReturn(signedDomain1)
@@ -2048,6 +2045,78 @@ public class ZMSClientTest {
             client.getSignedDomains("dom1", "meta1", null, true, "tag1", respHdrs);
             fail();
         } catch (ZMSClientException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
+    }
+
+    @Test
+    public void testGetDomainMetaStoreValidValuesList() {
+        ZMSClient client = createClient(systemAdminUser);
+        ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
+        client.setZMSRDLGeneratedClient(c);
+        try {
+            Mockito.when(
+                    c.getDomainMetaStoreValidValuesList(null, null))
+                    .thenThrow(new RuntimeException());
+            client.getDomainMetaStoreValidValuesList(null, null);
+            fail();
+        } catch (Exception ex) {
+            assertEquals(ex.getClass().toString(), "class com.yahoo.athenz.zms.ZMSClientException");
+        }
+
+        try {
+            Mockito.when(
+                    c.getDomainMetaStoreValidValuesList("bad attribute", null))
+                    .thenThrow(new InvalidParameterException("Bad parameter"));
+            client.getDomainMetaStoreValidValuesList("bad attribute", null);
+            fail();
+        } catch (Exception ex) {
+            assertEquals(ex.getMessage(), "ResourceException (400): Bad parameter");
+        }
+
+        try {
+            Mockito.when(
+                    c.getDomainMetaStoreValidValuesList("bad attribute2", null))
+                    .thenThrow(new ResourceException(400));
+            client.getDomainMetaStoreValidValuesList("bad attribute2", null);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
+    }
+
+    @Test
+    public void testGetDomainListException() {
+        ZMSClient client = createClient(systemAdminUser);
+        ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
+        client.setZMSRDLGeneratedClient(c);
+        try {
+            Mockito.when(
+                    c.getDomainList(0, null, null, null, null, null, null, null, null, null, null, null, null))
+                    .thenThrow(new RuntimeException());
+            client.getDomainList(0, null, null, null, null, null, null, null, null, null, null);
+            fail();
+        } catch (Exception ex) {
+            assertEquals(ex.getClass().toString(), "class com.yahoo.athenz.zms.ZMSClientException");
+        }
+
+        try {
+            Mockito.when(
+                    c.getDomainList(1, null, null, null, null, null, null, null, null, null, null, null, null))
+                    .thenThrow(new InvalidParameterException("Bad parameter"));
+            client.getDomainList(1, null, null, null, null, null, null, null, null, null, null);
+            fail();
+        } catch (Exception ex) {
+            assertEquals(ex.getMessage(), "ResourceException (400): Bad parameter");
+        }
+
+        try {
+            Mockito.when(
+                    c.getDomainList(2, null, null, null, null, null, null, null, null, null, null, null, null))
+                    .thenThrow(new ResourceException(400));
+            client.getDomainList(2, null, null, null, null, null, null, null, null, null, null);
+            fail();
+        } catch (ResourceException ex) {
             assertEquals(ex.getCode(), 400);
         }
     }
@@ -2222,8 +2291,9 @@ public class ZMSClientTest {
         ZMSClient client = createClient(systemAdminUser);
         ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
         client.setZMSRDLGeneratedClient(c);
-        UserList userListMock = Mockito.mock(UserList.class);
-        Mockito.when(c.getUserList())
+        UserList userListMock = Mockito
+                .mock(UserList.class);
+        Mockito.when(c.getUserList(null))
                 .thenReturn(userListMock)
                 .thenThrow(new ResourceException(401))
                 .thenThrow(new NullPointerException());
@@ -2244,6 +2314,40 @@ public class ZMSClientTest {
 
         try {
             client.getUserList();
+            fail();
+        } catch (ZMSClientException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
+    }
+
+    @Test
+    public void testGetUserListWithDomain() {
+        ZMSClient client = createClient(systemAdminUser);
+        ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
+        client.setZMSRDLGeneratedClient(c);
+        UserList userListMock = Mockito
+                .mock(UserList.class);
+        Mockito.when(c.getUserList("unix"))
+                .thenReturn(userListMock)
+                .thenThrow(new ResourceException(401))
+                .thenThrow(new NullPointerException());
+
+        try {
+            UserList userList = client.getUserList("unix");
+            assertNotNull(userList);
+        } catch (ZMSClientException ex) {
+            fail();
+        }
+
+        try {
+            client.getUserList("unix");
+            fail();
+        } catch (ZMSClientException ex) {
+            assertEquals(ex.getCode(), 401);
+        }
+
+        try {
+            client.getUserList("unix");
             fail();
         } catch (ZMSClientException ex) {
             assertEquals(ex.getCode(), 400);
@@ -2423,23 +2527,6 @@ public class ZMSClientTest {
         client.close();
     }
 
-    private void setEnv(String key, String value) {
-        try {
-            Map<String, String> env = System.getenv();
-            Class<?> cl = env.getClass();
-            Field field = cl.getDeclaredField("m");
-            field.setAccessible(true);
-            Map<String, String> writableEnv = (Map<String, String>) field.get(env);
-            if (value == null) {
-                writableEnv.remove(key);
-            } else {
-                writableEnv.put(key, value);
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to set environment variable", e);
-        }
-    }
-
     @Test
     public void testLookupZMSUrl() {
 
@@ -2449,14 +2536,11 @@ public class ZMSClientTest {
         System.clearProperty(ZMSClient.ZMS_CLIENT_PROP_ATHENZ_CONF);
         client.close();
 
-        final String envValue = System.getenv("ROOT");
-        setEnv("ROOT", "/home/athenz");
         System.setProperty(ZMSClient.ZMS_CLIENT_PROP_ATHENZ_CONF, "src/test/resources/athenz.conf");
         client = new ZMSClient();
         assertEquals(client.lookupZMSUrl(), "https://server-zms.athenzcompany.com:4443/");
         System.clearProperty(ZMSClient.ZMS_CLIENT_PROP_ATHENZ_CONF);
         client.close();
-        setEnv("ROOT", envValue);
     }
 
     @Test
@@ -3852,6 +3936,127 @@ public class ZMSClientTest {
         }
         try {
             client.getGroups(domainName, true);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 401);
+        }
+    }
+
+    @Test
+    public void testPutAssertionConditions() {
+        final String domainName = "put-assertion-conditions";
+        final String policyName = "put-assertion-conditions.pol";
+        ZMSClient client = createClient(systemAdminUser);
+        ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
+        client.setZMSRDLGeneratedClient(c);
+        AssertionCondition ac = new AssertionCondition().setId(1);
+        AssertionConditions ac1 = new AssertionConditions().setConditionsList(Collections.singletonList(ac));
+        Mockito.when(c.putAssertionConditions(anyString(), anyString(), anyLong(), anyString(), any(AssertionConditions.class)))
+                .thenReturn(ac1)
+                .thenThrow(new NullPointerException())
+                .thenThrow(new ResourceException(401));
+
+        assertEquals(client.putAssertionConditions(domainName, policyName, 1L, AUDIT_REF, ac1), ac1);
+
+        try {
+            client.putAssertionConditions(domainName, policyName, 1L, AUDIT_REF, ac1);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
+        try {
+            client.putAssertionConditions(domainName, policyName, 1L, AUDIT_REF, ac1);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 401);
+        }
+    }
+
+    @Test
+    public void testPutAssertionCondition() {
+        final String domainName = "put-assertion-condition";
+        final String policyName = "put-assertion-condition.pol";
+        ZMSClient client = createClient(systemAdminUser);
+        ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
+        client.setZMSRDLGeneratedClient(c);
+        AssertionCondition ac = new AssertionCondition().setId(1);
+        Mockito.when(c.putAssertionCondition(anyString(), anyString(), anyLong(), anyString(), any(AssertionCondition.class)))
+                .thenReturn(ac)
+                .thenThrow(new NullPointerException())
+                .thenThrow(new ResourceException(401));
+
+        assertEquals(client.putAssertionCondition(domainName, policyName, 1L, AUDIT_REF, ac), ac);
+
+        try {
+            client.putAssertionCondition(domainName, policyName, 1L, AUDIT_REF, ac);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
+        try {
+            client.putAssertionCondition(domainName, policyName, 1L, AUDIT_REF, ac);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 401);
+        }
+    }
+
+    @Test
+    public void testDeleteAssertionConditions() {
+        final String domainName = "delete-assertion-conditions";
+        final String policyName = "delete-assertion-conditions.pol";
+        ZMSClient client = createClient(systemAdminUser);
+        ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
+        client.setZMSRDLGeneratedClient(c);
+        Mockito.when(c.deleteAssertionConditions(anyString(), anyString(), anyLong(), anyString()))
+                .thenReturn(null)
+                .thenThrow(new NullPointerException())
+                .thenThrow(new ResourceException(401));
+
+        try {
+            client.deleteAssertionConditions(domainName, policyName, 1L, AUDIT_REF);
+        } catch(ResourceException re){
+            fail();
+        }
+        try {
+            client.deleteAssertionConditions(domainName, policyName, 1L, AUDIT_REF);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
+        try {
+            client.deleteAssertionConditions(domainName, policyName, 1L, AUDIT_REF);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 401);
+        }
+    }
+
+    @Test
+    public void testDeleteAssertionCondition() {
+        final String domainName = "delete-assertion-condition";
+        final String policyName = "delete-assertion-condition.pol";
+        ZMSClient client = createClient(systemAdminUser);
+        ZMSRDLGeneratedClient c = Mockito.mock(ZMSRDLGeneratedClient.class);
+        client.setZMSRDLGeneratedClient(c);
+        Mockito.when(c.deleteAssertionCondition(anyString(), anyString(), anyLong(), anyInt(), anyString()))
+                .thenReturn(null)
+                .thenThrow(new NullPointerException())
+                .thenThrow(new ResourceException(401));
+
+        try {
+            client.deleteAssertionCondition(domainName, policyName, 1L, 1, AUDIT_REF);
+        } catch(ResourceException re){
+            fail();
+        }
+        try {
+            client.deleteAssertionCondition(domainName, policyName, 1L, 1, AUDIT_REF);
+            fail();
+        } catch (ResourceException ex) {
+            assertEquals(ex.getCode(), 400);
+        }
+        try {
+            client.deleteAssertionCondition(domainName, policyName, 1L, 1, AUDIT_REF);
             fail();
         } catch (ResourceException ex) {
             assertEquals(ex.getCode(), 401);

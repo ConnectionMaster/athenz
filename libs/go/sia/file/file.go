@@ -3,7 +3,7 @@ package siafile
 import (
 	"bytes"
 	"fmt"
-	"github.com/yahoo/athenz/libs/go/sia/verify"
+	"github.com/AthenZ/athenz/libs/go/sia/verify"
 	"io/ioutil"
 	"log"
 	"os"
@@ -109,4 +109,40 @@ func overrideFile(fileName string, err error, contents []byte, perm os.FileMode,
 	log.Printf("Removing backup file %s...\n", bakFileName)
 	os.Remove(bakFileName)
 	return nil
+}
+
+func Copy(sourceFile, destFile string, perm os.FileMode) error {
+	if Exists(sourceFile) {
+		sourceBytes, err := ioutil.ReadFile(sourceFile)
+		if err != nil {
+			log.Printf("unable to read file %s", sourceFile)
+			return err
+		}
+		err = ioutil.WriteFile(destFile, sourceBytes, perm)
+		if err != nil {
+			log.Printf("unable to write to file %s", destFile)
+			return err
+		}
+	}
+	return nil
+}
+
+func CopyCertKeyFile(srcKey, destKey, srcCert, destCert string, keyPerm, certPerm int) error {
+	err := Copy(srcKey, destKey, os.FileMode(keyPerm))
+	if err != nil {
+		return err
+	}
+
+	err = Copy(srcCert, destCert, os.FileMode(certPerm))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func Exists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

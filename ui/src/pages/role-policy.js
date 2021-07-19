@@ -83,7 +83,7 @@ export default class RolePolicyPage extends React.Component {
             let response = RequestUtils.errorCheckHelper(err);
             reload = response.reload;
             error = response.error;
-            return [{}, {}, {}, {}, {}, {}, {}];
+            return [{}, {}, {}, {}, {}, {}];
         });
         return {
             api,
@@ -112,14 +112,8 @@ export default class RolePolicyPage extends React.Component {
     }
 
     render() {
-        const {
-            domain,
-            role,
-            reload,
-            roleDetails,
-            policies,
-            _csrf,
-        } = this.props;
+        const { domain, role, reload, roleDetails, policies, _csrf } =
+            this.props;
 
         let filteredPolicies = policies;
 

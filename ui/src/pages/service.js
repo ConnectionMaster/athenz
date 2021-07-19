@@ -69,6 +69,16 @@ export default class ServicePage extends React.Component {
         let reload = false;
         let notFound = false;
         let error = undefined;
+
+        var bServicesParams = {
+            category: 'domain',
+            attributeName: 'businessService',
+            userName: props.req.session.shortId,
+        };
+        var bServicesParamsAll = {
+            category: 'domain',
+            attributeName: 'businessService',
+        };
         const domains = await Promise.all([
             api.listUserDomains(),
             api.getHeaderDetails(),
@@ -78,12 +88,47 @@ export default class ServicePage extends React.Component {
             api.getPendingDomainMembersList(),
             api.getServicePageConfig(),
             api.isAWSTemplateApplied(props.query.domain),
+            api.getFeatureFlag(),
+            api.getMeta(bServicesParams),
+            api.getMeta(bServicesParamsAll),
         ]).catch((err) => {
             let response = RequestUtils.errorCheckHelper(err);
             reload = response.reload;
             error = response.error;
-            return [{}, {}, {}, {}, {}, {}, {}, {}];
+            return [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
         });
+        let businessServiceOptions = [];
+        if (domains[9] && domains[9].validValues) {
+            domains[9].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptions.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
+        let businessServiceOptionsAll = [];
+        if (domains[10] && domains[10].validValues) {
+            domains[10].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptionsAll.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
         let domainDetails = domains[2];
         domainDetails.isAWSTemplateApplied = !!domains[7];
         return {
@@ -99,7 +144,10 @@ export default class ServicePage extends React.Component {
             _csrf: domains[4],
             pending: domains[5],
             pageConfig: domains[6],
+            featureFlag: domains[8],
             nonce: props.req.headers.rid,
+            validBusinessServices: businessServiceOptions,
+            validBusinessServicesAll: businessServiceOptionsAll,
         };
     }
 
@@ -146,11 +194,19 @@ export default class ServicePage extends React.Component {
                                                 this.props.headerDetails
                                                     .productMasterLink
                                             }
+                                            validBusinessServices={
+                                                this.props.validBusinessServices
+                                            }
+                                            validBusinessServicesAll={
+                                                this.props
+                                                    .validBusinessServicesAll
+                                            }
                                         />
                                         <Tabs
                                             api={this.api}
                                             domain={domain}
                                             selectedName={'services'}
+                                            featureFlag={this.props.featureFlag}
                                         />
                                     </PageHeaderDiv>
                                     <ServiceList
@@ -159,6 +215,7 @@ export default class ServicePage extends React.Component {
                                         services={services}
                                         _csrf={this.props._csrf}
                                         pageConfig={this.props.pageConfig}
+                                        featureFlag={this.props.featureFlag}
                                     />
                                 </ServicesContentDiv>
                             </ServicesContainerDiv>

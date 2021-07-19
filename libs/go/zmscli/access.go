@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yahoo/athenz/clients/go/zms"
+	"github.com/AthenZ/athenz/clients/go/zms"
 )
 
 func (cli Zms) getAccessParameters(dn string, action string, resource string, altIdent *string, altDomain *string) (string, string, string, error) {
@@ -57,7 +57,11 @@ func (cli Zms) ShowAccess(dn string, action string, resource string, altIdent *s
 	if !access.Granted {
 		s = "access: denied"
 	}
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 // ShowAccessExt returns access indicator as string:
@@ -75,7 +79,11 @@ func (cli Zms) ShowAccessExt(dn string, action string, resource string, altIdent
 	if !access.Granted {
 		s = "access: denied"
 	}
-	return &s, nil
+	message := SuccessMessage{
+		Status:  200,
+		Message: s,
+	}
+	return cli.dumpByFormat(message, cli.buildYAMLOutput)
 }
 
 func (cli Zms) ShowResourceAccess(principal string, action string) (*string, error) {
@@ -83,16 +91,21 @@ func (cli Zms) ShowResourceAccess(principal string, action string) (*string, err
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	buf.WriteString("resource-access:\n")
-	for _, rsrc := range rsrcAccessList.Resources {
-		buf.WriteString(indentLevel1Dash + "principal: " + string(rsrc.Principal) + "\n")
-		buf.WriteString(indentLevel1 + "  assertions:\n")
-		indent2 := indentLevel1 + "    - "
-		for _, assertion := range rsrc.Assertions {
-			cli.dumpAssertion(&buf, assertion, "", indent2)
+
+	oldYamlConverter := func(res interface{}) (*string, error) {
+		var buf bytes.Buffer
+		buf.WriteString("resource-access:\n")
+		for _, rsrc := range rsrcAccessList.Resources {
+			buf.WriteString(indentLevel1Dash + "principal: " + string(rsrc.Principal) + "\n")
+			buf.WriteString(indentLevel1 + "  assertions:\n")
+			indent2 := indentLevel1 + "    - "
+			for _, assertion := range rsrc.Assertions {
+				cli.dumpAssertion(&buf, assertion, "", indent2)
+			}
 		}
+		s := buf.String()
+		return &s, nil
 	}
-	s := buf.String()
-	return &s, nil
+
+	return cli.dumpByFormat(rsrcAccessList, oldYamlConverter)
 }

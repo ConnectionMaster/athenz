@@ -69,6 +69,15 @@ export default class PolicyPage extends React.Component {
         let reload = false;
         let notFound = false;
         let error = undefined;
+        var bServicesParams = {
+            category: 'domain',
+            attributeName: 'businessService',
+            userName: props.req.session.shortId,
+        };
+        var bServicesParamsAll = {
+            category: 'domain',
+            attributeName: 'businessService',
+        };
         const domains = await Promise.all([
             api.listUserDomains(),
             api.getHeaderDetails(),
@@ -77,12 +86,47 @@ export default class PolicyPage extends React.Component {
             api.getForm(),
             api.getPendingDomainMembersList(),
             api.isAWSTemplateApplied(props.query.domain),
+            api.getFeatureFlag(),
+            api.getMeta(bServicesParams),
+            api.getMeta(bServicesParamsAll),
         ]).catch((err) => {
             let response = RequestUtils.errorCheckHelper(err);
             reload = response.reload;
             error = response.error;
-            return [{}, {}, {}, {}, {}, {}, {}];
+            return [{}, {}, {}, {}, {}, {}, {}, {}, {}];
         });
+        let businessServiceOptions = [];
+        if (domains[8] && domains[8].validValues) {
+            domains[8].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptions.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
+        let businessServiceOptionsAll = [];
+        if (domains[9] && domains[9].validValues) {
+            domains[9].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptionsAll.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
         let domainDetails = domains[2];
         domainDetails.isAWSTemplateApplied = !!domains[6];
         return {
@@ -98,6 +142,9 @@ export default class PolicyPage extends React.Component {
             _csrf: domains[4],
             pending: domains[5],
             nonce: props.req.headers.rid,
+            featureFlag: domains[7],
+            validBusinessServices: businessServiceOptions,
+            validBusinessServicesAll: businessServiceOptionsAll,
         };
     }
 
@@ -144,11 +191,19 @@ export default class PolicyPage extends React.Component {
                                                 this.props.headerDetails
                                                     .productMasterLink
                                             }
+                                            validBusinessServices={
+                                                this.props.validBusinessServices
+                                            }
+                                            validBusinessServicesAll={
+                                                this.props
+                                                    .validBusinessServicesAll
+                                            }
                                         />
                                         <Tabs
                                             api={this.api}
                                             domain={domain}
                                             selectedName={'policies'}
+                                            featureFlag={this.props.featureFlag}
                                         />
                                     </PageHeaderDiv>
                                     <PolicyList

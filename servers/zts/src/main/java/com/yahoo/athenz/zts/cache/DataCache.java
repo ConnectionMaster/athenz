@@ -15,22 +15,23 @@
  */
 package com.yahoo.athenz.zts.cache;
 
-import java.util.*;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.athenz.auth.AuthorityConsts;
 import com.yahoo.athenz.auth.Principal;
 import com.yahoo.athenz.auth.util.AthenzUtils;
+import com.yahoo.athenz.auth.util.Crypto;
+import com.yahoo.athenz.auth.util.CryptoException;
 import com.yahoo.athenz.common.config.AuthzDetailsEntity;
 import com.yahoo.athenz.common.config.AuthzDetailsField;
 import com.yahoo.athenz.common.server.util.AuthzHelper;
 import com.yahoo.athenz.common.server.util.ResourceUtils;
 import com.yahoo.athenz.zms.*;
+import com.yahoo.athenz.zts.transportrules.TransportRulesProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.yahoo.athenz.auth.util.Crypto;
-import com.yahoo.athenz.auth.util.CryptoException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.yahoo.athenz.common.ServerCommonConsts.ATHENZ_SYS_DOMAIN;
 
@@ -51,6 +52,8 @@ public class DataCache {
     private final Map<String, List<String>> providerHostnameAllowedSuffixCache;
     private final Map<String, List<String>> providerHostnameDeniedSuffixCache;
     private final Map<String, List<AuthzDetailsEntity>> authzDetailsCache;
+    private final Map<String, Map<String, List<String>>> transportRulesCache;
+    private final Set<String> workloadStoreExcludeProvidersCache;
 
     public static final String ACTION_ASSUME_ROLE = "assume_role";
     public static final String ACTION_ASSUME_AWS_ROLE = "assume_aws_role";
@@ -58,6 +61,7 @@ public class DataCache {
 
     public static final String RESOURCE_DNS_PREFIX = "sys.auth:dns.";
     public static final String RESOURCE_HOSTNAME_PREFIX = "sys.auth:hostname.";
+    public static final String ROLE_WORKLOAD_STORE_EXCLUDED_PROVIDER_NAME = "sys.auth:role.workload.store.excluded.providers";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataCache.class);
     
@@ -74,6 +78,8 @@ public class DataCache {
         providerHostnameAllowedSuffixCache = new HashMap<>();
         providerHostnameDeniedSuffixCache = new HashMap<>();
         authzDetailsCache = new HashMap<>();
+        transportRulesCache = new HashMap<>();
+        workloadStoreExcludeProvidersCache = new HashSet<>();
     }
     
     public void setDomainData(DomainData domainData) {
@@ -210,7 +216,7 @@ public class DataCache {
     }
 
     void processProviderSuffixAssertion(Assertion assertion, AssertionEffect effect, Map<String, Role> roles,
-            final String resoourceSuffix, Map<String, List<String>> providerSuffixCache) {
+            final String resourceSuffix, Map<String, List<String>> providerSuffixCache) {
 
         // make sure we have satisfied the effect
         // if effect is null then it defaults to ALLOW
@@ -223,7 +229,7 @@ public class DataCache {
         // make sure we're processing dns suffix assertion
 
         final String resource = assertion.getResource();
-        if (!resource.startsWith(resoourceSuffix)) {
+        if (!resource.startsWith(resourceSuffix)) {
             return;
         }
 
@@ -238,7 +244,7 @@ public class DataCache {
         // we don't check to make sure there is . in front of it.
         // so we're going to reduce the length by 1 to get the .
 
-        final String suffix = resource.substring(resoourceSuffix.length() - 1);
+        final String suffix = resource.substring(resourceSuffix.length() - 1);
         for (RoleMember roleMember : role.getRoleMembers()) {
 
             final String memberName = roleMember.getMemberName();
@@ -334,7 +340,27 @@ public class DataCache {
                 case ACTION_LAUNCH:
                     processLaunchAssertion(domainName, assertion, roles);
                     break;
+                default:
+                    if (TransportRulesProcessor.isTransportRuleAction(assertion.getAction())) {
+                        processTransportRulesAssertion(domainName, assertion, roles);
+                    }
             }
+        }
+    }
+
+    private void processTransportRulesAssertion(String domainName, Assertion assertion, Map<String, Role> roles) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Processing Transport rules for action={} resource={} and role={}",
+                    assertion.getAction(), assertion.getResource(), assertion.getRole());
+        }
+        String mapKey = assertion.getResource().substring(domainName.length() + 1);
+        transportRulesCache.computeIfAbsent(mapKey, k -> new HashMap<>());
+
+        if (roles.containsKey(assertion.getRole()) && roles.get(assertion.getRole()) != null
+                && roles.get(assertion.getRole()).getRoleMembers() != null) {
+            List<String> serviceMembers = roles.get(assertion.getRole()).getRoleMembers()
+                    .stream().map(RoleMember::getMemberName).collect(Collectors.toList());
+            transportRulesCache.get(mapKey).put(assertion.getAction(), serviceMembers);
         }
     }
 
@@ -425,7 +451,7 @@ public class DataCache {
         try {
             detailsEntity = AuthzHelper.convertEntityToAuthzDetailsEntity(entity);
         } catch (JsonProcessingException ex) {
-            LOGGER.error("Unable to process entity {}, error {}", entity.toString(), ex.getMessage());
+            LOGGER.error("Unable to process entity {}, error {}", entity, ex.getMessage());
             return;
         }
 
@@ -498,6 +524,7 @@ public class DataCache {
     
     /**
      * Return the number of members in the cache
+     * @return member count
      */
     public int getMemberCount() {
         return memberRoleCache.size();
@@ -537,5 +564,38 @@ public class DataCache {
 
     public List<AuthzDetailsEntity> getAuthzDetailsEntities(final String role) {
         return authzDetailsCache.get(role);
+    }
+
+    public Map<String, List<String>> getTransportRulesInfoForService(final String service) {
+        return transportRulesCache.get(service);
+    }
+
+    public boolean isWorkloadStoreExcludedProvider(final String provider) {
+        return workloadStoreExcludeProvidersCache.contains(provider);
+    }
+
+    /**
+     * This method populates relevant cache objects from system configurations via Athenz system domain
+     * @param domainData domain object with updates
+     */
+    public void processSystemBehaviorRoles(DomainData domainData) {
+        // only processing system domain
+        if (!domainData.getName().equals(ATHENZ_SYS_DOMAIN)) {
+            return;
+        }
+        // if we have a role by name workload.store.excluded.providers then its members will be stored in a set
+        // and those providers' workloads will be excluded from workload store
+        Set<String> currentExcludedProviders = domainData.getRoles().stream()
+                .filter(r -> ROLE_WORKLOAD_STORE_EXCLUDED_PROVIDER_NAME.equals(r.getName()))
+                .map(Role::getRoleMembers)
+                .flatMap(List::stream)
+                .map(RoleMember::getMemberName).collect(Collectors.toSet());
+        // first add missing new entries
+        if (!workloadStoreExcludeProvidersCache.containsAll(currentExcludedProviders)) {
+            workloadStoreExcludeProvidersCache.addAll(currentExcludedProviders);
+        }
+        // now delete entries which were removed
+        workloadStoreExcludeProvidersCache.retainAll(currentExcludedProviders);
+
     }
 }

@@ -1,13 +1,29 @@
+//
+// Copyright The Athenz Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package tokens
 
 import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/yahoo/athenz/clients/go/zts"
-	"github.com/yahoo/athenz/libs/go/sia/access/config"
-	siafile "github.com/yahoo/athenz/libs/go/sia/file"
-	tlsconfig "github.com/yahoo/athenz/libs/go/tls/config"
+	"github.com/AthenZ/athenz/clients/go/zts"
+	"github.com/AthenZ/athenz/libs/go/sia/access/config"
+	siafile "github.com/AthenZ/athenz/libs/go/sia/file"
+	tlsconfig "github.com/AthenZ/athenz/libs/go/tls/config"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -63,7 +79,7 @@ func ToBeRefreshed(tokenDir string, tokens []config.AccessToken) ([]config.Acces
 	return refresh, errs
 }
 
-//func Fetch(ztsUrl, domain string, svcs []string, tokens []ac.AccessToken) []error {
+// Fetch retrieves the configured set of access tokens from the ZTS Server
 func Fetch(opts *config.TokenOptions) []error {
 	errs := []error{}
 	tlsConfigs, e := loadSvcCerts(opts)

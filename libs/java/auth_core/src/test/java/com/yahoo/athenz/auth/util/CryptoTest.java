@@ -152,16 +152,37 @@ public class CryptoTest {
 
 
         System.setProperty(Crypto.ATHENZ_CRYPTO_ALGO_ECDSA, "abcd");
-        assertThrows(CryptoException.class, () -> {
-            Crypto.extractPublicKey(privateKey);
-        });
+        assertThrows(CryptoException.class, () -> Crypto.extractPublicKey(privateKey));
         System.clearProperty(Crypto.ATHENZ_CRYPTO_ALGO_ECDSA);
 
-        System.setProperty(Crypto.ATHENZ_CRYPTO_BC_PROVIDER, "C");
-        assertThrows(CryptoException.class, () -> {
-            Crypto.extractPublicKey(privateKey);
-        });
-        System.clearProperty(Crypto.ATHENZ_CRYPTO_BC_PROVIDER);
+        System.setProperty(Crypto.ATHENZ_CRYPTO_KEY_FACTORY_PROVIDER, "C");
+        assertThrows(CryptoException.class, () -> Crypto.extractPublicKey(privateKey));
+        System.clearProperty(Crypto.ATHENZ_CRYPTO_KEY_FACTORY_PROVIDER);
+    }
+
+    @Test
+    public void testSignatureProviderException() {
+        PrivateKey privateKey = Crypto.loadPrivateKey(ecPrivateKey);
+        assertNotNull(privateKey);
+
+        PublicKey publicKey = Crypto.loadPublicKey(ecPublicKey);
+        assertNotNull(publicKey);
+
+        System.setProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER, "C");
+        assertThrows(CryptoException.class, () -> Crypto.sign(serviceToken, privateKey));
+        System.clearProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER);
+
+        System.setProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER, "C");
+        assertThrows(CryptoException.class, () -> Crypto.sign(serviceToken.getBytes(StandardCharsets.UTF_8), privateKey, Crypto.SHA256));
+        System.clearProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER);
+
+        System.setProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER, "C");
+        assertThrows(CryptoException.class, () -> Crypto.verify(serviceToken, publicKey, serviceECSignature));
+        System.clearProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER);
+
+        System.setProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER, "C");
+        assertThrows(CryptoException.class, () -> Crypto.verify(serviceToken.getBytes(StandardCharsets.UTF_8), publicKey, serviceECSignature.getBytes(StandardCharsets.UTF_8), Crypto.SHA256));
+        System.clearProperty(Crypto.ATHENZ_CRYPTO_SIGNATURE_PROVIDER);
     }
 
     @Test
@@ -171,16 +192,12 @@ public class CryptoTest {
         assertNotNull(privateKey);
 
         System.setProperty(Crypto.ATHENZ_CRYPTO_ALGO_RSA, "abcd");
-        assertThrows(CryptoException.class, () -> {
-            Crypto.extractPublicKey(privateKey);
-        });
+        assertThrows(CryptoException.class, () -> Crypto.extractPublicKey(privateKey));
         System.clearProperty(Crypto.ATHENZ_CRYPTO_ALGO_RSA);
 
-        System.setProperty(Crypto.ATHENZ_CRYPTO_BC_PROVIDER, "C");
-        assertThrows(CryptoException.class, () -> {
-            Crypto.extractPublicKey(privateKey);
-        });
-        System.clearProperty(Crypto.ATHENZ_CRYPTO_BC_PROVIDER);
+        System.setProperty(Crypto.ATHENZ_CRYPTO_KEY_FACTORY_PROVIDER, "C");
+        assertThrows(CryptoException.class, () -> Crypto.extractPublicKey(privateKey));
+        System.clearProperty(Crypto.ATHENZ_CRYPTO_KEY_FACTORY_PROVIDER);
     }
 
     @Test
@@ -188,9 +205,7 @@ public class CryptoTest {
         PrivateKey privateKey = mock(PrivateKey.class);
         when(privateKey.getAlgorithm()).thenReturn("TestAlgo");
 
-        assertThrows(CryptoException.class, () -> {
-            Crypto.extractPublicKey(privateKey);
-        });
+        assertThrows(CryptoException.class, () -> Crypto.extractPublicKey(privateKey));
     }
 
     @Test
@@ -292,9 +307,7 @@ public class CryptoTest {
     @Test
     public void testLoadPrivateKeyInvalidFile() {
         File temp = new File("test/Invalid/File/path.key");
-        assertThrows(CryptoException.class, () -> {
-            Crypto.loadPrivateKey(temp, "test");
-        });
+        assertThrows(CryptoException.class, () -> Crypto.loadPrivateKey(temp, "test"));
     }
 
 
@@ -330,18 +343,14 @@ public class CryptoTest {
         PrivateKey privateKey = Crypto.loadPrivateKey(ecPrivateParamsKey);
         assertNotNull(privateKey);
 
-        String signature = Crypto.sign(serviceToken, privateKey);
+        Crypto.sign(serviceToken, privateKey);
 
-        System.setProperty(Crypto.ATHENZ_CRYPTO_BC_PROVIDER, "C");
-        assertThrows(CryptoException.class, () -> {
-            Crypto.loadPublicKey(ecPublicParamsKey);
-        });
-        System.clearProperty(Crypto.ATHENZ_CRYPTO_BC_PROVIDER);
+        System.setProperty(Crypto.ATHENZ_CRYPTO_KEY_FACTORY_PROVIDER, "C");
+        assertThrows(CryptoException.class, () -> Crypto.loadPublicKey(ecPublicParamsKey));
+        System.clearProperty(Crypto.ATHENZ_CRYPTO_KEY_FACTORY_PROVIDER);
 
         System.setProperty(Crypto.ATHENZ_CRYPTO_ALGO_ECDSA, "TESTAlgo");
-        assertThrows(CryptoException.class, () -> {
-            Crypto.loadPublicKey(ecPublicParamsKey);
-        });
+        assertThrows(CryptoException.class, () -> Crypto.loadPublicKey(ecPublicParamsKey));
         System.clearProperty(Crypto.ATHENZ_CRYPTO_ALGO_ECDSA);
 
     }
@@ -362,9 +371,7 @@ public class CryptoTest {
 
     @Test
     public void testLoadPublicKeyException() {
-        assertThrows(CryptoException.class, () -> {
-            Crypto.loadPublicKey(noFile);
-        });
+        assertThrows(CryptoException.class, () -> Crypto.loadPublicKey(noFile));
     }
     @Test
     public void testSignVerifyECParamMixCurvesFail() {
@@ -574,10 +581,19 @@ public class CryptoTest {
     }
 
     @Test
-    public void testEnDecodedFile() {
+    public void testEncodedFile() {
         String encoded = Crypto.encodedFile(argFile);
         assertNotNull(encoded);
+    }
 
+    @Test
+    public void testEncodedFileNotFound() {
+        try {
+            File file = new File("src/test/resources/not-found-file");
+            Crypto.encodedFile(file);
+            fail();
+        } catch (Exception ignored) {
+        }
     }
 
     @Test
@@ -592,7 +608,6 @@ public class CryptoTest {
             fail();
         }
     }
-
 
     @Test
     public void testSHA256() {
@@ -656,8 +671,7 @@ public class CryptoTest {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
 
-            String cn = Crypto.extractX509CertCommonName(cert);
-            assertEquals("athenz.syncer", cn);
+            assertEquals(Crypto.extractX509CertCommonName(cert), "athenz.syncer");
         }
     }
 
@@ -668,8 +682,17 @@ public class CryptoTest {
         try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_1.pem")) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-            boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-            assertFalse(restrictedCertificate);
+            assertFalse(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
+        }
+    }
+
+    @Test
+    public void testIsRestrictedCertificateSuffix() throws Exception {
+
+        try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_4.pem")) {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
+            assertTrue(Crypto.isRestrictedCertificate(cert, null));
         }
     }
 
@@ -698,8 +721,7 @@ public class CryptoTest {
         try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_1.pem")) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-            boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-            assertTrue(restrictedCertificate);
+            assertTrue(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
         } finally {
             System.clearProperty("athenz.crypto.restricted_ou");
         }
@@ -714,27 +736,23 @@ public class CryptoTest {
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_1.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertTrue(restrictedCertificate);
+                assertTrue(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_2.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertTrue(restrictedCertificate);
+                assertTrue(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_3.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertTrue(restrictedCertificate);
+                assertTrue(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
             // This one's OU doesn't match the pattern (regular_ou)
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/regular_ou.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertFalse(restrictedCertificate);
+                assertFalse(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
         } finally {
             System.clearProperty("athenz.crypto.restricted_ou");
@@ -751,28 +769,24 @@ public class CryptoTest {
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_1.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertTrue(restrictedCertificate);
+                assertTrue(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
             // The others that begin with "restricted_ou" shouldn't
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_2.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertFalse(restrictedCertificate);
+                assertFalse(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/restricted_ou_3.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertFalse(restrictedCertificate);
+                assertFalse(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
             // regular_ou should match
             try (InputStream inStream = new FileInputStream("src/test/resources/ou_tests/regular_ou.pem")) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-                boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-                assertTrue(restrictedCertificate);
+                assertTrue(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
             }
         } finally {
             System.clearProperty("athenz.crypto.restricted_ou");
@@ -787,8 +801,7 @@ public class CryptoTest {
         try (InputStream inStream = new FileInputStream("src/test/resources/valid_email_x509.cert")) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
-            boolean restrictedCertificate = Crypto.isRestrictedCertificate(cert, globStringsMatcher);
-            assertFalse(restrictedCertificate);
+            assertFalse(Crypto.isRestrictedCertificate(cert, globStringsMatcher));
         } finally {
             System.clearProperty("athenz.crypto.restricted_ou");
         }
@@ -800,8 +813,7 @@ public class CryptoTest {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
 
-            String o = Crypto.extractX509CertSubjectOField(cert);
-            assertEquals("My Test Company", o);
+            assertEquals(Crypto.extractX509CertSubjectOField(cert), "My Test Company");
         }
     }
 
@@ -812,16 +824,14 @@ public class CryptoTest {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
 
-            String ou = Crypto.extractX509CertSubjectOUField(cert);
-            assertNull(ou);
+            assertNull(Crypto.extractX509CertSubjectOUField(cert));
         }
 
         try (InputStream inStream = new FileInputStream("src/test/resources/valid_email_x509.cert")) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
 
-            String ou = Crypto.extractX509CertSubjectOUField(cert);
-            assertEquals("Testing Domain", ou);
+            assertEquals(Crypto.extractX509CertSubjectOUField(cert), "Testing Domain");
         }
     }
 
@@ -853,7 +863,7 @@ public class CryptoTest {
             X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
 
             List<String> ips = Crypto.extractX509CertIPAddresses(cert);
-            assertEquals(1, ips.size());
+            assertEquals(ips.size(), 1);
             assertEquals(ips.get(0), "10.11.12.13");
         }
     }
@@ -891,6 +901,9 @@ public class CryptoTest {
 
             List<String> uris = Crypto.extractX509CertURIs(cert);
             assertTrue(uris.isEmpty());
+
+            // no spiffe uri - returning null
+            assertNull(Crypto.extractX509CertSpiffeUri(cert));
         }
 
         try (InputStream inStream = new FileInputStream("src/test/resources/x509_altnames_noip.cert")) {
@@ -899,6 +912,9 @@ public class CryptoTest {
 
             List<String> uris = Crypto.extractX509CertURIs(cert);
             assertTrue(uris.isEmpty());
+
+            // no spiffe uri - returning null
+            assertNull(Crypto.extractX509CertSpiffeUri(cert));
         }
     }
 
@@ -912,6 +928,9 @@ public class CryptoTest {
             List<String> uris = Crypto.extractX509CertURIs(cert);
             assertEquals(1, uris.size());
             assertEquals(uris.get(0), "spiffe://athenz/domain1/service1");
+
+            // single spiffe uri - successfully validated
+            assertEquals(Crypto.extractX509CertSpiffeUri(cert), "spiffe://athenz/domain1/service1");
         }
     }
 
@@ -926,6 +945,26 @@ public class CryptoTest {
             assertEquals(2, uris.size());
             assertEquals(uris.get(0), "spiffe://athenz/domain1/service1");
             assertEquals(uris.get(1), "spiffe://athenz/domain1/service2");
+
+            // multiple spiffe uri - invalid - returning null
+            assertNull(Crypto.extractX509CertSpiffeUri(cert));
+        }
+    }
+
+    @Test
+    public void testExtractX509CertSpifeeURINull() throws Exception {
+
+        try (InputStream inStream = new FileInputStream("src/test/resources/role_cert_principal_uri_x509.cert")) {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) cf.generateCertificate(inStream);
+
+            List<String> uris = Crypto.extractX509CertURIs(cert);
+            assertEquals(2, uris.size());
+            assertEquals(uris.get(0), "athenz://instanceid/sys.auth.zts/id001");
+            assertEquals(uris.get(1), "athenz://principal/athenz.production");
+
+            // valid uris - but not spiffe - returning null
+            assertNull(Crypto.extractX509CertSpiffeUri(cert));
         }
     }
 
@@ -935,6 +974,7 @@ public class CryptoTest {
         Path path = Paths.get("src/test/resources/valid.csr");
         String csr = new String(Files.readAllBytes(path));
         PKCS10CertificationRequest certReq1 = Crypto.getPKCS10CertRequest(csr);
+        assertNotNull(certReq1);
         PKCS10CertificationRequest certReq = Mockito.spy(certReq1);
         assertNotNull(certReq);
         assertEquals(Crypto.extractX509CSRCommonName(certReq), "athenz.syncer");
@@ -1081,6 +1121,7 @@ public class CryptoTest {
         Path path = Paths.get("src/test/resources/valid.csr");
         String csr = new String(Files.readAllBytes(path));
         PKCS10CertificationRequest certReq1 = Crypto.getPKCS10CertRequest(csr);
+        assertNotNull(certReq1);
         PKCS10CertificationRequest certReq = Mockito.spy(certReq1);
         assertNotNull(certReq);
         assertEquals(Crypto.extractX509CSRCommonName(certReq), "athenz.syncer");
@@ -1093,10 +1134,7 @@ public class CryptoTest {
     public void testLoadPrivateKeyPem() throws IOException {
         Path path = Paths.get("./src/test/resources/unit_test_private_encrypted.key");
         String keyStr = new String(Files.readAllBytes(path));
-        assertThrows(CryptoException.class, () -> {
-
-            Crypto.loadPrivateKey(keyStr, "testPWD");
-        });
+        assertThrows(CryptoException.class, () -> Crypto.loadPrivateKey(keyStr, "testPWD"));
     }
 
     @Test
@@ -1109,9 +1147,7 @@ public class CryptoTest {
         when(certReq.getSubject()).thenReturn(x500Name);
         RDN[] rdns = new RDN[2];
         when(x500Name.getRDNs(null)).thenReturn(rdns);
-        assertThrows(CryptoException.class, () -> {
-            Crypto.extractX509CSRSubjectField(certReq, null);
-        });
+        assertThrows(CryptoException.class, () -> Crypto.extractX509CSRSubjectField(certReq, null));
     }
 
     @Test
@@ -1128,10 +1164,10 @@ public class CryptoTest {
     public void testLoadX509Certificates() {
 
         X509Certificate[] certs = Crypto.loadX509Certificates("src/test/resources/x509_certs_comments.pem");
-        assertTrue(certs.length == 3);
+        assertEquals(certs.length, 3);
 
         certs = Crypto.loadX509Certificates("src/test/resources/x509_certs_no_comments.pem");
-        assertTrue(certs.length == 3);
+        assertEquals(certs.length, 3);
 
         // invalid file
 

@@ -148,19 +148,63 @@
             }
         },
         {
+            "StringTypeDef": {
+                "type": "String",
+                "name": "TagValue",
+                "comment": "TagValue to contain generic string patterns",
+                "pattern": "[a-zA-Z0-9_:,\\/][a-zA-Z0-9_:,\\/-]*"
+            }
+        },
+        {
+            "StringTypeDef": {
+                "type": "String",
+                "name": "TagCompoundValue",
+                "comment": "A compound value of TagValue",
+                "pattern": "([a-zA-Z0-9_:,\\/][a-zA-Z0-9_:,\\/-]*\\.)*[a-zA-Z0-9_:,\\/][a-zA-Z0-9_:,\\/-]*"
+            }
+        },
+        {
             "StructTypeDef": {
                 "type": "Struct",
-                "name": "StringList",
+                "name": "TagValueList",
                 "fields": [
                     {
                         "name": "list",
                         "type": "Array",
                         "optional": false,
-                        "comment": "generic list of strings",
-                        "items": "CompoundName"
+                        "comment": "list of tag values",
+                        "items": "TagCompoundValue"
                     }
                 ],
                 "closed": false
+            }
+        },
+        {
+            "StringTypeDef": {
+                "type": "String",
+                "name": "AssertionConditionKeyPattern",
+                "pattern": "[a-zA-Z][a-zA-Z0-9_-]+"
+            }
+        },
+        {
+            "StringTypeDef": {
+                "type": "String",
+                "name": "AssertionConditionKey",
+                "pattern": "([a-zA-Z][a-zA-Z0-9_-]+\\.)*[a-zA-Z][a-zA-Z0-9_-]+"
+            }
+        },
+        {
+            "StringTypeDef": {
+                "type": "String",
+                "name": "AssertionConditionValuePattern",
+                "pattern": "[a-zA-Z0-9\\*][a-zA-Z0-9_\\.\\*-]+"
+            }
+        },
+        {
+            "StringTypeDef": {
+                "type": "String",
+                "name": "AssertionConditionValue",
+                "pattern": "([a-zA-Z0-9\\*][a-zA-Z0-9_\\.\\*-]+,)*[a-zA-Z0-9\\*][a-zA-Z0-9_\\.\\*-]+"
             }
         },
         {
@@ -179,7 +223,7 @@
                         "name": "org",
                         "type": "ResourceName",
                         "optional": true,
-                        "comment": "a reference to an Organization. (i.e. org:media)"
+                        "comment": "a reference to an audit organization defined in athenz"
                     },
                     {
                         "name": "enabled",
@@ -272,6 +316,20 @@
                         "type": "String",
                         "optional": true,
                         "comment": "associated azure subscription id (system attribute - uniqueness check)"
+                    },
+                    {
+                        "name": "tags",
+                        "type": "Map",
+                        "optional": true,
+                        "comment": "key-value pair tags, tag might contain multiple values",
+                        "items": "TagValueList",
+                        "keys": "CompoundName"
+                    },
+                    {
+                        "name": "businessService",
+                        "type": "String",
+                        "optional": true,
+                        "comment": "associated business service with domain"
                     }
                 ],
                 "closed": false
@@ -555,11 +613,17 @@
                         "comment": "all groups in the domain roles will have specified max expiry days"
                     },
                     {
+                        "name": "groupReviewDays",
+                        "type": "Int32",
+                        "optional": true,
+                        "comment": "all groups in the domain roles will have specified max review days"
+                    },
+                    {
                         "name": "tags",
                         "type": "Map",
                         "optional": true,
                         "comment": "key-value pair tags, tag might contain multiple values",
-                        "items": "StringList",
+                        "items": "TagValueList",
                         "keys": "CompoundName"
                     }
                 ],
@@ -882,6 +946,81 @@
             }
         },
         {
+            "EnumTypeDef": {
+                "type": "Enum",
+                "name": "AssertionConditionOperator",
+                "comment": "Allowed operators for assertion conditions",
+                "elements": [
+                    {
+                        "symbol": "EQUALS"
+                    }
+                ]
+            }
+        },
+        {
+            "StructTypeDef": {
+                "type": "Struct",
+                "name": "AssertionConditionData",
+                "comment": "A representation of details associated with an assertion condition key",
+                "fields": [
+                    {
+                        "name": "operator",
+                        "type": "AssertionConditionOperator",
+                        "optional": false,
+                        "comment": "Operator for the assertion condition"
+                    },
+                    {
+                        "name": "value",
+                        "type": "AssertionConditionValue",
+                        "optional": false,
+                        "comment": "Value of the assertion condition"
+                    }
+                ],
+                "closed": false
+            }
+        },
+        {
+            "StructTypeDef": {
+                "type": "Struct",
+                "name": "AssertionCondition",
+                "comment": "A representation of condition associated with an assertion",
+                "fields": [
+                    {
+                        "name": "id",
+                        "type": "Int32",
+                        "optional": true,
+                        "comment": "condition id - auto generated by server. Not required during put operations."
+                    },
+                    {
+                        "name": "conditionsMap",
+                        "type": "Map",
+                        "optional": false,
+                        "comment": "each key in the map represents a unique condition. All the keys present in the map form a logical condition with AND operation.",
+                        "items": "AssertionConditionData",
+                        "keys": "AssertionConditionKey"
+                    }
+                ],
+                "closed": false
+            }
+        },
+        {
+            "StructTypeDef": {
+                "type": "Struct",
+                "name": "AssertionConditions",
+                "comment": "The representation of list of assertion conditions",
+                "fields": [
+                    {
+                        "name": "conditionsList",
+                        "type": "Array",
+                        "optional": false,
+                        "comment": "list of assertion conditions.",
+                        "items": "AssertionCondition"
+                    }
+                ],
+                "closed": false
+            }
+        },
+        {
             "StructTypeDef": {
                 "type": "Struct",
                 "name": "Assertion",
@@ -923,6 +1062,12 @@
                         "type": "Bool",
                         "optional": true,
                         "comment": "If true, we should store action and resource in their original case"
+                    },
+                    {
+                        "name": "conditions",
+                        "type": "AssertionConditions",
+                        "optional": true,
+                        "comment": "optional list of assertion conditions associated with given assertion"
                     }
                 ],
                 "closed": false
@@ -1396,6 +1541,23 @@
         {
             "StructTypeDef": {
                 "type": "Struct",
+                "name": "DomainMetaStoreValidValuesList",
+                "comment": "List of valid domain meta attribute values",
+                "fields": [
+                    {
+                        "name": "validValues",
+                        "type": "Array",
+                        "optional": false,
+                        "comment": "list of valid values for attribute",
+                        "items": "String"
+                    }
+                ],
+                "closed": false
+            }
+        },
+        {
+            "StructTypeDef": {
+                "type": "Struct",
                 "name": "DanglingPolicy",
                 "comment": "A dangling policy where the assertion is referencing a role name that doesn't exist in the domain",
                 "fields": [
@@ -1477,7 +1639,7 @@
                 "fields": [
                     {
                         "name": "name",
-                        "type": "EntityName",
+                        "type": "ResourceName",
                         "optional": false,
                         "comment": "name of the entity object"
                     },
@@ -1741,6 +1903,18 @@
                         "type": "String",
                         "optional": true,
                         "comment": "expiration enforced by a user authority configured attribute"
+                    },
+                    {
+                        "name": "memberExpiryDays",
+                        "type": "Int32",
+                        "optional": true,
+                        "comment": "all user members in the group will have specified max expiry days"
+                    },
+                    {
+                        "name": "serviceExpiryDays",
+                        "type": "Int32",
+                        "optional": true,
+                        "comment": "all services in the group will have specified max expiry days"
                     }
                 ],
                 "closed": false
@@ -1935,6 +2109,13 @@
                         "optional": true,
                         "comment": "registered resource groups for this tenant",
                         "items": "EntityName"
+                    },
+                    {
+                        "name": "createAdminRole",
+                        "type": "Bool",
+                        "optional": true,
+                        "comment": "optional flag indicating whether to create a default tenancy admin role",
+                        "default": true
                     }
                 ],
                 "closed": false
@@ -2039,6 +2220,13 @@
                         "type": "EntityName",
                         "optional": false,
                         "comment": "tenant resource group"
+                    },
+                    {
+                        "name": "createAdminRole",
+                        "type": "Bool",
+                        "optional": true,
+                        "comment": "optional flag indicating whether to create a default tenancy admin role",
+                        "default": true
                     }
                 ],
                 "closed": false
@@ -2484,6 +2672,40 @@
                 ],
                 "closed": false
             }
+        },
+        {
+            "StructTypeDef": {
+                "type": "Struct",
+                "name": "UserAuthorityAttributes",
+                "comment": "Copyright Athenz Authors Licensed under the terms of the Apache version 2.0 license. See LICENSE file for terms.",
+                "fields": [
+                    {
+                        "name": "values",
+                        "type": "Array",
+                        "optional": false,
+                        "items": "String"
+                    }
+                ],
+                "closed": false
+            }
+        },
+        {
+            "StructTypeDef": {
+                "type": "Struct",
+                "name": "UserAuthorityAttributeMap",
+                "comment": "Map of user authority attributes",
+                "fields": [
+                    {
+                        "name": "attributes",
+                        "type": "Map",
+                        "optional": false,
+                        "comment": "map of type to attribute values",
+                        "items": "UserAuthorityAttributes",
+                        "keys": "SimpleName"
+                    }
+                ],
+                "closed": false
+            }
         }
     ],
     "resources": [
@@ -2528,7 +2750,7 @@
             "type": "DomainList",
             "method": "GET",
             "path": "/domain",
-            "comment": "Enumerate domains. Can be filtered by prefix and depth, and paginated. This operation can be expensive, as it may span multiple domains.",
+            "comment": "Enumerate domains. Can be filtered by prefix and depth, and paginated. Most of the query options that are looking for specific domain attributes (e.g. aws account, azure subscriptions, business service, tags, etc) are mutually exclusive. The server will only process the first query argument and ignore the others.",
             "inputs": [
                 {
                     "name": "limit",
@@ -2608,6 +2830,33 @@
                     "comment": "restrict to domain names that have specified azure subscription name",
                     "pathParam": false,
                     "queryParam": "azure",
+                    "optional": true,
+                    "flag": false
+                },
+                {
+                    "name": "tagKey",
+                    "type": "CompoundName",
+                    "comment": "flag to query all domains that have a given tagName",
+                    "pathParam": false,
+                    "queryParam": "tagKey",
+                    "optional": true,
+                    "flag": false
+                },
+                {
+                    "name": "tagValue",
+                    "type": "CompoundName",
+                    "comment": "flag to query all domains that have a given tag name and value",
+                    "pathParam": false,
+                    "queryParam": "tagValue",
+                    "optional": true,
+                    "flag": false
+                },
+                {
+                    "name": "businessService",
+                    "type": "String",
+                    "comment": "restrict to domain names that have specified business service name",
+                    "pathParam": false,
+                    "queryParam": "businessService",
                     "optional": true,
                     "flag": false
                 },
@@ -3286,6 +3535,50 @@
                     "type": "ResourceError"
                 },
                 "FORBIDDEN": {
+                    "type": "ResourceError"
+                }
+            }
+        },
+        {
+            "type": "DomainMetaStoreValidValuesList",
+            "method": "GET",
+            "path": "/domain/metastore",
+            "comment": "List all valid values for the given attribute and user",
+            "inputs": [
+                {
+                    "name": "attributeName",
+                    "type": "String",
+                    "comment": "name of attribute",
+                    "pathParam": false,
+                    "queryParam": "attribute",
+                    "optional": true,
+                    "flag": false
+                },
+                {
+                    "name": "userName",
+                    "type": "String",
+                    "comment": "restrict to values associated with the given user",
+                    "pathParam": false,
+                    "queryParam": "user",
+                    "optional": true,
+                    "flag": false
+                }
+            ],
+            "auth": {
+                "authenticate": true
+            },
+            "expected": "OK",
+            "exceptions": {
+                "TOO_MANY_REQUESTS": {
+                    "type": "ResourceError"
+                },
+                "UNAUTHORIZED": {
+                    "type": "ResourceError"
+                },
+                "BAD_REQUEST": {
+                    "type": "ResourceError"
+                },
+                "NOT_FOUND": {
                     "type": "ResourceError"
                 }
             }
@@ -4036,7 +4329,7 @@
             "type": "Membership",
             "method": "PUT",
             "path": "/domain/{domainName}/role/{roleName}/member/{memberName}",
-            "comment": "Add the specified user to the role's member list. If the role is neither auditEnabled nor selfserve, then it will use authorize (\"update\", \"{domainName}:role.{roleName}\") otherwise membership will be sent for approval to either designated delegates ( in case of auditEnabled roles ) or to domain admins ( in case of selfserve roles )",
+            "comment": "Add the specified user to the role's member list. If the role is neither auditEnabled nor selfserve, then it will use authorize (\"update\", \"{domainName}:role.{roleName}\") or (\"update_members\", \"{domainName}:role.{roleName}\"). This only allows access to members and not role attributes. otherwise membership will be sent for approval to either designated delegates ( in case of auditEnabled roles ) or to domain admins ( in case of selfserve roles )",
             "inputs": [
                 {
                     "name": "domainName",
@@ -4109,7 +4402,7 @@
             "type": "Membership",
             "method": "DELETE",
             "path": "/domain/{domainName}/role/{roleName}/member/{memberName}",
-            "comment": "Delete the specified role membership. Upon successful completion of this delete request, the server will return NO_CONTENT status code without any data (no object will be returned).",
+            "comment": "Delete the specified role membership. Upon successful completion of this delete request, the server will return NO_CONTENT status code without any data (no object will be returned). The required authorization includes two options: (\"update\", \"{domainName}:role.{roleName}\") or (\"update_members\", \"{domainName}:role.{roleName}\")",
             "inputs": [
                 {
                     "name": "domainName",
@@ -4146,9 +4439,7 @@
                 }
             ],
             "auth": {
-                "authenticate": false,
-                "action": "update",
-                "resource": "{domainName}:role.{roleName}"
+                "authenticate": true
             },
             "expected": "NO_CONTENT",
             "exceptions": {
@@ -5910,6 +6201,298 @@
             }
         },
         {
+            "type": "AssertionConditions",
+            "method": "PUT",
+            "path": "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/conditions",
+            "comment": "Add the specified conditions to the given assertion",
+            "inputs": [
+                {
+                    "name": "domainName",
+                    "type": "DomainName",
+                    "comment": "name of the domain",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "policyName",
+                    "type": "EntityName",
+                    "comment": "name of the policy",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "assertionId",
+                    "type": "Int64",
+                    "comment": "assertion id",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "auditRef",
+                    "type": "String",
+                    "comment": "Audit param required(not empty) if domain auditEnabled is true.",
+                    "pathParam": false,
+                    "header": "Y-Audit-Ref",
+                    "optional": true,
+                    "flag": false
+                },
+                {
+                    "name": "assertionConditions",
+                    "type": "AssertionConditions",
+                    "comment": "Assertion conditions object to be added to the given assertion",
+                    "pathParam": false,
+                    "optional": false,
+                    "flag": false
+                }
+            ],
+            "auth": {
+                "authenticate": false,
+                "action": "update",
+                "resource": "{domainName}:policy.{policyName}"
+            },
+            "expected": "OK",
+            "exceptions": {
+                "TOO_MANY_REQUESTS": {
+                    "type": "ResourceError"
+                },
+                "CONFLICT": {
+                    "type": "ResourceError"
+                },
+                "UNAUTHORIZED": {
+                    "type": "ResourceError"
+                },
+                "BAD_REQUEST": {
+                    "type": "ResourceError"
+                },
+                "NOT_FOUND": {
+                    "type": "ResourceError"
+                },
+                "FORBIDDEN": {
+                    "type": "ResourceError"
+                }
+            }
+        },
+        {
+            "type": "AssertionCondition",
+            "method": "PUT",
+            "path": "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/condition",
+            "comment": "Add the specified condition to the existing assertion conditions of an assertion",
+            "inputs": [
+                {
+                    "name": "domainName",
+                    "type": "DomainName",
+                    "comment": "name of the domain",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "policyName",
+                    "type": "EntityName",
+                    "comment": "name of the policy",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "assertionId",
+                    "type": "Int64",
+                    "comment": "assertion id",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "auditRef",
+                    "type": "String",
+                    "comment": "Audit param required(not empty) if domain auditEnabled is true.",
+                    "pathParam": false,
+                    "header": "Y-Audit-Ref",
+                    "optional": true,
+                    "flag": false
+                },
+                {
+                    "name": "assertionCondition",
+                    "type": "AssertionCondition",
+                    "comment": "Assertion conditions object to be added to the given assertion",
+                    "pathParam": false,
+                    "optional": false,
+                    "flag": false
+                }
+            ],
+            "auth": {
+                "authenticate": false,
+                "action": "update",
+                "resource": "{domainName}:policy.{policyName}"
+            },
+            "expected": "OK",
+            "exceptions": {
+                "TOO_MANY_REQUESTS": {
+                    "type": "ResourceError"
+                },
+                "CONFLICT": {
+                    "type": "ResourceError"
+                },
+                "UNAUTHORIZED": {
+                    "type": "ResourceError"
+                },
+                "BAD_REQUEST": {
+                    "type": "ResourceError"
+                },
+                "NOT_FOUND": {
+                    "type": "ResourceError"
+                },
+                "FORBIDDEN": {
+                    "type": "ResourceError"
+                }
+            }
+        },
+        {
+            "type": "AssertionConditions",
+            "method": "DELETE",
+            "path": "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/conditions",
+            "comment": "Delete all assertion conditions for specified assertion id. Upon successful completion of this delete request, the server will return NO_CONTENT status code without any data (no object will be returned).",
+            "inputs": [
+                {
+                    "name": "domainName",
+                    "type": "DomainName",
+                    "comment": "name of the domain",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "policyName",
+                    "type": "EntityName",
+                    "comment": "name of the policy",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "assertionId",
+                    "type": "Int64",
+                    "comment": "assertion id",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "auditRef",
+                    "type": "String",
+                    "comment": "Audit param required(not empty) if domain auditEnabled is true.",
+                    "pathParam": false,
+                    "header": "Y-Audit-Ref",
+                    "optional": true,
+                    "flag": false
+                }
+            ],
+            "auth": {
+                "authenticate": false,
+                "action": "update",
+                "resource": "{domainName}:policy.{policyName}"
+            },
+            "expected": "NO_CONTENT",
+            "exceptions": {
+                "TOO_MANY_REQUESTS": {
+                    "type": "ResourceError"
+                },
+                "CONFLICT": {
+                    "type": "ResourceError"
+                },
+                "UNAUTHORIZED": {
+                    "type": "ResourceError"
+                },
+                "BAD_REQUEST": {
+                    "type": "ResourceError"
+                },
+                "NOT_FOUND": {
+                    "type": "ResourceError"
+                },
+                "FORBIDDEN": {
+                    "type": "ResourceError"
+                }
+            }
+        },
+        {
+            "type": "AssertionCondition",
+            "method": "DELETE",
+            "path": "/domain/{domainName}/policy/{policyName}/assertion/{assertionId}/condition/{conditionId}",
+            "comment": "Delete the assertion condition(s) for specified assertion id and condition id. Upon successful completion of this delete request, the server will return NO_CONTENT status code without any data (no object will be returned).",
+            "inputs": [
+                {
+                    "name": "domainName",
+                    "type": "DomainName",
+                    "comment": "name of the domain",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "policyName",
+                    "type": "EntityName",
+                    "comment": "name of the policy",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "assertionId",
+                    "type": "Int64",
+                    "comment": "assertion id",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "conditionId",
+                    "type": "Int32",
+                    "comment": "condition id",
+                    "pathParam": true,
+                    "optional": false,
+                    "flag": false
+                },
+                {
+                    "name": "auditRef",
+                    "type": "String",
+                    "comment": "Audit param required(not empty) if domain auditEnabled is true.",
+                    "pathParam": false,
+                    "header": "Y-Audit-Ref",
+                    "optional": true,
+                    "flag": false
+                }
+            ],
+            "auth": {
+                "authenticate": false,
+                "action": "update",
+                "resource": "{domainName}:policy.{policyName}"
+            },
+            "expected": "NO_CONTENT",
+            "exceptions": {
+                "TOO_MANY_REQUESTS": {
+                    "type": "ResourceError"
+                },
+                "CONFLICT": {
+                    "type": "ResourceError"
+                },
+                "UNAUTHORIZED": {
+                    "type": "ResourceError"
+                },
+                "BAD_REQUEST": {
+                    "type": "ResourceError"
+                },
+                "NOT_FOUND": {
+                    "type": "ResourceError"
+                },
+                "FORBIDDEN": {
+                    "type": "ResourceError"
+                }
+            }
+        },
+        {
             "type": "ServiceIdentity",
             "method": "PUT",
             "path": "/domain/{domain}/service/{service}",
@@ -7299,7 +7882,7 @@
             "type": "ResourceAccessList",
             "method": "GET",
             "path": "/resource",
-            "comment": "Return list of resources that the given principal has access to. Even though the principal is marked as optional, it must be specified unless the caller has authorization from sys.auth domain to check access for all user principals. (action: access, resource: resource-lookup-all)",
+            "comment": "Return list of resources that the given principal has access to. Even though the principal is marked as optional, it must be specified",
             "inputs": [
                 {
                     "name": "principal",
@@ -7381,6 +7964,15 @@
                     "comment": "for system principals only - request data from master data store and not read replicas if any are configured",
                     "pathParam": false,
                     "queryParam": "master",
+                    "optional": true,
+                    "flag": false
+                },
+                {
+                    "name": "conditions",
+                    "type": "Bool",
+                    "comment": "for specific purpose only. If this flag is passed, assertion id and assertion conditions will be included in the response assertions if available",
+                    "pathParam": false,
+                    "queryParam": "conditions",
                     "optional": true,
                     "flag": false
                 },
@@ -7647,10 +8239,40 @@
             }
         },
         {
+            "type": "DomainTemplateDetailsList",
+            "method": "GET",
+            "path": "/templatedetails",
+            "comment": "Get a list of Solution templates with meta data details defined in the server",
+            "auth": {
+                "authenticate": true
+            },
+            "expected": "OK",
+            "exceptions": {
+                "TOO_MANY_REQUESTS": {
+                    "type": "ResourceError"
+                },
+                "UNAUTHORIZED": {
+                    "type": "ResourceError"
+                }
+            },
+            "name": "GetServerTemplateDetailsList"
+        },
+        {
             "type": "UserList",
             "method": "GET",
             "path": "/user",
             "comment": "Enumerate users that are registered as principals in the system This will return only the principals with \"<user-domain>.\" prefix",
+            "inputs": [
+                {
+                    "name": "domainName",
+                    "type": "DomainName",
+                    "comment": "name of the allowed user-domains and/or aliases",
+                    "pathParam": false,
+                    "queryParam": "domain",
+                    "optional": true,
+                    "flag": false
+                }
+            ],
             "auth": {
                 "authenticate": true
             },
@@ -7965,6 +8587,30 @@
                 }
             },
             "name": "getPendingDomainRoleMembersList"
+        },
+        {
+            "type": "UserAuthorityAttributeMap",
+            "method": "GET",
+            "path": "/authority/user/attribute",
+            "comment": "Map of type to attribute values for the user authority",
+            "auth": {
+                "authenticate": true
+            },
+            "expected": "OK",
+            "exceptions": {
+                "TOO_MANY_REQUESTS": {
+                    "type": "ResourceError"
+                },
+                "UNAUTHORIZED": {
+                    "type": "ResourceError"
+                },
+                "BAD_REQUEST": {
+                    "type": "ResourceError"
+                },
+                "NOT_FOUND": {
+                    "type": "ResourceError"
+                }
+            }
         }
     ]
 }

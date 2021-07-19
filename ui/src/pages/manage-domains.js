@@ -22,7 +22,6 @@ import Head from 'next/head';
 
 import ManageDomains from '../components/domain/ManageDomains';
 import RequestUtils from '../components/utils/RequestUtils';
-import Alert from '../components/denali/Alert';
 import { MODAL_TIME_OUT } from '../components/constants/constants';
 import Error from './_error';
 import createCache from '@emotion/cache';
@@ -68,18 +67,62 @@ export default class ManageDomainsPage extends React.Component {
         let reload = false;
         let notFound = false;
         let error = undefined;
+        var bServicesParams = {
+            category: 'domain',
+            attributeName: 'businessService',
+            userName: props.req.session.shortId,
+        };
+        var bServicesParamsAll = {
+            category: 'domain',
+            attributeName: 'businessService',
+        };
         const domains = await Promise.all([
             api.listUserDomains(),
             api.getHeaderDetails(),
             api.listAdminDomains(),
             api.getPendingDomainMembersList(),
             api.getForm(),
+            api.getMeta(bServicesParams),
+            api.getMeta(bServicesParamsAll),
         ]).catch((err) => {
             let response = RequestUtils.errorCheckHelper(err);
             reload = response.reload;
             error = response.error;
-            return [{}, {}, {}, {}, {}];
+            return [{}, {}, {}, {}, {}, {}, {}];
         });
+
+        let businessServiceOptions = [];
+        if (domains[5] && domains[5].validValues) {
+            domains[5].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptions.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
+        let businessServiceOptionsAll = [];
+        if (domains[6] && domains[6].validValues) {
+            domains[6].validValues.forEach((businessService) => {
+                let bServiceOnlyId = businessService.substring(
+                    0,
+                    businessService.indexOf(':')
+                );
+                let bServiceOnlyName = businessService.substring(
+                    businessService.indexOf(':') + 1
+                );
+                businessServiceOptionsAll.push({
+                    value: bServiceOnlyId,
+                    name: bServiceOnlyName,
+                });
+            });
+        }
         return {
             api,
             reload,
@@ -91,6 +134,8 @@ export default class ManageDomainsPage extends React.Component {
             pending: domains[3],
             _csrf: domains[4],
             nonce: props.req.headers.rid,
+            validBusinessServices: businessServiceOptions,
+            validBusinessServicesAll: businessServiceOptionsAll,
         };
     }
 
@@ -167,20 +212,20 @@ export default class ManageDomainsPage extends React.Component {
                                         <TitleDiv>Manage My Domains</TitleDiv>
                                     </PageHeaderDiv>
                                     <ManageDomains
+                                        successMessage={
+                                            this.state.successMessage
+                                        }
                                         domains={this.state.manageDomains}
                                         _csrf={this.props._csrf}
                                         api={this.api}
                                         loadDomains={this.loadDomains}
-                                    />
-                                    <Alert
-                                        isOpen={this.state.showSuccess}
-                                        title={this.state.successMessage}
-                                        onClose={() => {
-                                            this.setState({
-                                                showSuccess: false,
-                                            });
-                                        }}
-                                        type='success'
+                                        userId={this.props.headerDetails.userId}
+                                        validBusinessServices={
+                                            this.props.validBusinessServices
+                                        }
+                                        validBusinessServicesAll={
+                                            this.props.validBusinessServicesAll
+                                        }
                                     />
                                 </RolesContentDiv>
                             </RolesContainerDiv>

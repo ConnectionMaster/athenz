@@ -15,8 +15,6 @@
  */
 package com.yahoo.athenz.zts.cert;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.yahoo.athenz.common.server.dns.HostnameResolver;
+import com.yahoo.athenz.common.utils.X509CertUtils;
 import com.yahoo.athenz.zts.CertType;
 import com.yahoo.athenz.zts.ZTSConsts;
 import com.yahoo.athenz.zts.cache.DataCache;
@@ -41,8 +40,8 @@ public class X509CertRequest {
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
     protected PKCS10CertificationRequest certReq;
-    protected String instanceId = null;
-    protected String uriHostname = null;
+    protected String instanceId;
+    protected String uriHostname;
     protected String spiffeUri = null;
     protected String normCsrPublicKey = null;
 
@@ -58,7 +57,6 @@ public class X509CertRequest {
         if (certReq == null) {
             throw new CryptoException("Invalid csr provided");
         }
-
 
         // extract the dns names but we can't process them now
         // since we need to know what the provider and domain
@@ -89,6 +87,7 @@ public class X509CertRequest {
         }
 
         // extract and set uriHostname, if present
+
         uriHostname = X509CertUtils.extractItemFromURI(uris, ZTSConsts.ZTS_CERT_HOSTNAME_URI);
 
         // extract instanceId
@@ -199,7 +198,7 @@ public class X509CertRequest {
 
         // final check comes from the hostname resolver
 
-        return hostnameResolver == null ? true : hostnameResolver.isValidHostname(instanceHostname);
+        return hostnameResolver == null || hostnameResolver.isValidHostname(instanceHostname);
     }
 
     /**
@@ -345,7 +344,7 @@ public class X509CertRequest {
         // check if this is the requested hostname in which case we need the
         // provider to validate it
 
-        if (instanceHostname != null && dnsName.equalsIgnoreCase(instanceHostname)) {
+        if (dnsName.equalsIgnoreCase(instanceHostname)) {
             providerDnsNames.add(dnsName);
             return true;
         }
@@ -452,15 +451,23 @@ public class X509CertRequest {
             Set<String> validValues) {
 
         try {
-            final String value = Crypto.extractX509CSRSubjectOUField(certReq);
+            String value = Crypto.extractX509CSRSubjectOUField(certReq);
             if (value == null) {
                 return true;
             }
+
             // we have three values that we want to possible match against
             // a) provider callback specified value
             // b) provider name
             // c) configured set of valid ou names
+            // in all cases the caller might ask for a restricted certificate
+            // which cannot be used to talk to ZMS/ZTS - those have the
+            // suffix of ":restricted" so if our value contains one of those
+            // we'll strip it out before comparing
 
+            if (value.endsWith(Crypto.CERT_RESTRICTED_SUFFIX)) {
+                value = value.substring(0, value.length() - Crypto.CERT_RESTRICTED_SUFFIX.length());
+            }
             if (value.equalsIgnoreCase(certSubjectOU)) {
                 return true;
             } else if (value.equalsIgnoreCase(provider)) {
@@ -608,48 +615,17 @@ public class X509CertRequest {
 
     boolean validateSpiffeURI(final String domain, final String name, final String value) {
 
-        // the expected default format is
-        // spiffe://[<provider-cluster>/ns/]<athenz-domain>/sa/<athenz-service>
-        // spiffe://[<provider-cluster>/ns/]<athenz-domain>/ra/<athenz-role>
-        //
-        // so we'll be validating that our request has:
-        // spiffe://<provider-cluster>/ns/<domain>/<name>/<value> or
-        // spiffe://<domain>/<name>/<value> or
+        // the expected format is spiffe://<domain>/<name>/<value>
 
         if (spiffeUri == null) {
             return true;
         }
 
-        URI uri;
-        try {
-            uri = new URI(spiffeUri);
-        } catch (URISyntaxException ex) {
-            LOGGER.error("validateSpiffeURI: Unable to parse {}: {}", spiffeUri, ex.getMessage());
-            return false;
-        }
-
-        final String uriPath = uri.getPath();
-        final String uriHost = uri.getHost();
-
-        if (uriPath == null || uriPath.isEmpty() || uriHost == null || uriHost.isEmpty()) {
-            LOGGER.error("validateSpiffeURI: invalid uri {}", spiffeUri);
-            return false;
-        }
-
-        // let's check to see if our path starts with our
-        // namespace ns field and thus which format we're using
-
-        boolean uriVerified = false;
-        if (uriPath.startsWith("/ns/")) {
-            final String path = "/ns/" + domain + "/" + name + "/" + value;
-            uriVerified = uriPath.equalsIgnoreCase(path);
-        } else {
-            final String path = "/" + name + "/" + value;
-            uriVerified = uriHost.equalsIgnoreCase(domain) && uriPath.equalsIgnoreCase(path);
-        }
+        final String reqUri = "spiffe://" + domain + "/" + name + "/" + value;
+        boolean uriVerified = reqUri.equalsIgnoreCase(spiffeUri);
 
         if (!uriVerified) {
-            LOGGER.error("validateSpiffeURI: invalid uri path/host: {}", spiffeUri);
+            LOGGER.error("validateSpiffeURI: spiffe uri mismatch: {}/{}", spiffeUri, reqUri);
         }
 
         return uriVerified;

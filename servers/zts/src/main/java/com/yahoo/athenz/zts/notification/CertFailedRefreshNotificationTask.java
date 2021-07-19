@@ -39,6 +39,7 @@ import static com.yahoo.athenz.common.ServerCommonConsts.ADMIN_ROLE_NAME;
 import static com.yahoo.athenz.common.ServerCommonConsts.USER_DOMAIN_PREFIX;
 import static com.yahoo.athenz.common.server.notification.NotificationServiceConstants.*;
 import static com.yahoo.athenz.common.server.notification.impl.MetricNotificationService.*;
+import static com.yahoo.athenz.zts.ZTSConsts.ZTS_PROP_ATHENZ_GUIDE;
 
 public class CertFailedRefreshNotificationTask implements NotificationTask {
     private final String serverName;
@@ -112,7 +113,7 @@ public class CertFailedRefreshNotificationTask implements NotificationTask {
             LOGGER.info("No unrefreshed certificates with valid hosts available to send notifications");
             return new ArrayList<>();
         } else {
-            LOGGER.info("Number of valid certificate records that will receive notifications: " + unrefreshedCertsValidHosts.size());
+            LOGGER.info("Number of valid certificate records that will receive notifications: {}", unrefreshedCertsValidHosts.size());
         }
 
         Map<String, List<X509CertRecord>> domainToCertRecordsMap = getDomainToCertRecordsMap(unrefreshedCertsValidHosts);
@@ -168,7 +169,7 @@ public class CertFailedRefreshNotificationTask implements NotificationTask {
     private List<X509CertRecord> getRecordsWithValidHosts(List<X509CertRecord> unrefreshedCerts) {
         unrefreshedCerts.stream()
                 .filter(record -> StringUtil.isEmpty(record.getHostName()))
-                .peek(record -> LOGGER.warn("Record with empty hostName: " + record.toString()))
+                .peek(record -> LOGGER.warn("Record with empty hostName: {}", record.toString()))
                 .collect(Collectors.toList());
 
         // Filter all records with non existing hosts or hosts not recognized by DNS
@@ -229,17 +230,20 @@ public class CertFailedRefreshNotificationTask implements NotificationTask {
     public static class CertFailedRefreshNotificationToEmailConverter implements NotificationToEmailConverter {
         private static final String EMAIL_TEMPLATE_UNREFRESHED_CERTS = "messages/unrefreshed-certs.html";
         private static final String UNREFRESHED_CERTS_SUBJECT = "athenz.notification.email.unrefreshed.certs.subject";
+        private static final String DEFAULT_ATHENZ_GUIDE = "https://athenz.github.io/athenz/";
 
         private final NotificationToEmailConverterCommon notificationToEmailConverterCommon;
         private String emailUnrefreshedCertsBody;
         private final String serverName;
         private final int httpsPort;
+        private final String athenzGuide;
 
         public CertFailedRefreshNotificationToEmailConverter(final String serverName, int httpsPort) {
             notificationToEmailConverterCommon = new NotificationToEmailConverterCommon();
             emailUnrefreshedCertsBody = notificationToEmailConverterCommon.readContentFromFile(getClass().getClassLoader(), EMAIL_TEMPLATE_UNREFRESHED_CERTS);
             this.serverName = serverName;
             this.httpsPort = httpsPort;
+            athenzGuide = System.getProperty(ZTS_PROP_ATHENZ_GUIDE, DEFAULT_ATHENZ_GUIDE);
         }
 
         private String getUnrefreshedCertsBody(Map<String, String> metaDetails) {
@@ -282,7 +286,8 @@ public class CertFailedRefreshNotificationTask implements NotificationTask {
                     providerPlaceHolder,
                     domainPlaceHolder,
                     servicePlaceHolder,
-                    instanceIdHolder);
+                    instanceIdHolder,
+                    athenzGuide);
         }
 
         @Override

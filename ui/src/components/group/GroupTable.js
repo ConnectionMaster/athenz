@@ -98,6 +98,7 @@ export default class GroupTable extends React.Component {
                                 this.props.justificationRequired
                             }
                             userProfileLink={this.props.userProfileLink}
+                            newGroup={this.props.newGroup}
                         />
                     );
                 });
@@ -109,10 +110,11 @@ export default class GroupTable extends React.Component {
                     <col style={{ width: 30 + '%' }} />
                     <col style={{ width: 15 + '%' }} />
                     <col style={{ width: 15 + '%' }} />
-                    <col style={{ width: 10 + '%' }} />
-                    <col style={{ width: 10 + '%' }} />
-                    <col style={{ width: 10 + '%' }} />
-                    <col style={{ width: 10 + '%' }} />
+                    <col style={{ width: 8 + '%' }} />
+                    <col style={{ width: 8 + '%' }} />
+                    <col style={{ width: 8 + '%' }} />
+                    <col style={{ width: 8 + '%' }} />
+                    <col style={{ width: 8 + '%' }} />
                 </colgroup>
                 <thead>
                     <tr>
@@ -124,6 +126,7 @@ export default class GroupTable extends React.Component {
                         <TableHeadStyled>Members</TableHeadStyled>
                         <TableHeadStyled>Roles</TableHeadStyled>
                         <TableHeadStyled>Settings</TableHeadStyled>
+                        <TableHeadStyled>History</TableHeadStyled>
                         <TableHeadStyled>Delete</TableHeadStyled>
                     </tr>
                 </thead>

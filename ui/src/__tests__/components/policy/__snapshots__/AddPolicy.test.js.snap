@@ -2,9 +2,11 @@
 
 exports[`AddPolicy should render 1`] = `
 .emotion-0 {
-  text-align: center;
+  text-align: left;
   font: 300 14px HelveticaNeue-Reg,Helvetica,Arial,sans-serif;
   padding-bottom: 15px;
+  max-height: auto;
+  overflow-y: scroll;
 }
 
 .emotion-2 {
@@ -398,6 +400,7 @@ exports[`AddPolicy should render 1`] = `
 <div
   class="emotion-0 emotion-1"
   data-testid="add-modal-message"
+  height="auto"
 >
   <div
     autocomplete="off"
@@ -618,9 +621,11 @@ exports[`AddPolicy should render 1`] = `
 
 exports[`AddPolicy should render fail to submit policy name is required 1`] = `
 .emotion-0 {
-  text-align: center;
+  text-align: left;
   font: 300 14px HelveticaNeue-Reg,Helvetica,Arial,sans-serif;
   padding-bottom: 15px;
+  max-height: auto;
+  overflow-y: scroll;
 }
 
 .emotion-2 {
@@ -1014,6 +1019,7 @@ exports[`AddPolicy should render fail to submit policy name is required 1`] = `
 <div
   class="emotion-0 emotion-1"
   data-testid="add-modal-message"
+  height="auto"
 >
   <div
     autocomplete="off"
@@ -1234,9 +1240,11 @@ exports[`AddPolicy should render fail to submit policy name is required 1`] = `
 
 exports[`AddPolicy should render failed to submit action is required 1`] = `
 .emotion-0 {
-  text-align: center;
+  text-align: left;
   font: 300 14px HelveticaNeue-Reg,Helvetica,Arial,sans-serif;
   padding-bottom: 15px;
+  max-height: auto;
+  overflow-y: scroll;
 }
 
 .emotion-2 {
@@ -1630,6 +1638,7 @@ exports[`AddPolicy should render failed to submit action is required 1`] = `
 <div
   class="emotion-0 emotion-1"
   data-testid="add-modal-message"
+  height="auto"
 >
   <div
     autocomplete="off"
@@ -1850,9 +1859,11 @@ exports[`AddPolicy should render failed to submit action is required 1`] = `
 
 exports[`AddPolicy should render failed to submit role name is required 1`] = `
 .emotion-0 {
-  text-align: center;
+  text-align: left;
   font: 300 14px HelveticaNeue-Reg,Helvetica,Arial,sans-serif;
   padding-bottom: 15px;
+  max-height: auto;
+  overflow-y: scroll;
 }
 
 .emotion-2 {
@@ -2246,6 +2257,7 @@ exports[`AddPolicy should render failed to submit role name is required 1`] = `
 <div
   class="emotion-0 emotion-1"
   data-testid="add-modal-message"
+  height="auto"
 >
   <div
     autocomplete="off"

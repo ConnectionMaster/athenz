@@ -2,6 +2,7 @@
 // Licensed under the terms of the Apache version 2.0 license. See LICENSE file for terms.
 
 include "Names.tdl";
+include "RoleCert.tdl";
 
 //A representation of a signed RoleToken
 type RoleToken Struct {
@@ -36,16 +37,10 @@ resource RoleToken GET "/domain/{domainName}/token?role={role}&minExpiryTime={mi
     }
 }
 
-// RoleCertificateRequest - a certificate signing request
-type RoleCertificateRequest Struct {
-    String csr;
-    EntityName proxyForPrincipal (optional); //this request is proxy for this principal
-    Int64 expiryTime;
-}
-
 //Return a TLS certificate for the specific role in the namespace that
 //the principal can assume. Role certificates are valid for 30 days
-//by default
+//by default.
+//This is deprecated and "POST /rolecert" api should be used instead.
 resource RoleToken POST "/domain/{domainName}/role/{roleName}/token" {
     DomainName domainName; //name of the domain
     EntityName roleName; //name of role

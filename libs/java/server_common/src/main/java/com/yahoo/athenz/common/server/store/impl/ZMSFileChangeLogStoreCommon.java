@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ZMSFileChangeLogStoreCommon {
 
@@ -46,6 +47,8 @@ public class ZMSFileChangeLogStoreCommon {
     private static final String VALUE_TRUE         = "true";
     private static final String LAST_MOD_FNAME     = ".lastModTime";
     private static final String ATTR_LAST_MOD_TIME = "lastModTime";
+
+    boolean requestConditions;
 
     public ZMSFileChangeLogStoreCommon(final String rootDirectory) {
 
@@ -93,6 +96,10 @@ public class ZMSFileChangeLogStoreCommon {
         }
     }
 
+    public void setRequestConditions(final boolean requestConditions) {
+        this.requestConditions = requestConditions;
+    }
+
     public boolean supportsFullRefresh() {
         return false;
     }
@@ -103,7 +110,7 @@ public class ZMSFileChangeLogStoreCommon {
 
     public SignedDomain getServerSignedDomain(ZMSClient zmsClient, final String domainName) {
 
-        SignedDomains signedDomains = zmsClient.getSignedDomains(domainName, null, null, null);
+        SignedDomains signedDomains = makeSignedDomainsCall(zmsClient, domainName, null, null, null);
 
         if (signedDomains == null) {
             LOGGER.error("No data was returned from ZMS for domain {}", domainName);
@@ -213,7 +220,7 @@ public class ZMSFileChangeLogStoreCommon {
     }
 
     public SignedDomains getServerDomainModifiedList(ZMSClient zmsClient) {
-        return zmsClient.getSignedDomains(null, VALUE_TRUE, null, null);
+        return makeSignedDomainsCall(zmsClient, null, VALUE_TRUE, null, null);
     }
 
     public String retrieveLastModificationTime() {
@@ -272,10 +279,14 @@ public class ZMSFileChangeLogStoreCommon {
                 LOGGER.debug("getSignedDomainList: fetching domain {}", domainName);
             }
 
-            while (true) {
+            // we're going to retry up to 100 times in case of rate limiting
+            // from ZMS Server. If not able to retrieve after so many times
+            // we'll pick up the change again during our full sync time
+
+            for (int count = 1; count < 101; count++) {
                 try {
-                    SignedDomains singleDomain = zmsClient.getSignedDomains(domainName,
-                            null, null, null);
+
+                    SignedDomains singleDomain = makeSignedDomainsCall(zmsClient, domainName, null, null, null);
 
                     if (singleDomain != null && !singleDomain.getDomains().isEmpty()) {
                         domains.addAll(singleDomain.getDomains());
@@ -285,18 +296,17 @@ public class ZMSFileChangeLogStoreCommon {
 
                 } catch (ZMSClientException ex) {
 
-                    LOGGER.error("Error fetching domain {} from ZMS: {}", domainName,
-                            ex.getMessage());
+                    LOGGER.error("Error fetching domain {} from ZMS: {}", domainName, ex.getMessage());
 
                     // if we get a rate limiting failure, we're going to sleep
-                    // for a second and retry our operation again
+                    // for some period and retry our operation again
 
                     if (ex.getCode() != ZMSClientException.TOO_MANY_REQUESTS) {
                         break;
                     }
 
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(randomSleepForRetry(count));
                     } catch (InterruptedException ignored) {
                     }
                 }
@@ -305,14 +315,26 @@ public class ZMSFileChangeLogStoreCommon {
         return domains;
     }
 
+    /**
+     * For the first three tries we're going to sleep given number of seconds
+     * After the 4th try we'll just pick a random number of seconds between
+     * 4 and 10 - this will randomize the sleep between zts instances so that
+     * all of them do not sleep exact same number of seconds and end up
+     * being rate limited over and over again.
+     * @param count number of retries
+     * @return number of seconds to sleep
+     */
+    long randomSleepForRetry(int count) {
+        return count < 4 ? 1000L * count : ThreadLocalRandom.current().nextInt(4, 11) * 1000L;
+    }
+
     public SignedDomains getUpdatedSignedDomains(ZMSClient zmsClient, StringBuilder lastModTimeBuffer) {
 
         // request all the changes from ZMS. In this call we're asking for
         // meta data only so we'll only get the list of domains
 
         Map<String, List<String>> responseHeaders = new HashMap<>();
-        SignedDomains domainList = zmsClient.getSignedDomains(null, VALUE_TRUE,
-                lastModTime, responseHeaders);
+        SignedDomains domainList = makeSignedDomainsCall(zmsClient, null, VALUE_TRUE, lastModTime, responseHeaders);
 
         // retrieve the tag value for the request
 
@@ -344,5 +366,9 @@ public class ZMSFileChangeLogStoreCommon {
     static void error(String msg) {
         LOGGER.error(msg);
         throw new RuntimeException("ZMSFileChangeLogStore: " + msg);
+    }
+
+    private SignedDomains makeSignedDomainsCall(ZMSClient zmsClient, String domainName, String metaOnly, String matchingTag, Map<String, List<String>> responseHeaders) {
+        return zmsClient.getSignedDomains(domainName, metaOnly, null, true, requestConditions, matchingTag, responseHeaders);
     }
 }

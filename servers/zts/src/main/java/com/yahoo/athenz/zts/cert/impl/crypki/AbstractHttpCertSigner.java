@@ -18,6 +18,7 @@ package com.yahoo.athenz.zts.cert.impl.crypki;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -67,7 +68,7 @@ public abstract class AbstractHttpCertSigner implements CertSigner {
     private final SslContextFactory sslContextFactory;
     
     String serverBaseUri;
-    int requestRetryCount;
+    int requestConnectRetryCount;
     int maxCertExpiryTimeMins;
     String defaultProviderSignerKeyId = X509_KEY_META_IDENTIFIER;
     Map<String, String> providerSignerKeys = new ConcurrentHashMap<>();
@@ -80,9 +81,9 @@ public abstract class AbstractHttpCertSigner implements CertSigner {
         
         int connectionTimeoutSec = Integer.parseInt(System.getProperty(ZTSConsts.ZTS_PROP_CERTSIGN_CONNECT_TIMEOUT, "10"));
 
-        int readTimeoutSec = Integer.parseInt(System.getProperty(ZTSConsts.ZTS_PROP_CERTSIGN_REQUEST_TIMEOUT, "15"));
-        
-        requestRetryCount = Integer.parseInt(System.getProperty(ZTSConsts.ZTS_PROP_CERTSIGN_RETRY_COUNT, "2"));
+        int readTimeoutSec = Integer.parseInt(System.getProperty(ZTSConsts.ZTS_PROP_CERTSIGN_REQUEST_TIMEOUT, "25"));
+
+        requestConnectRetryCount = Integer.parseInt(System.getProperty(ZTSConsts.ZTS_PROP_CERTSIGN_RETRY_COUNT, "2"));
 
         // max expiry time in minutes.  Max is is 30 days
         maxCertExpiryTimeMins = Integer.parseInt(System.getProperty(ZTSConsts.ZTS_PROP_CERTSIGN_MAX_EXPIRY_TIME, "43200"));
@@ -171,12 +172,18 @@ public abstract class AbstractHttpCertSigner implements CertSigner {
 
     /**
      * Return x.509 certificate uri based on server uri
+     * @param serverBaseUri server's base uri
+     * @param provider provider service name
      * @return uri
      */
     public abstract String getX509CertUri(String serverBaseUri, String provider);
 
     /**
      * Return object based on given csr, usage and expiry
+     * @param provider provider service name
+     * @param csr certificate signing request
+     * @param keyUsage client or server usage for the certificate
+     * @param expireMins expiry time in minutes for the certificate
      * @return CSR Object
      */
     public abstract Object getX509CertSigningRequest(String provider, String csr, String keyUsage, int expireMins);
@@ -185,6 +192,7 @@ public abstract class AbstractHttpCertSigner implements CertSigner {
      * Parse the response from certificate sisnger
      * @param response input stream
      * @return response as string
+     * @throws IOException for any IO errors
      */
     public abstract String parseResponse(InputStream response) throws IOException;
 
@@ -286,12 +294,16 @@ public abstract class AbstractHttpCertSigner implements CertSigner {
         
         // Retry configured number of times before returning failure
 
-        for (int i = 0; i < requestRetryCount; i++) {
+        for (int i = 0; i < requestConnectRetryCount; i++) {
             try {
                 return processHttpResponse(httpPost, 201);
-            } catch (IOException e) {
+            } catch (ConnectException ex) {
                 LOGGER.error("Unable to process x509 certificate request to url {}, retrying {}/{}, {}",
-                        x509CertUri, i + 1, requestRetryCount, e);
+                        x509CertUri, i + 1, requestConnectRetryCount, ex);
+            } catch (IOException ex) {
+                LOGGER.error("Unable to process x509 certificate request to url {}",
+                        x509CertUri, ex);
+                break;
             }
         }
         

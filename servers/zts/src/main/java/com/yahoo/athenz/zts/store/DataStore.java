@@ -18,6 +18,7 @@ package com.yahoo.athenz.zts.store;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.yahoo.athenz.auth.util.StringUtils;
+import com.yahoo.athenz.common.metrics.Metric;
 import com.yahoo.athenz.common.server.db.RolesProvider;
 import com.yahoo.athenz.common.server.store.ChangeLogStore;
 import com.yahoo.athenz.common.server.util.ConfigProperties;
@@ -67,6 +68,7 @@ public class DataStore implements DataCacheProvider, RolesProvider {
 
     ChangeLogStore changeLogStore;
     private CloudStore cloudStore;
+    private final Metric metric;
     private final Cache<String, DataCache> cacheStore;
     final Cache<String, PublicKey> zmsPublicKeyCache;
     final Cache<String, List<GroupMember>> groupMemberCache;
@@ -98,12 +100,13 @@ public class DataStore implements DataCacheProvider, RolesProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataStore.class);
     
-    public DataStore(ChangeLogStore clogStore, CloudStore cloudStore) {
+    public DataStore(ChangeLogStore clogStore, CloudStore cloudStore, Metric metric) {
 
         /* save our store objects */
 
         this.changeLogStore = clogStore;
         this.setCloudStore(cloudStore);
+        this.metric = metric;
         
         /* generate our cache stores */
 
@@ -512,13 +515,21 @@ public class DataStore implements DataCacheProvider, RolesProvider {
         
         PublicKey zmsKey = zmsPublicKeyCache.getIfPresent(keyId == null ? "0" : keyId);
         if (zmsKey == null) {
+            metric.increment("domain_validation_failure", domainData.getName());
             LOGGER.error("validateSignedDomain: ZMS Public Key id={} not available", keyId);
             return false;
         }
 
-        boolean result = Crypto.verify(SignUtils.asCanonicalString(domainData), zmsKey, signature);
+        boolean result = false;
+        try {
+            result = Crypto.verify(SignUtils.asCanonicalString(domainData), zmsKey, signature);
+        } catch (Exception ex) {
+            LOGGER.error("validateSignedDomain: Domain={} signature validation exception",
+                    domainData.getName(), ex);
+        }
         
         if (!result) {
+            metric.increment("domain_validation_failure", domainData.getName());
             LOGGER.error("validateSignedDomain: Domain={} signature validation failed", domainData.getName());
             LOGGER.error("validateSignedDomain: Signed Domain Data: {}", SignUtils.asCanonicalString(domainData));
         }
@@ -767,12 +778,18 @@ public class DataStore implements DataCacheProvider, RolesProvider {
             LOGGER.info("Processing domain: {}", domainName);
         }
         
-        /* if the domain is disabled we're going to skip
-         * processing this domain and just assume success */
+        // if the domain is disabled we're going to skip
+        // processing this domain. however, we must invalidate
+        // our cache and save the updated data with disabled
+        // flag before assuming success
         
         if (domainData.getEnabled() == Boolean.FALSE) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Skipping disabled domain domain: {}", domainName);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Skipping disabled domain: {}", domainName);
+            }
+            deleteDomainFromCache(domainName);
+            if (saveInStore) {
+                changeLogStore.saveLocalDomain(domainName, signedDomain);
             }
             return true;
         }
@@ -807,6 +824,10 @@ public class DataStore implements DataCacheProvider, RolesProvider {
 
         processDomainEntities(domainData, domainCache);
 
+        // Athenz System domain special role processing
+
+        processSystemBehaviorRoles(domainData, domainCache);
+
         /* save the full domain object with the cache entry itself
          * since we need to that information to handle
          * getServiceIdentity and getServiceIdentityList requests */
@@ -823,7 +844,11 @@ public class DataStore implements DataCacheProvider, RolesProvider {
         
         return true;
     }
-    
+
+    private void processSystemBehaviorRoles(DomainData domainData, DataCache domainCache) {
+        domainCache.processSystemBehaviorRoles(domainData);
+    }
+
     boolean validDomainListResponse(Set<String> zmsDomainList) {
         
         /* we're doing some basic validation to make sure our
@@ -872,7 +897,7 @@ public class DataStore implements DataCacheProvider, RolesProvider {
             
             if (!zmsDomainList.contains(domainName)) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Removing local domain: " + domainName + ". Domain not in ZMS anymore.");
+                    LOGGER.debug("Removing local domain: {}. Domain not in ZMS anymore.", domainName);
                 }
                 deleteDomain(domainName);
             }
@@ -890,16 +915,15 @@ public class DataStore implements DataCacheProvider, RolesProvider {
             return;
         }
 
-        /* go through each domain in the list. if it doesn't exist
-         * in the local list we need to update it. if it exists
-         * but with an older last modified time, then we need
-         * to update it. */
+        // go through each domain in the list. if it doesn't exist
+        // in the local list we need to update it. if it exists
+        // but with an older last modified time, then we need
+        // to update it unless the domain is disabled
 
         for (SignedDomain zmsDomain : signedDomains.getDomains()) {
 
             final DomainData domainData = zmsDomain.getDomain();
-            DomainData localDomain = getDomainData(domainData.getName());
-            if (localDomain == null || localDomain.getModified().millis() < domainData.getModified().millis()) {
+            if (processDomainCheck(getDomainData(domainData.getName()), domainData)) {
 
                 SignedDomain signedDomain = changeLogStore.getServerSignedDomain(domainData.getName());
 
@@ -910,6 +934,23 @@ public class DataStore implements DataCacheProvider, RolesProvider {
                 processDomain(signedDomain, true);
             }
         }
+    }
+
+    boolean processDomainCheck(final DomainData localDomainData, final DomainData zmsDomainData) {
+
+        // we're going to handle three cases for processing the domain
+
+        // 1. the domain is not in our cache but it is enabled in zms
+
+        if (localDomainData == null) {
+            return zmsDomainData.getEnabled() != Boolean.FALSE;
+        }
+
+        // the domain is in our cache
+        //    2. it's disabled in zms so we need process and clean up our cache
+        //    3. the zms domain modification timestamp is later than local copy
+
+        return zmsDomainData.getEnabled() == Boolean.FALSE || localDomainData.getModified().millis() < zmsDomainData.getModified().millis();
     }
 
     // Internal
@@ -1146,8 +1187,8 @@ public class DataStore implements DataCacheProvider, RolesProvider {
     }
     
     // Internal
-    void processStandardMembership(Set<MemberRole> memberRoles, String rolePrefix, Set<String> trustedResources,
-                                   String[] requestedRoleList, Set<String> accessibleRoles, boolean keepFullName) {
+    void processStandardMembership(Set<MemberRole> memberRoles, String rolePrefix, String[] requestedRoleList,
+            Set<String> accessibleRoles, boolean keepFullName) {
         
         /* if we have no member roles, then we haven't added anything
          * to our return result list */
@@ -1164,16 +1205,6 @@ public class DataStore implements DataCacheProvider, RolesProvider {
 
             long expiration = memberRole.getExpiration();
             if (expiration != 0 && expiration < currentTime) {
-                continue;
-            }
-
-            // if we're given trust resource set then make sure
-            // the role we're processing is in the set and since
-            // since the role set can include wildcard domains we
-            // need to match the role as oppose to a direct check if the
-            // set contains the name
-
-            if (trustedResources != null && !roleMatchInTrustSet(memberRole.getRole(), trustedResources)) {
                 continue;
             }
 
@@ -1205,10 +1236,27 @@ public class DataStore implements DataCacheProvider, RolesProvider {
                 continue;
             }
 
+            // skip any that have no member roles
+
+            final Set<MemberRole> groupMemberRoleSet = data.getMemberRoleSet(member.getGroupName());
+            if (groupMemberRoleSet == null) {
+                continue;
+            }
+
             // process the role as a standard identity check
 
-            processStandardMembership(data.getMemberRoleSet(member.getGroupName()),
-                    rolePrefix, trustedResources, requestedRoleList, accessibleRoles, keepFullName);
+            if (trustedResources == null) {
+                processStandardMembership(groupMemberRoleSet, rolePrefix, requestedRoleList,
+                        accessibleRoles, keepFullName);
+            } else {
+                for (String resource : trustedResources) {
+
+                    // in this case our resource is the role name
+
+                    processSingleTrustedDomainRole(resource, rolePrefix, requestedRoleList,
+                            groupMemberRoleSet, accessibleRoles, keepFullName);
+                }
+            }
         }
     }
 
@@ -1254,13 +1302,13 @@ public class DataStore implements DataCacheProvider, RolesProvider {
          * included in the list explicitly */
 
         processStandardMembership(data.getMemberRoleSet(identity),
-                rolePrefix, null, requestedRoleList, accessibleRoles, keepFullName);
+                rolePrefix, requestedRoleList, accessibleRoles, keepFullName);
         
         /* next look at all * wildcard roles that are configured
          * for all members to access */
 
         processStandardMembership(data.getAllMemberRoleSet(),
-                rolePrefix, null, requestedRoleList, accessibleRoles, keepFullName);
+                rolePrefix, requestedRoleList, accessibleRoles, keepFullName);
         
         /* then look at the prefix wildcard roles. in this map
          * we only process those where the key in the map is
@@ -1270,7 +1318,7 @@ public class DataStore implements DataCacheProvider, RolesProvider {
         for (String identityPrefix : roleSetMap.keySet()) {
             if (identity.startsWith(identityPrefix)) {
                 processStandardMembership(roleSetMap.get(identityPrefix),
-                        rolePrefix, null, requestedRoleList, accessibleRoles, keepFullName);
+                        rolePrefix, requestedRoleList, accessibleRoles, keepFullName);
             }
         }
 
@@ -1359,36 +1407,6 @@ public class DataStore implements DataCacheProvider, RolesProvider {
             }
         }
         
-        return false;
-    }
-
-    boolean roleMatchInTrustSet(final String role, Set<String> memberRoles) {
-
-        // first we'll do a quick check if the role is included
-        // in the set and return if we have a match
-
-        if (memberRoles.contains(role)) {
-            return true;
-        }
-
-        // we'll look for wildcard characters and try to match
-
-        for (String memberRole : memberRoles) {
-
-            // if the role does not contain any of our pattern
-            // then no need to process since we have already
-            // verified the contains check above
-
-            if (!StringUtils.containsMatchCharacter(memberRole)) {
-                continue;
-            }
-
-            final String rolePattern = StringUtils.patternFromGlob(memberRole);
-            if (role.matches(rolePattern)) {
-                return true;
-            }
-        }
-
         return false;
     }
 
@@ -1489,7 +1507,7 @@ public class DataStore implements DataCacheProvider, RolesProvider {
 
         ///CLOVER:OFF
         if (publicKey == null && LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Public key: " + publicKeyName + " not available");
+            LOGGER.debug("Public key: {} not available", publicKeyName);
         }
         ///CLOVER:ON
         

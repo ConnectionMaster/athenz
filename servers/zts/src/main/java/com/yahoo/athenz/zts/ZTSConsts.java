@@ -80,7 +80,6 @@ public final class ZTSConsts {
     public static final String ZTS_PROP_AUTHORIZED_PROXY_USERS     = "athenz.zts.authorized_proxy_users";
     public static final String ZTS_PROP_SECURE_REQUESTS_ONLY       = "athenz.zts.secure_requests_only";
     public static final String ZTS_PROP_STATUS_CERT_SIGNER         = "athenz.zts.status_cert_signer";
-    public static final String ZTS_PROP_SINGLE_DOMAIN_IN_ROLE_CERT = "athenz.zts.single_domain_in_role_cert";
 
     public static final String ZTS_PROP_SELF_SIGNER_PRIVATE_KEY_FNAME    = "athenz.zts.self_signer_private_key_fname";
     public static final String ZTS_PROP_SELF_SIGNER_PRIVATE_KEY_PASSWORD = "athenz.zts.self_signer_private_key_password";
@@ -133,6 +132,22 @@ public final class ZTSConsts {
     public static final String ZTS_PROP_SSH_DYNAMODB_ITEM_TTL_HOURS  = "athenz.zts.ssh_dynamodb_item_ttl_hours";
     public static final String ZTS_PROP_SSH_OP_TIMEOUT               = "athenz.zts.ssh_op_timeout";
 
+    public static final String ZTS_PROP_WORKLOAD_JDBC_STORE               = "athenz.zts.workload_jdbc_store";
+    public static final String ZTS_PROP_WORKLOAD_JDBC_USER                = "athenz.zts.workload_jdbc_user";
+    public static final String ZTS_PROP_WORKLOAD_JDBC_PASSWORD            = "athenz.zts.workload_jdbc_password";
+    public static final String ZTS_PROP_WORKLOAD_JDBC_APP_NAME            = "athenz.zts.workload_jdbc_app_name";
+    public static final String ZTS_PROP_WORKLOAD_JDBC_USE_SSL             = "athenz.zts.workload_jdbc_use_ssl";
+    public static final String ZTS_PROP_WORKLOAD_JDBC_VERIFY_SERVER_CERT  = "athenz.zts.workload_jdbc_verify_server_certificate";
+    public static final String ZTS_PROP_WORKLOAD_FILE_STORE_PATH          = "athenz.zts.workload_file_store_path";
+    public static final String ZTS_PROP_WORKLOAD_FILE_STORE_NAME          = "athenz.zts.workload_file_store_name";
+    public static final String ZTS_PROP_WORKLOAD_DYNAMODB_TABLE_NAME      = "athenz.zts.workload_dynamodb_table_name";
+    public static final String ZTS_PROP_WORKLOAD_DYNAMODB_ITEM_TTL_HOURS  = "athenz.zts.workload_dynamodb_item_ttl_hours";
+    public static final String ZTS_PROP_WORKLOAD_OP_TIMEOUT               = "athenz.zts.workload_op_timeout";
+    public static final String ZTS_PROP_WORKLOAD_DYNAMODB_INDEX_SERVICE_NAME   = "athenz.zts.workload_dynamodb_index_service_name";
+    public static final String ZTS_PROP_WORKLOAD_DYNAMODB_INDEX_IP_NAME   = "athenz.zts.workload_dynamodb_index_ip_name";
+    public static final String ZTS_PROP_WORKLOAD_ENABLE_STORE_FEATURE     = "athenz.zts.workload_enable_store_feature";
+    public static final String ZTS_PROP_SYSTEM_AUTHZ_DETAILS_PATH         = "athenz.zts.system_authz_details_path";
+
     public static final String ZTS_PROP_PROVIDER_ENDPOINTS      = "athenz.zts.provider_endpoints";
     public static final String ZTS_PROP_INSTANCE_NTOKEN_TIMEOUT = "athenz.zts.instance_token_timeout";
     public static final String ZTS_PROP_X509_CA_CERT_FNAME      = "athenz.zts.x509_ca_cert_fname";
@@ -175,8 +190,8 @@ public final class ZTSConsts {
     public static final String ZTS_CERT_INSTANCE_ID_DNS  = ".instanceid.athenz.";
     public static final String ZTS_CERT_INSTANCE_ID_URI  = "athenz://instanceid/";
     public static final String ZTS_CERT_HOSTNAME_URI     = "athenz://hostname/";
+    public static final String ZTS_CERT_PRINCIPAL_URI    = "athenz://principal/";
     public static final String ZTS_CERT_SPIFFE_URI       = "spiffe://";
-    public static final String ZTS_CERT_ROLE_URI         = "athenz://role/";
     public static final String ZTS_CERT_PROXY_USER_URI   = "athenz://proxyuser/";
 
     public static final String RSA   = "RSA";
@@ -195,6 +210,7 @@ public final class ZTSConsts {
     public static final String ZTS_PROP_VALIDATE_SERVICE_SKIP_DOMAINS    = "athenz.zts.validate_service_skip_domains";
     public static final String ZTS_PROP_VALIDATE_SERVICE_IDENTITY        = "athenz.zts.validate_service_identity";
     public static final String ZTS_PROP_MAX_AUTHZ_DETAILS_LENGTH         = "athenz.zts.max_authz_details_length";
+    public static final String ZTS_PROP_WORKLOAD_RECORD_STORE_FACTORY_CLASS   = "athenz.zts.workload_record_store_factory_class";
 
     public static final String ZTS_CHANGE_LOG_STORE_FACTORY_CLASS  = "com.yahoo.athenz.common.server.store.impl.ZMSFileChangeLogStoreFactory";
     public static final String ZTS_PKEY_STORE_FACTORY_CLASS        = "com.yahoo.athenz.auth.impl.FilePrivateKeyStoreFactory";
@@ -206,10 +222,12 @@ public final class ZTSConsts {
     public static final String ZTS_PROP_NOTIFICATION_CERT_FAIL_PROVIDER_LIST            = "athenz.zts.notification_cert_fail_provider_list";
     public static final String ZTS_PROP_NOTIFICATION_CERT_FAIL_IGNORED_SERVICES_LIST    = "athenz.zts.notification_cert_fail_ignored_services_list";
     public static final String ZTS_PROP_NOTIFICATION_GRACE_PERIOD_HOURS                 = "athenz.zts.notification_cert_fail_grace_hours";
+    public static final String ZTS_PROP_ATHENZ_GUIDE                                    = "athenz.zts.notification_cert_fail_athenz_guide";
+
     public static final String ZTS_PROP_NOTIFICATION_AWS_HEALTH_DOMAIN                  = "athenz.zts.notification_aws_health_domain";
     public static final String ZTS_PROP_NOTIFICATION_API_HOSTNAME                       = "athenz.zts.notification_api_hostname";
 
-    public static final String ZTS_JSON_PARSER_ERROR_RESPONSE = "{\"code\":400,\"message\":\"Invalid Object: checkout https://github.com/yahoo/athenz/tree/master/core/zts/src/main/rdl for object defintions\"}";
+    public static final String ZTS_JSON_PARSER_ERROR_RESPONSE = "{\"code\":400,\"message\":\"Invalid Object: checkout https://github.com/AthenZ/athenz/tree/master/core/zts/src/main/rdl for object defintions\"}";
 
     public static final String ZTS_PROP_STATUS_CHECKER_FACTORY_CLASS = "athenz.zts.status_checker_factory_class";
 }

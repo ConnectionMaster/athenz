@@ -30,9 +30,15 @@ public class SignUtilsTest {
 
     @BeforeMethod
     public void setUp(){
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
     }
-    
+
+    @Test
+    public void testEmptyConstructor() {
+        SignUtils signUtils = new SignUtils();
+        assertNotNull(signUtils);
+    }
+
     @Test
     public void testAsCanonicalStringPolicyData() {
         Mockito.when(mockPolicy.getPolicies()).thenReturn(null);
@@ -133,6 +139,8 @@ public class SignUtilsTest {
         Mockito.when(mRole.getMemberReviewDays()).thenReturn(null);
         Mockito.when(mRole.getServiceReviewDays()).thenReturn(null);
         Mockito.when(mRole.getTokenExpiryMins()).thenReturn(null);
+        Mockito.when(mRole.getGroupExpiryDays()).thenReturn(null);
+        Mockito.when(mRole.getGroupReviewDays()).thenReturn(null);
         roles.add(mRole);
         
         List<String> items = new ArrayList<>();
@@ -189,7 +197,8 @@ public class SignUtilsTest {
         List<RoleMember> roleMembers1 = new ArrayList<>();
         Role role1 = new Role().setName("role1").setRoleMembers(roleMembers1)
                 .setMemberExpiryDays(30).setTokenExpiryMins(450)
-                .setCertExpiryMins(300).setServiceExpiryDays(40);
+                .setCertExpiryMins(300).setServiceExpiryDays(40)
+                .setGroupExpiryDays(70).setGroupReviewDays(80);
 
         List<RoleMember> roleMembers2 = new ArrayList<>();
         roleMembers2.add(new RoleMember().setMemberName("user.joe").setExpiration(Timestamp.fromMillis(0)));
@@ -256,10 +265,70 @@ public class SignUtilsTest {
     }
 
     @Test
+    public void testAsStructGroupService() {
+        List<Group> groups = new ArrayList<>();
+        Group mGroup = Mockito.mock(Group.class);
+        Mockito.when(mGroup.getAuditEnabled()).thenReturn(null);
+        Mockito.when(mGroup.getSelfServe()).thenReturn(null);
+        Mockito.when(mGroup.getMemberExpiryDays()).thenReturn(null);
+        Mockito.when(mGroup.getServiceExpiryDays()).thenReturn(null);
+        groups.add(mGroup);
+
+        List<GroupMember> groupMembers = new ArrayList<>();
+        GroupMember groupMember = new GroupMember();
+        groupMember.setMemberName("groupMemberName1");
+        groupMembers.add(groupMember);
+
+        List<ServiceIdentity> services = new ArrayList<>();
+        ServiceIdentity mService = Mockito.mock(ServiceIdentity.class);
+        services.add(mService);
+
+        List<PublicKeyEntry> publicKeys = new ArrayList<>();
+        PublicKeyEntry mPublicKey = Mockito.mock(PublicKeyEntry.class);
+        publicKeys.add(mPublicKey);
+
+        SignedPolicies signedPolicies = Mockito.mock(SignedPolicies.class);
+
+        Mockito.when(mockDomain.getAuditEnabled()).thenReturn(null);
+        Mockito.when(mockDomain.getEnabled()).thenReturn(null);
+        Mockito.when(mockDomain.getAccount()).thenReturn("chk_string");
+        Mockito.when(mockDomain.getGroups()).thenReturn(groups);
+        Mockito.when(mockDomain.getRoles()).thenReturn(null);
+        Mockito.when(mGroup.getGroupMembers()).thenReturn(groupMembers);
+        Mockito.when(mockDomain.getServices()).thenReturn(services);
+        Mockito.when(mService.getHosts()).thenReturn(null);
+        Mockito.when(mService.getPublicKeys()).thenReturn(publicKeys);
+        Mockito.when(mockDomain.getPolicies()).thenReturn(signedPolicies);
+        Mockito.when(signedPolicies.getContents()).thenReturn(mockPolicies);
+        Mockito.when(mockDomain.getMemberExpiryDays()).thenReturn(30);
+        Mockito.when(mockDomain.getServiceExpiryDays()).thenReturn(40);
+        Mockito.when(mockDomain.getTokenExpiryMins()).thenReturn(450);
+
+        String check = SignUtils.asCanonicalString(mockDomain);
+        assertNotNull(check);
+        assertEquals(check, "{\"account\":\"chk_string\",\"groups\":[{\"groupMembers\":[{\"memberName\":\"groupMemberName1\"}]," +
+                "\"reviewEnabled\":false}],\"memberExpiryDays\":30,\"policies\":{\"contents\":{\"policies\":[]}}," +
+                "\"roleCertExpiryMins\":0,\"roles\":[],\"serviceCertExpiryMins\":0,\"serviceExpiryDays\":40,\"services\":[{\"publicKeys\":[{}]}]," +
+                "\"tokenExpiryMins\":450,\"ypmId\":0}");
+
+        Mockito.when(mService.getPublicKeys()).thenReturn(null);
+        Mockito.when(mockDomain.getMemberExpiryDays()).thenReturn(null);
+        Mockito.when(mockDomain.getServiceExpiryDays()).thenReturn(null);
+
+        check = SignUtils.asCanonicalString(mockDomain);
+        assertNotNull(check);
+        assertEquals(check,"{\"account\":\"chk_string\",\"groups\":[{\"groupMembers\":[{\"memberName\":\"groupMemberName1\"}]," +
+                "\"reviewEnabled\":false}],\"policies\":{\"contents\":{\"policies\":[]}},\"roleCertExpiryMins\":0,\"roles\":[]," +
+                "\"serviceCertExpiryMins\":0,\"services\":[{\"publicKeys\":[]}],\"tokenExpiryMins\":450,\"ypmId\":0}");
+    }
+
+
+    @Test
     public void testAsStructGroup() {
 
         List<GroupMember> groupMembers1 = new ArrayList<>();
         Group group1 = new Group().setName("group1").setGroupMembers(groupMembers1)
+                .setMemberExpiryDays(30).setServiceExpiryDays(40)
                 .setReviewEnabled(true).setSelfServe(true).setAuditEnabled(true);
 
         List<GroupMember> groupMembers2 = new ArrayList<>();
@@ -276,7 +345,7 @@ public class SignUtilsTest {
 
         final String check = SignUtils.asCanonicalString(data);
         final String expected = "{\"enabled\":true,\"groups\":[{\"auditEnabled\":true,"
-                +"\"groupMembers\":[],\"name\":\"group1\",\"reviewEnabled\":true,\"selfServe\":true},"
+                +"\"groupMembers\":[],\"memberExpiryDays\":30,\"name\":\"group1\",\"reviewEnabled\":true,\"selfServe\":true,\"serviceExpiryDays\":40},"
                 +"{\"groupMembers\":[{\"expiration\":\"1970-01-01T00:00:00.000Z\","
                 +"\"memberName\":\"user.joe\"},{\"expiration\":\"1970-01-01T00:00:00.000Z\","
                 +"\"memberName\":\"user.jane\"}],\"name\":\"group2\"},{\"name\":\"group3\"}],"
